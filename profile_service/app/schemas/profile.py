@@ -1,0 +1,88 @@
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+from typing import Any
+
+from pydantic import BaseModel, Field
+
+
+class ProfileResponse(BaseModel):
+    id: uuid.UUID
+    candidate_id: uuid.UUID
+    version: int
+    is_current: bool
+    schema_version: str
+    constraints: dict[str, Any]
+    preferences: dict[str, Any]
+    skills: dict[str, Any]
+    education: dict[str, Any]
+    patch_id: uuid.UUID | None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ProfileVersionSummary(BaseModel):
+    version: int
+    is_current: bool
+    created_at: datetime
+    patch_id: uuid.UUID | None
+
+    model_config = {"from_attributes": True}
+
+
+class ConstraintsUpdate(BaseModel):
+    sponsorship_required: bool | None = None
+    visa_type: str | None = None
+    work_authorization: str | None = None
+    internship_only: bool | None = None
+    fulltime_only: bool | None = None
+    minimum_salary: float | None = None
+    minimum_hourly_rate: float | None = None
+
+
+class PreferencesUpdate(BaseModel):
+    primary_roles: list[str] | None = None
+    secondary_roles: list[str] | None = None
+    preferred_locations: list[str] | None = None
+    acceptable_locations: list[str] | None = None
+    remote_preference: str | None = None
+    relocation_allowed: bool | None = None
+    preferred_company_stages: list[str] | None = None
+    preferred_industries: list[str] | None = None
+
+
+class EducationUpdate(BaseModel):
+    degree: str | None = None
+    university: str | None = None
+    graduation_date: str | None = None
+
+
+class CapabilityResponse(BaseModel):
+    capability_name: str
+    supporting_evidence: list[str]
+    profile_version: int
+    taxonomy_version: str
+    computed_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class CapabilitiesListResponse(BaseModel):
+    capabilities: list[CapabilityResponse]
+
+
+class EvidenceResponse(BaseModel):
+    id: uuid.UUID
+    evidence_type: str
+    normalized_data: dict[str, Any]
+    source_resume_id: uuid.UUID
+    is_approved: bool
+    approved_at: datetime | None
+
+    model_config = {"from_attributes": True}
+
+
+class EvidenceListResponse(BaseModel):
+    evidence: list[EvidenceResponse]

@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+.venv/
+.pytest_cache/
+__pycache__/
+*.py[cod]
+*.pyc
+alerts.json
+data/
+job-crawler/
+*.egg-info/
