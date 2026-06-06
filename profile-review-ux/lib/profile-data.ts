@@ -17,8 +17,11 @@ export interface ExperienceChange {
   title: string
   company: string
   durationMonths: number
+  previousTitle?: string
+  previousCompany?: string
   previousDurationMonths?: number
   domains: string[]
+  previousDomains?: string[]
   keywords: string[]
   newKeywords?: string[]
 }
@@ -30,8 +33,11 @@ export interface ProjectChange {
   status: ItemStatus
   name: string
   type: string
+  previousType?: string
   domain: string
+  previousDomain?: string
   keywords: string[]
+  newKeywords?: string[]
 }
 
 export interface CertificationChange {

@@ -1,4 +1,4 @@
-import type { PendingPatchResponse, PatchOperationResponse } from "@/lib/api-types"
+import type { EvidenceResponse, PendingPatchResponse, PatchOperationResponse } from "@/lib/api-types"
 import type {
   CertificationChange,
   EducationChange,
@@ -80,28 +80,63 @@ function mapAddExperience(op: PatchOperationResponse): ExperienceChange {
   }
 }
 
-function mergeExperienceUpdates(ops: PatchOperationResponse[]): ExperienceChange {
+function buildEvidenceIndex(evidence: EvidenceResponse[]): Map<string, EvidenceResponse> {
+  return new Map(evidence.map((item) => [item.id, item]))
+}
+
+function experienceBaseline(
+  evidenceById: Map<string, EvidenceResponse>,
+  evidenceId: string,
+) {
+  const data = evidenceById.get(evidenceId)?.normalized_data ?? {}
+  return {
+    title: String(data.title ?? ""),
+    company: String(data.company ?? ""),
+    durationMonths: Number(data.duration_months ?? 0),
+    domains: (data.domains as string[]) ?? [],
+    keywords: (data.evidence_keywords as string[]) ?? [],
+  }
+}
+
+function mergeExperienceUpdates(
+  ops: PatchOperationResponse[],
+  evidenceById: Map<string, EvidenceResponse>,
+): ExperienceChange {
   const first = ops[0]
   const evidenceId = first.evidence_id ?? first.id
-  let title = ""
-  let company = ""
-  let durationMonths = 0
+  const baseline = experienceBaseline(evidenceById, evidenceId)
+
+  let title = baseline.title
+  let company = baseline.company
+  let durationMonths = baseline.durationMonths
+  let domains = baseline.domains
+  let keywords = baseline.keywords
+  let previousTitle: string | undefined
+  let previousCompany: string | undefined
   let previousDurationMonths: number | undefined
-  let domains: string[] = []
-  let keywords: string[] = []
+  let previousDomains: string[] | undefined
   let newKeywords: string[] | undefined
 
   for (const op of ops) {
-    if (op.field === "title") title = String(op.to ?? "")
-    if (op.field === "company") company = String(op.to ?? "")
-    if (op.field === "duration_months") {
-      durationMonths = Number(op.to ?? 0)
-      previousDurationMonths = Number(op.from_value ?? 0)
+    if (op.field === "title") {
+      previousTitle = String(op.from_value ?? baseline.title)
+      title = String(op.to ?? "")
     }
-    if (op.field === "domains") domains = (op.to as string[]) ?? []
+    if (op.field === "company") {
+      previousCompany = String(op.from_value ?? baseline.company)
+      company = String(op.to ?? "")
+    }
+    if (op.field === "duration_months") {
+      previousDurationMonths = Number(op.from_value ?? baseline.durationMonths)
+      durationMonths = Number(op.to ?? 0)
+    }
+    if (op.field === "domains") {
+      previousDomains = (op.from_value as string[]) ?? baseline.domains
+      domains = (op.to as string[]) ?? []
+    }
     if (op.field === "evidence_keywords") {
       keywords = (op.to as string[]) ?? []
-      const prev = (op.from_value as string[]) ?? []
+      const prev = (op.from_value as string[]) ?? baseline.keywords
       newKeywords = keywords.filter((k) => !prev.includes(k))
     }
   }
@@ -114,8 +149,11 @@ function mergeExperienceUpdates(ops: PatchOperationResponse[]): ExperienceChange
     title,
     company,
     durationMonths,
+    previousTitle,
+    previousCompany,
     previousDurationMonths,
     domains,
+    previousDomains,
     keywords,
     newKeywords,
   }
@@ -136,21 +174,49 @@ function mapAddProject(op: PatchOperationResponse): ProjectChange {
   }
 }
 
-function mergeProjectUpdates(ops: PatchOperationResponse[]): ProjectChange {
+function projectBaseline(evidenceById: Map<string, EvidenceResponse>, evidenceId: string) {
+  const data = evidenceById.get(evidenceId)?.normalized_data ?? {}
+  const domains = (data.domains as string[]) ?? []
+  return {
+    name: String(data.name ?? ""),
+    type: String(data.category ?? ""),
+    domain: domains[0] ?? "",
+    keywords: (data.evidence_keywords as string[]) ?? [],
+  }
+}
+
+function mergeProjectUpdates(
+  ops: PatchOperationResponse[],
+  evidenceById: Map<string, EvidenceResponse>,
+): ProjectChange {
   const first = ops[0]
   const evidenceId = first.evidence_id ?? first.id
-  let name = ""
-  let type = ""
-  let domain = ""
-  let keywords: string[] = []
+  const baseline = projectBaseline(evidenceById, evidenceId)
+
+  let name = baseline.name
+  let type = baseline.type
+  let domain = baseline.domain
+  let keywords = baseline.keywords
+  let previousType: string | undefined
+  let previousDomain: string | undefined
+  let newKeywords: string[] | undefined
 
   for (const op of ops) {
-    if (op.field === "category") type = String(op.to ?? "")
-    if (op.field === "domains") {
-      const domains = (op.to as string[]) ?? []
-      domain = domains[0] ?? domain
+    if (op.field === "category") {
+      previousType = String(op.from_value ?? baseline.type)
+      type = String(op.to ?? "")
     }
-    if (op.field === "evidence_keywords") keywords = (op.to as string[]) ?? []
+    if (op.field === "domains") {
+      const prevDomains = (op.from_value as string[]) ?? []
+      previousDomain = prevDomains[0] ?? baseline.domain
+      const nextDomains = (op.to as string[]) ?? []
+      domain = nextDomains[0] ?? domain
+    }
+    if (op.field === "evidence_keywords") {
+      keywords = (op.to as string[]) ?? []
+      const prev = (op.from_value as string[]) ?? baseline.keywords
+      newKeywords = keywords.filter((k) => !prev.includes(k))
+    }
   }
 
   return {
@@ -160,8 +226,11 @@ function mergeProjectUpdates(ops: PatchOperationResponse[]): ProjectChange {
     status: "pending",
     name,
     type,
+    previousType,
     domain,
+    previousDomain,
     keywords,
+    newKeywords,
   }
 }
 
@@ -235,13 +304,18 @@ function groupByEvidenceId(ops: PatchOperationResponse[]): Map<string, PatchOper
   return groups
 }
 
-export function mapPendingPatchToReviewState(patch: PendingPatchResponse): ReviewState {
+export function mapPendingPatchToReviewState(
+  patch: PendingPatchResponse,
+  evidence: EvidenceResponse[] = [],
+): ReviewState {
+  const evidenceById = buildEvidenceIndex(evidence)
+
   const experiences: ExperienceChange[] = []
   const addExps = patch.experiences.filter((o) => o.op === "ADD_EXPERIENCE")
   const updateExps = patch.experiences.filter((o) => o.op === "UPDATE_EXPERIENCE")
   experiences.push(...addExps.map(mapAddExperience))
   for (const [, ops] of groupByEvidenceId(updateExps)) {
-    experiences.push(mergeExperienceUpdates(ops))
+    experiences.push(mergeExperienceUpdates(ops, evidenceById))
   }
 
   const projects: ProjectChange[] = []
@@ -249,7 +323,7 @@ export function mapPendingPatchToReviewState(patch: PendingPatchResponse): Revie
   const updateProjects = patch.projects.filter((o) => o.op === "UPDATE_PROJECT")
   projects.push(...addProjects.map(mapAddProject))
   for (const [, ops] of groupByEvidenceId(updateProjects)) {
-    projects.push(mergeProjectUpdates(ops))
+    projects.push(mergeProjectUpdates(ops, evidenceById))
   }
 
   const education = patch.education.map(mapEducation)

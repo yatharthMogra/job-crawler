@@ -139,12 +139,22 @@ function ExperienceCard({
         </div>
       ) : (
         <>
-          <h4 className="text-base font-semibold text-foreground">{e.title}</h4>
-          <p className="mt-0.5 flex items-center gap-1.5 text-sm text-muted-foreground">
-            <Building2 className="size-3.5" aria-hidden="true" />
-            {e.company}
+          <h4 className="text-base font-semibold text-foreground">
+            <UpdateText
+              kind={exp.kind}
+              previous={exp.previousTitle}
+              current={e.title}
+            />
+          </h4>
+          <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
+            <Building2 className="size-3.5 shrink-0" aria-hidden="true" />
+            <UpdateText
+              kind={exp.kind}
+              previous={exp.previousCompany}
+              current={e.company}
+            />
             <span aria-hidden="true">·</span>
-            {exp.kind === "update" && exp.previousDurationMonths ? (
+            {exp.kind === "update" && exp.previousDurationMonths !== undefined ? (
               <span className="inline-flex items-center gap-1">
                 <span className="text-muted-foreground/70 line-through">
                   {exp.previousDurationMonths} months
@@ -160,7 +170,21 @@ function ExperienceCard({
           </p>
 
           {e.domains.length > 0 ? (
-            <p className="mt-1 text-sm text-muted-foreground">{e.domains.join(" · ")}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {exp.kind === "update" && exp.previousDomains !== undefined ? (
+                <span className="inline-flex flex-wrap items-center gap-1">
+                  <span className="text-muted-foreground/70 line-through">
+                    {exp.previousDomains.join(" · ") || "None"}
+                  </span>
+                  <ArrowRight className="size-3 shrink-0 text-update-foreground" aria-hidden="true" />
+                  <span className="font-medium text-update-foreground">
+                    {e.domains.join(" · ")}
+                  </span>
+                </span>
+              ) : (
+                e.domains.join(" · ")
+              )}
+            </p>
           ) : null}
 
           {exp.kind === "update" && exp.newKeywords?.length ? (
@@ -207,4 +231,26 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       {children}
     </div>
   )
+}
+
+function UpdateText({
+  kind,
+  previous,
+  current,
+}: {
+  kind: ExperienceChange["kind"]
+  previous?: string
+  current: string
+}) {
+  if (kind === "update" && previous !== undefined && previous !== current) {
+    return (
+      <span className="inline-flex flex-wrap items-center gap-1">
+        <span className="text-muted-foreground/70 line-through">{previous}</span>
+        <ArrowRight className="size-3 shrink-0 text-update-foreground" aria-hidden="true" />
+        <span className="font-medium text-update-foreground">{current}</span>
+      </span>
+    )
+  }
+
+  return <>{current}</>
 }

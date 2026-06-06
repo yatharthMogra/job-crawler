@@ -51,6 +51,7 @@ pnpm-debug.log*
 **/data/resumes/
 **/alerts.json
 job-crawler/
+exports/
 
 # Logs
 *.log

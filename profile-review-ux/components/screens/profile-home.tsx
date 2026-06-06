@@ -69,19 +69,21 @@ export function ProfileHome({
 
         {profile.capabilities.length > 0 ? (
           <Section title="Your Capabilities">
-            <TooltipProvider delayDuration={150}>
+            <TooltipProvider delay={150}>
               <div className="flex flex-col gap-4">
                 {profile.capabilities.map((c) => (
                   <div key={c.name} className="w-full">
                     <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
                       <span className="text-sm font-medium text-foreground">{c.name}</span>
                       <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="cursor-default text-xs text-muted-foreground">
-                            Supported by {c.evidence.slice(0, 2).join(", ")}
-                            {c.evidence.length > 2 ? ` +${c.evidence.length - 2}` : ""}
-                          </span>
-                        </TooltipTrigger>
+                        <TooltipTrigger
+                          render={
+                            <span className="cursor-default text-xs text-muted-foreground">
+                              Supported by {c.evidence.slice(0, 2).join(", ")}
+                              {c.evidence.length > 2 ? ` +${c.evidence.length - 2}` : ""}
+                            </span>
+                          }
+                        />
                         <TooltipContent>
                           <p className="text-xs font-medium">Evidence</p>
                           <p className="text-xs text-muted-foreground">{c.evidence.join(", ")}</p>

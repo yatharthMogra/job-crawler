@@ -70,6 +70,23 @@ export default function Page() {
     setHasExistingProfile(true)
   }, [])
 
+  const loadPendingReview = useCallback(async (id: string) => {
+    const [pending, evidence] = await Promise.all([getPendingPatch(id), getEvidence(id)])
+    setPatchId(pending.patch_id)
+    setReviewState(mapPendingPatchToReviewState(pending, evidence.evidence))
+    try {
+      await getProfile(id)
+      setHasExistingProfile(true)
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) {
+        setHasExistingProfile(false)
+      } else {
+        throw err
+      }
+    }
+    setStage("review")
+  }, [])
+
   useEffect(() => {
     async function boot() {
       if (mockMode) {
@@ -87,6 +104,16 @@ export default function Page() {
       setCandidateId(storedId)
       try {
         await getCandidate(storedId)
+
+        try {
+          await loadPendingReview(storedId)
+          return
+        } catch (err) {
+          if (!(err instanceof ApiError && err.status === 404)) {
+            throw err
+          }
+        }
+
         try {
           await loadProfileHome(storedId)
           setStage("profile")
@@ -103,14 +130,7 @@ export default function Page() {
     }
 
     void boot()
-  }, [mockMode, loadProfileHome])
-
-  async function handlePendingPatchRedirect(id: string) {
-    const pending = await getPendingPatch(id)
-    setPatchId(pending.patch_id)
-    setReviewState(mapPendingPatchToReviewState(pending))
-    setStage("review")
-  }
+  }, [mockMode, loadProfileHome, loadPendingReview])
 
   async function handleUploadSelected(selected: File) {
     setFile(selected)
@@ -131,17 +151,20 @@ export default function Page() {
     try {
       const result = await uploadResume(candidateId, file)
       setPatchId(result.patch_id)
-      const pending = await getPendingPatch(candidateId)
-      setReviewState(mapPendingPatchToReviewState(pending))
+      const [pending, evidence] = await Promise.all([
+        getPendingPatch(candidateId),
+        getEvidence(candidateId),
+      ])
+      setReviewState(mapPendingPatchToReviewState(pending, evidence.evidence))
       setStage("review")
     } catch (err) {
       if (err instanceof ApiError && err.status === 409 && candidateId) {
-        await handlePendingPatchRedirect(candidateId)
+        await loadPendingReview(candidateId)
         return
       }
       throw err
     }
-  }, [mockMode, candidateId, file])
+  }, [mockMode, candidateId, file, loadPendingReview])
 
   const handleProcessingComplete = useCallback(() => {
     setStage("review")
