@@ -5,8 +5,13 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from app.constants import EFFORT_LABELS
 from app.models.shared import NormalizedJob
+from app.notification.briefing_content import (
+    build_job_card,
+    estimate_time_saved_minutes,
+    estimate_total_review_minutes,
+    format_briefing_date,
+)
 from app.services.profile_loader import UserProfile
 
 _TEMPLATE_DIR = Path(__file__).resolve().parent.parent / "templates"
@@ -15,30 +20,7 @@ _env = Environment(
     autoescape=select_autoescape(["html", "xml"]),
 )
 
-
-def _format_salary(job: NormalizedJob) -> str | None:
-    if job.salary_min and job.salary_max:
-        return f"${job.salary_min:,} - ${job.salary_max:,}"
-    if job.salary_max:
-        return f"Up to ${job.salary_max:,}"
-    if job.salary_min:
-        return f"From ${job.salary_min:,}"
-    return None
-
-
-def _posted_ago(posted_at: datetime | None) -> str:
-    if posted_at is None:
-        return "Recently"
-    now = datetime.now(timezone.utc)
-    if posted_at.tzinfo is None:
-        posted_at = posted_at.replace(tzinfo=timezone.utc)
-    hours = int((now - posted_at).total_seconds() / 3600)
-    if hours < 1:
-        return "Just posted"
-    if hours < 24:
-        return f"{hours}h ago"
-    days = hours // 24
-    return f"{days}d ago"
+_DEFAULT_APP_BASE_URL = "http://localhost:3000"
 
 
 def render_daily_briefing(
@@ -46,27 +28,28 @@ def render_daily_briefing(
     jobs_with_explanations: list[tuple[NormalizedJob, list[str], float]],
     user_profile: UserProfile,
     total_scanned: int,
+    briefing_date: datetime | None = None,
+    app_base_url: str | None = None,
 ) -> str:
     template = _env.get_template("daily_briefing.html")
-    jobs_payload = []
-    for job, explanations, score in jobs_with_explanations:
-        jobs_payload.append(
-            {
-                "title": job.title,
-                "company_name": job.company_name,
-                "posting_url": job.posting_url or "#",
-                "salary": _format_salary(job),
-                "location": job.location or "Location not specified",
-                "remote_type": job.remote_type,
-                "posted_ago": _posted_ago(job.posted_at),
-                "effort_label": EFFORT_LABELS.get(job.application_effort or "MEDIUM", "Standard"),
-                "explanations": explanations,
-                "score": round(score, 3),
-            }
-        )
+    jobs_sent = len(jobs_with_explanations)
+    base_url = (app_base_url or _DEFAULT_APP_BASE_URL).rstrip("/")
+    candidate_id = str(user_profile.candidate_id)
+
+    jobs_payload = [
+        build_job_card(job, explanations, score, rank=idx, total_jobs=jobs_sent)
+        for idx, (job, explanations, score) in enumerate(jobs_with_explanations, start=1)
+    ]
+
     return template.render(
         user_name=user_profile.name,
+        briefing_date=format_briefing_date(briefing_date),
         jobs=jobs_payload,
-        jobs_sent=len(jobs_payload),
+        jobs_sent=jobs_sent,
         total_scanned=total_scanned,
+        time_saved_minutes=estimate_time_saved_minutes(total_scanned, jobs_sent),
+        total_review_minutes=estimate_total_review_minutes(total_scanned),
+        manage_prefs_url=f"{base_url}/preferences?candidate_id={candidate_id}",
+        dashboard_url=f"{base_url}/dashboard?candidate_id={candidate_id}",
+        unsubscribe_url=f"{base_url}/unsubscribe?candidate_id={candidate_id}",
     )

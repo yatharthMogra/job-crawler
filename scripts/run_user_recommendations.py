@@ -19,7 +19,7 @@ from sqlalchemy import and_, func, select
 from app.config import get_settings
 from app.database import AsyncSessionLocal
 from app.models.shared import NormalizedJob
-from app.notification.ranker import rank_jobs
+from app.notification.ranker import deduplicate_ranked_jobs, rank_jobs
 from app.notification.retrieval import build_constraint_filters, query_jobs_in_pools
 from app.scoring.explainability import generate_explanations
 from app.services.profile_loader import load_user_profile
@@ -139,6 +139,7 @@ async def recommend_for_user(user: dict) -> dict:
         )
 
         ranked = rank_jobs(all_jobs, profile, settings)
+        deduped_ranked = deduplicate_ranked_jobs(ranked)
         dashboard_sorted = sorted(all_jobs, key=lambda j: j.opportunity_score or 0, reverse=True)
 
         personalized = []
@@ -164,7 +165,10 @@ async def recommend_for_user(user: dict) -> dict:
             "capabilities": [c.capability_name for c in profile.capabilities],
             "total_matching_jobs": total,
             "pool_breakdown": [dict(r._mapping) for r in pool_breakdown],
-            "notification_top_4": personalized[:4],
+            "notification_top_4": [
+                {**_job_row(job, score, generate_explanations(job, profile)), "rank": idx}
+                for idx, (job, score) in enumerate(deduped_ranked[:4], start=1)
+            ],
             "personalized_ranked_all": personalized,
             "dashboard_by_opportunity_score": dashboard,
         }

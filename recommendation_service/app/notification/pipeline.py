@@ -12,7 +12,7 @@ from app.database import AsyncSessionLocal
 from app.models.notification import NotificationBatch, NotificationJobHistory
 from app.models.shared import Candidate
 from app.models.subscription import UserPoolSubscription
-from app.notification.ranker import rank_jobs
+from app.notification.ranker import deduplicate_ranked_jobs, rank_jobs
 from app.notification.renderer import render_daily_briefing
 from app.notification.retrieval import build_constraint_filters, fetch_new_jobs_in_pools
 from app.notification.sender import send_email
@@ -86,7 +86,7 @@ async def run_notification_for_user(
         await _skip_batch(batch, "no_jobs_after_filter", db)
         return
 
-    ranked_jobs = rank_jobs(filtered_jobs, user_profile, settings)
+    ranked_jobs = deduplicate_ranked_jobs(rank_jobs(filtered_jobs, user_profile, settings))
     batch.jobs_ranked = len(ranked_jobs)
     top_jobs = ranked_jobs[: settings.notification_jobs_per_email]
 
@@ -99,10 +99,11 @@ async def run_notification_for_user(
         jobs_with_explanations=jobs_with_explanations,
         user_profile=user_profile,
         total_scanned=len(candidate_jobs),
+        app_base_url=settings.app_base_url,
     )
     delivered = await send_email(
         to=user_profile.email,
-        subject="Your job opportunities — Career Match AI",
+        subject="Career Match AI - Daily Briefing",
         html=html,
         settings=settings,
     )

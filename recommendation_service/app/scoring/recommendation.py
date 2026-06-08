@@ -2,15 +2,25 @@ from __future__ import annotations
 
 from typing import Any
 
+import structlog
+
 from app.config import Settings
 from app.models.shared import NormalizedJob
+from app.scoring.location import location_alignment_score
 from app.services.profile_loader import UserProfile
+
+log = structlog.get_logger(__name__)
 
 
 def score_job(job: NormalizedJob, user_profile: UserProfile, settings: Settings) -> float:
     cap_score = _capability_overlap(job.job_capabilities, user_profile.capabilities)
     skill_score = _skill_overlap(job.tech_stack + job.skills, user_profile.skills)
-    loc_score = _location_alignment(job.location, job.remote_type, user_profile.preferences)
+    loc_score = _location_alignment(
+        job.location,
+        job.remote_type,
+        user_profile.preferences,
+        job_title=job.title,
+    )
     comp_score = _compensation_alignment(job.salary_min, job.salary_max, user_profile.constraints)
 
     return (
@@ -52,22 +62,20 @@ def _location_alignment(
     job_location: str | None,
     remote_type: str,
     preferences: dict[str, Any],
+    *,
+    job_title: str | None = None,
 ) -> float:
-    preferred_locations = preferences.get("preferred_locations") or []
-    acceptable_locations = preferences.get("acceptable_locations") or []
-
-    if remote_type == "remote":
-        if "Remote" in preferred_locations:
-            return 1.0
-        return 0.7
-
-    for loc in preferred_locations:
-        if isinstance(loc, str) and loc.lower() in (job_location or "").lower():
-            return 1.0
-    for loc in acceptable_locations:
-        if isinstance(loc, str) and loc.lower() in (job_location or "").lower():
-            return 0.5
-    return 0.0
+    score, matched = location_alignment_score(job_location, remote_type, preferences)
+    log.debug(
+        "location_score",
+        job_title=job_title,
+        job_location=job_location,
+        remote_type=remote_type,
+        preferred_locations=preferences.get("preferred_locations"),
+        loc_score=score,
+        matched_segment=matched,
+    )
+    return score
 
 
 def _compensation_alignment(

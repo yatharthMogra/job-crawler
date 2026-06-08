@@ -9,3 +9,4 @@ __pycache__/
 alerts.json
 job-crawler/
 *.egg-info/
+alembic/

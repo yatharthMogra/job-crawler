@@ -34,7 +34,7 @@ A standalone FastAPI app that reads from the shared `jobingestion` PostgreSQL DB
 
 New tables (own migration): `user_pool_subscriptions`, `notification_batches`, `notification_job_history`.
 
-**Not built in V1:** dashboard UI, auto pool derivation from profile, vector/semantic search.
+**Not built in V1:** vector/semantic search. Dashboard UI lives in [`web/`](web/) (unified app).
 
 ---
 
@@ -305,9 +305,8 @@ cd recommendation_service && PYTHONPATH=. python -m pytest tests/ -q  # 4 tests
 |------|--------|
 | Full LLM re-enrichment of all jobs | Optional — run reprocessing API |
 | SMTP credentials for email | Required for notification step |
-| Dashboard UI | Not built — use curl/API only |
-| Auto pool subscription from profile roles | Not built — manual `POST /subscriptions` |
-| profile-review-ux integration | Not wired to recommendation service |
+| Dashboard UI | Built in [`web/`](web/) — see `web/README.md` |
+| Auto pool subscription from profile roles | Built — syncs on dashboard boot + profile commit |
 
 ---
 

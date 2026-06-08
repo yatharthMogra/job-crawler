@@ -96,7 +96,7 @@ async def wait_for_drain(timeout_s: int = 7200) -> dict:
 
 
 async def main() -> None:
-    for pass_num in range(1, 4):
+    for pass_num in range(1, 3):
         count = await requeue_empty_skill_jobs()
         print(f"pass={pass_num} requeued={count}", flush=True)
         if count == 0:

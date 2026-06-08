@@ -26,6 +26,16 @@ class DashboardJobOut(BaseModel):
     skills: list[str]
 
 
+class DashboardRecommendedJobOut(DashboardJobOut):
+    personal_score: float
+    match_reasons: list[str] = Field(default_factory=list)
+
+
 class DashboardJobsResponse(BaseModel):
     jobs: list[DashboardJobOut]
+    total: int
+
+
+class DashboardRecommendedJobsResponse(BaseModel):
+    jobs: list[DashboardRecommendedJobOut]
     total: int

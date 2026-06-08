@@ -53,6 +53,12 @@ def test_batch_response_parses_skill_fields_per_job() -> None:
 
 def test_enrichment_missing_skill_fields() -> None:
     assert enrichment_missing_skill_fields([], [], description_chars=500) is True
+    assert enrichment_missing_skill_fields(
+        [], [], description_chars=500, normalized_roles=["PRODUCT_MANAGER"]
+    ) is False
+    assert enrichment_missing_skill_fields(
+        [], [], description_chars=500, normalized_roles=["SWE"]
+    ) is True
     assert enrichment_missing_skill_fields(["Python"], [], description_chars=500) is False
     assert enrichment_missing_skill_fields([], ["NLP"], description_chars=500) is False
     assert enrichment_missing_skill_fields([], [], description_chars=100) is False

@@ -7,10 +7,18 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import Settings, get_settings
 from app.database import get_db
 from app.models.shared import NormalizedJob
+from app.notification.ranker import deduplicate_ranked_jobs, rank_jobs
 from app.notification.retrieval import build_constraint_filters, query_jobs_in_pools
-from app.schemas.dashboard import DashboardJobOut, DashboardJobsResponse
+from app.scoring.explainability import generate_explanations
+from app.schemas.dashboard import (
+    DashboardJobOut,
+    DashboardJobsResponse,
+    DashboardRecommendedJobOut,
+    DashboardRecommendedJobsResponse,
+)
 from app.services.profile_loader import load_user_profile
 from app.services.subscriptions import get_active_pools
 
@@ -87,6 +95,64 @@ async def get_dashboard_jobs(
     )
     total = await db.scalar(count_stmt) or 0
     return DashboardJobsResponse(jobs=[_job_to_out(job) for job in jobs], total=total)
+
+
+async def _fetch_all_pool_jobs(
+    db: AsyncSession,
+    *,
+    pools: list[str],
+    filters: list,
+    cap: int,
+) -> list[NormalizedJob]:
+    all_jobs: list[NormalizedJob] = []
+    offset = 0
+    while len(all_jobs) < cap:
+        chunk = await query_jobs_in_pools(
+            db, pools=pools, filters=filters, limit=min(200, cap - len(all_jobs)), offset=offset
+        )
+        if not chunk:
+            break
+        all_jobs.extend(chunk)
+        offset += len(chunk)
+        if len(chunk) < 200:
+            break
+    return all_jobs
+
+
+@router.get("/jobs/recommended", response_model=DashboardRecommendedJobsResponse)
+async def get_recommended_jobs(
+    candidate_id: uuid.UUID = Query(...),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+) -> DashboardRecommendedJobsResponse:
+    pools = await get_active_pools(db, candidate_id)
+    if not pools:
+        return DashboardRecommendedJobsResponse(jobs=[], total=0)
+
+    user_profile = await load_user_profile(db, candidate_id)
+    if user_profile is None:
+        return DashboardRecommendedJobsResponse(jobs=[], total=0)
+
+    filters = build_constraint_filters(user_profile)
+    cap = settings.notification_retrieval_limit
+    all_jobs = await _fetch_all_pool_jobs(db, pools=pools, filters=filters, cap=cap)
+    ranked = deduplicate_ranked_jobs(rank_jobs(all_jobs, user_profile, settings))
+    total = len(ranked)
+    page = ranked[offset : offset + limit]
+
+    jobs_out: list[DashboardRecommendedJobOut] = []
+    for job, score in page:
+        base = _job_to_out(job)
+        jobs_out.append(
+            DashboardRecommendedJobOut(
+                **base.model_dump(),
+                personal_score=score,
+                match_reasons=generate_explanations(job, user_profile),
+            )
+        )
+    return DashboardRecommendedJobsResponse(jobs=jobs_out, total=total)
 
 
 @router.get("/jobs/{job_id}", response_model=DashboardJobOut)

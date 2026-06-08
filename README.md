@@ -23,6 +23,7 @@ Use the helper scripts (recommended):
 ./scripts/dev-job-ingestion.sh          # http://localhost:8000
 ./scripts/dev-profile-service.sh      # http://localhost:8001
 ./scripts/dev-recommendation-service.sh  # http://localhost:8002
+./scripts/dev-web.sh                     # http://localhost:3000 (unified dashboard + profile UI)
 ```
 
 Or manually after activating the venv:
@@ -53,4 +54,11 @@ cd profile_service && pytest
 cd recommendation_service && pytest
 ```
 
-See [`testing.md`](testing.md) for end-to-end recommendation testing.
+See [`testing.md`](testing.md) for end-to-end recommendation testing and [`web/README.md`](web/README.md) for the user-facing frontend.
+
+## Frontend apps
+
+| App | Purpose |
+|-----|---------|
+| [`web/`](web/) | User-facing job dashboard + profile review (Career Match AI) |
+| [`job-ingestion-dashboard/`](job-ingestion-dashboard/) | Internal ops dashboard for the job ingestion pipeline |

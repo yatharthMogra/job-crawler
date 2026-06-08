@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/jobingestion"
     notification_cadence_hours: int = 3
-    notification_retrieval_limit: int = 50
+    notification_retrieval_limit: int = 500
     notification_jobs_per_email: int = 4
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 587
@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     score_compensation_weight: float = 0.15
     log_level: str = "INFO"
     cors_origins: str = ""
+    app_base_url: str = "http://localhost:3000"
 
     model_config = SettingsConfigDict(
         env_file=".env",

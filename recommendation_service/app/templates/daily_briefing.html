@@ -1,46 +1,184 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Your job opportunities</title>
-  <style>
-    body { font-family: Arial, sans-serif; color: #1a1a1a; line-height: 1.5; }
-    .job { border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
-    .title { font-size: 20px; font-weight: bold; margin: 0 0 4px; }
-    .company { color: #4b5563; margin-bottom: 8px; }
-    .meta { color: #6b7280; font-size: 14px; margin-bottom: 8px; }
-    .badge { display: inline-block; background: #eef2ff; color: #3730a3; padding: 2px 8px; border-radius: 999px; font-size: 12px; }
-    .match { margin-top: 12px; }
-    .match ul { margin: 4px 0 0; padding-left: 18px; }
-    .apply { display: inline-block; margin-top: 12px; background: #2563eb; color: #fff; text-decoration: none; padding: 8px 14px; border-radius: 6px; }
-    .footer { margin-top: 24px; font-size: 13px; color: #6b7280; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
+  <meta name="supported-color-schemes" content="dark">
+  <title>Career Match AI - Daily Briefing</title>
 </head>
-<body>
-  <p>Hi {{ user_name }},</p>
-  <p>Here are your top job opportunities from Career Match AI.</p>
+<body style="margin:0;padding:0;background-color:#07090b;font-family:Arial,Helvetica,sans-serif;color:#eeeeee;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#07090b;padding:24px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%;background-color:#07090b;">
 
-  {% for job in jobs %}
-  <div class="job">
-    <p class="title"><a href="{{ job.posting_url }}">{{ job.title }}</a></p>
-    <p class="company">{{ job.company_name }}</p>
-    {% if job.salary %}<p class="meta">{{ job.salary }}</p>{% endif %}
-    <p class="meta">{{ job.location }} · {{ job.remote_type }} · Posted {{ job.posted_ago }}</p>
-    <span class="badge">{{ job.effort_label }}</span>
-    <div class="match">
-      <strong>Profile Match</strong>
-      <ul>
-        {% for reason in job.explanations %}
-        <li>{{ reason }}</li>
-        {% endfor %}
-      </ul>
-    </div>
-    <a class="apply" href="{{ job.posting_url }}">Apply Now</a>
-  </div>
-  {% endfor %}
+          <!-- Header -->
+          <tr>
+            <td style="padding:8px 24px 20px 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="font-size:13px;font-weight:700;letter-spacing:0.1em;color:#eeeeee;">
+                    <span style="display:inline-block;width:24px;height:24px;line-height:24px;text-align:center;background:#67bb6b;color:#030405;border-radius:6px;margin-right:10px;font-size:14px;font-weight:700;">C</span>
+                    CAREER MATCH AI
+                  </td>
+                  <td align="right" style="font-size:12px;color:#6e7278;letter-spacing:0.06em;">{{ briefing_date }}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
-  <div class="footer">
-    <p>Why only {{ jobs_sent }} jobs? We scanned {{ total_scanned }} total. We recommended {{ jobs_sent }} because they offered the strongest combination of relevance, freshness, and application efficiency.</p>
-  </div>
+          <!-- Hero -->
+          <tr>
+            <td style="padding:0 24px 18px 24px;">
+              <p style="margin:0 0 8px 0;font-size:11px;font-weight:700;letter-spacing:0.16em;color:#67bb6b;">DAILY BRIEFING</p>
+              <p style="margin:0 0 18px 0;font-size:30px;line-height:1.15;font-weight:700;color:#eeeeee;">
+                {{ jobs_sent }} Jobs Worth Your Time Right Now
+              </p>
+              <table role="presentation" cellpadding="0" cellspacing="0" style="font-size:14px;">
+                <tr>
+                  <td style="padding-right:20px;color:#6e7278;">Scanned: <span style="color:#eeeeee;font-weight:700;">{{ total_scanned }}</span></td>
+                  <td style="padding-right:20px;color:#6e7278;">Surfaced: <span style="color:#eeeeee;font-weight:700;">{{ jobs_sent }}</span></td>
+                  <td style="color:#6e7278;">Time saved: <span style="color:#67bb6b;font-weight:700;">~{{ time_saved_minutes }}min</span></td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Selection criteria -->
+          <tr>
+            <td style="padding:0 24px 22px 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #2a2d33;background-color:#101113;">
+                <tr>
+                  <td style="padding:14px 16px;">
+                    <p style="margin:0 0 10px 0;font-size:10px;font-weight:700;letter-spacing:0.14em;color:#6e7278;">SELECTION CRITERIA</p>
+                    <table role="presentation" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="padding-right:16px;font-size:12px;color:#6e7278;">&#9679; Profile relevance</td>
+                        <td style="padding-right:16px;font-size:12px;color:#6e7278;">&#9201; Freshness</td>
+                        <td style="padding-right:16px;font-size:12px;color:#6e7278;">&#9878; Visa signals</td>
+                        <td style="font-size:12px;color:#6e7278;">&#8599; Competition dynamics</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          {% for job in jobs %}
+          <!-- Job card -->
+          <tr>
+            <td style="padding:0 24px 18px 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #2a2d33;background-color:#171a1f;">
+                <tr>
+                  <td style="padding:20px 22px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="font-size:14px;font-weight:700;color:#6e7278;">#{{ job.rank_label }}</td>
+                        <td align="right">
+                          <a href="{{ job.posting_url }}" style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:{{ job.cta_color }};text-decoration:none;background-color:{{ job.cta_bg }};border:1px solid {{ job.cta_border }};padding:7px 14px;display:inline-block;border-radius:4px;">{{ job.cta }}</a>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <p style="margin:16px 0 6px 0;font-size:20px;font-weight:700;letter-spacing:0.03em;color:#eeeeee;text-transform:uppercase;line-height:1.25;">
+                      <a href="{{ job.posting_url }}" style="color:#eeeeee;text-decoration:none;">{{ job.title }}</a>
+                    </p>
+                    <p style="margin:0 0 6px 0;font-size:14px;color:#6e7278;">{{ job.company_name }}</p>
+                    {% if job.salary %}
+                    <p style="margin:0 0 6px 0;font-size:15px;font-weight:700;color:#d1a84b;">{{ job.salary }}</p>
+                    {% endif %}
+                    <p style="margin:0 0 10px 0;font-size:13px;color:#6e7278;">&#128205; {{ job.location }}</p>
+                    <p style="margin:0 0 14px 0;font-size:12px;color:#6e7278;">
+                      <span style="color:#de6900;">&#9201;</span> Posted {{ job.posted_ago }}&nbsp;&nbsp;&nbsp;
+                      <span style="color:#67bb6b;">&#9889;</span> Detected {{ job.detected_after }}
+                    </p>
+                    <p style="margin:0 0 18px 0;font-size:13px;line-height:1.55;color:#6e7278;">{{ job.summary }}</p>
+
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
+                      <tr>
+                        <td width="33%" valign="top" style="padding-right:8px;">
+                          <p style="margin:0 0 4px 0;font-size:10px;font-weight:700;letter-spacing:0.12em;color:#6e7278;">VELOCITY</p>
+                          <p style="margin:0;font-size:12px;color:{{ job.velocity_color }};">{{ job.velocity }}</p>
+                        </td>
+                        <td width="33%" valign="top" style="padding-right:8px;">
+                          <p style="margin:0 0 4px 0;font-size:10px;font-weight:700;letter-spacing:0.12em;color:#6e7278;">COMPETITION</p>
+                          <p style="margin:0;font-size:12px;color:{{ job.competition_color }};">{{ job.competition }}</p>
+                        </td>
+                        <td width="33%" valign="top">
+                          <p style="margin:0 0 4px 0;font-size:10px;font-weight:700;letter-spacing:0.12em;color:#6e7278;">VISA SIGNAL</p>
+                          <p style="margin:0;font-size:12px;color:{{ job.visa_color }};">{{ job.visa_signal }}</p>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <p style="margin:0 0 6px 0;font-size:10px;font-weight:700;letter-spacing:0.12em;color:#6e7278;">MARKET SIGNALS</p>
+                    <p style="margin:0 0 16px 0;font-size:12px;line-height:1.6;color:#6e7278;">
+                      {% for signal in job.market_signals %}&bull; {{ signal }}{% if not loop.last %}&nbsp;&nbsp;{% endif %}{% endfor %}
+                    </p>
+
+                    <p style="margin:0 0 8px 0;font-size:10px;font-weight:700;letter-spacing:0.12em;color:#6e7278;">PROFILE MATCH</p>
+                    <table role="presentation" cellpadding="0" cellspacing="0" style="margin-bottom:18px;">
+                      <tr>
+                        {% for tag in job.profile_match_tags %}
+                        <td style="padding:0 6px 6px 0;">
+                          <span style="display:inline-block;padding:5px 10px;border:1px solid #67bb6b;font-size:11px;color:#67bb6b;background-color:#152218;border-radius:4px;">&#10003; {{ tag }}</span>
+                        </td>
+                        {% endfor %}
+                      </tr>
+                    </table>
+
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="font-size:12px;color:#6e7278;">
+                          Effort: {{ job.effort_minutes }} min | {{ job.effort_detail }}
+                        </td>
+                        <td align="right">
+                          <a href="{{ job.posting_url }}" style="font-size:12px;font-weight:700;color:#030405;text-decoration:none;background-color:#eeeeee;padding:10px 18px;display:inline-block;border-radius:4px;">Apply &#8599;</a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          {% endfor %}
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:10px 24px 28px 24px;border-top:1px solid #2a2d33;">
+              <p style="margin:0 0 8px 0;font-size:16px;font-weight:700;color:#eeeeee;">Why only {{ jobs_sent }} jobs?</p>
+              <p style="margin:0 0 12px 0;font-size:13px;line-height:1.6;color:#6e7278;">
+                {{ total_scanned }} jobs matched your filters. We recommended only {{ jobs_sent }} because they offered the strongest combination of:
+              </p>
+              <p style="margin:0 0 14px 0;font-size:12px;color:#6e7278;">
+                Relevance&nbsp;&nbsp;Freshness&nbsp;&nbsp;Visa signals&nbsp;&nbsp;Compensation&nbsp;&nbsp;Competition&nbsp;&nbsp;Application effort
+              </p>
+              <p style="margin:0 0 22px 0;font-size:13px;color:#6e7278;">
+                Average student would spend ~{{ total_review_minutes }} minutes reviewing all {{ total_scanned }} jobs.&nbsp;&nbsp;
+                <strong style="color:#67bb6b;">Est. saved: {{ time_saved_minutes }}min</strong>
+              </p>
+
+              <p style="margin:0 0 8px 0;font-size:13px;font-weight:700;color:#eeeeee;">
+                <span style="display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;background:#67bb6b;color:#030405;border-radius:5px;margin-right:8px;font-size:12px;">C</span>
+                CAREER MATCH AI
+              </p>
+              <p style="margin:0 0 16px 0;font-size:12px;color:#6e7278;">Helping you decide where the next 20 minutes should go.</p>
+              <p style="margin:0;font-size:12px;color:#6e7278;">
+                <a href="{{ manage_prefs_url }}" style="color:#67bb6b;text-decoration:none;">Manage preferences</a>
+                &nbsp;|&nbsp;
+                <a href="{{ dashboard_url }}" style="color:#67bb6b;text-decoration:none;">View all jobs</a>
+                &nbsp;|&nbsp;
+                <a href="{{ unsubscribe_url }}" style="color:#67bb6b;text-decoration:none;">Unsubscribe</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>

@@ -67,18 +67,35 @@ ENRICHMENT_SYSTEM_PROMPT = (
     "- Extract annual USD salary range when explicitly stated\n"
     "- Leave null when not mentioned or only hourly/equity is given\n\n"
     "tech_stack rules:\n"
-    "- REQUIRED when the description mentions technologies: list explicit tools, "
-    "languages, frameworks, databases, and cloud platforms\n"
+    "- REQUIRED for engineering roles (SWE, BACKEND_ENGINEER, FRONTEND_ENGINEER, "
+    "FULLSTACK_ENGINEER, ML_ENGINEER, DATA_ENGINEER, DATA_SCIENTIST, DEVOPS_ENGINEER, "
+    "SECURITY_ENGINEER, MOBILE_ENGINEER): return at least 3 items; never []\n"
+    "- List explicit tools, languages, frameworks, databases, and cloud platforms\n"
     "- Use canonical names (Python, Go, Java, TypeScript, React, Kubernetes, AWS, "
     "GCP, PostgreSQL, Spark, PyTorch, etc.)\n"
-    "- Include 3-12 items when the posting lists qualifications or stack requirements\n"
-    "- Leave empty only for non-technical roles with no tech mentions\n\n"
+    "- Leave empty only for non-technical roles (e.g. PRODUCT_MANAGER, sales, legal)\n\n"
     "skills rules:\n"
-    "- List domain competencies and technical themes beyond raw tool names "
-    "(e.g. distributed systems, NLP, computer vision, CI/CD, data pipelines)\n"
+    "- REQUIRED alongside tech_stack for engineering roles: return at least 2 domain "
+    "competencies or technical themes\n"
+    "- Examples: distributed systems, NLP, computer vision, CI/CD, data pipelines\n"
     "- Do not duplicate job_capabilities taxonomy labels here\n"
-    "- Include 2-8 items when the description implies technical themes\n"
     "- Leave empty only when no technical themes are present"
+)
+
+
+_ENGINEERING_ROLES = frozenset(
+    {
+        "SWE",
+        "BACKEND_ENGINEER",
+        "FRONTEND_ENGINEER",
+        "FULLSTACK_ENGINEER",
+        "ML_ENGINEER",
+        "DATA_ENGINEER",
+        "DATA_SCIENTIST",
+        "DEVOPS_ENGINEER",
+        "SECURITY_ENGINEER",
+        "MOBILE_ENGINEER",
+    }
 )
 
 
@@ -87,12 +104,17 @@ def enrichment_missing_skill_fields(
     skills: list[str],
     *,
     description_chars: int,
+    normalized_roles: list[str] | None = None,
     min_description_chars: int = 300,
 ) -> bool:
-    """True when a substantive description yielded no skill signals."""
+    """True when a substantive engineering job yielded no skill signals."""
     if tech_stack or skills:
         return False
-    return description_chars >= min_description_chars
+    if description_chars < min_description_chars:
+        return False
+    if normalized_roles and not (set(normalized_roles) & _ENGINEERING_ROLES):
+        return False
+    return True
 
 
 class JobEnrichment(BaseModel):

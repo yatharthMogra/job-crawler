@@ -35,12 +35,9 @@ async def fetch_new_jobs_in_pools(
     if since is not None:
         conditions.append(NormalizedJob.created_at > since)
 
-    stmt = (
-        select(NormalizedJob)
-        .where(and_(*conditions))
-        .order_by(NormalizedJob.opportunity_score.desc())
-        .limit(limit)
-    )
+    # No opportunity_score pre-filter: all matching jobs feed personalized ranking.
+    # `limit` is only a safety cap for unbounded pool growth (not a ranking cutoff).
+    stmt = select(NormalizedJob).where(and_(*conditions)).limit(limit)
     return list((await db.scalars(stmt)).all())
 
 

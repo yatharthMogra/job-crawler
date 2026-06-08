@@ -8,28 +8,18 @@ from app.models.company import Company
 
 
 @pytest.mark.asyncio
-async def test_ashby_connector_fetches_jobs_via_graphql(monkeypatch) -> None:
-    captured: dict[str, object] = {}
+async def test_ashby_connector_fetches_jobs_with_description_html(monkeypatch) -> None:
+    captured: list[dict[str, object]] = []
 
     class _FakeResponse:
+        def __init__(self, payload: dict[str, object]) -> None:
+            self._payload = payload
+
         def raise_for_status(self) -> None:
             return None
 
         def json(self) -> dict[str, object]:
-            return {
-                "data": {
-                    "jobBoard": {
-                        "jobPostings": [
-                            {
-                                "id": "job-1",
-                                "title": "Software Engineer",
-                                "locationName": "Remote",
-                                "employmentType": "FullTime",
-                            }
-                        ]
-                    }
-                }
-            }
+            return self._payload
 
     class _FakeClient:
         def __init__(self, timeout: float) -> None:  # noqa: ARG002
@@ -42,9 +32,42 @@ async def test_ashby_connector_fetches_jobs_via_graphql(monkeypatch) -> None:
             return False
 
         async def post(self, url: str, json: dict[str, object]):  # noqa: A002
-            captured["url"] = url
-            captured["json"] = json
-            return _FakeResponse()
+            captured.append({"url": url, "json": json})
+            operation = json.get("operationName")
+            if operation == "ApiJobBoardWithTeams":
+                return _FakeResponse(
+                    {
+                        "data": {
+                            "jobBoard": {
+                                "jobPostings": [
+                                    {
+                                        "id": "job-1",
+                                        "title": "Software Engineer",
+                                        "locationName": "Remote",
+                                        "employmentType": "FullTime",
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                )
+            if operation == "ApiJobPosting":
+                return _FakeResponse(
+                    {
+                        "data": {
+                            "jobPosting": {
+                                "id": "job-1",
+                                "title": "Software Engineer",
+                                "locationName": "Remote",
+                                "employmentType": "FullTime",
+                                "descriptionHtml": "<p>Build APIs with Python.</p>",
+                                "publishedDate": "2026-01-01T00:00:00.000Z",
+                                "departmentName": "Engineering",
+                            }
+                        }
+                    }
+                )
+            raise AssertionError(f"unexpected operation: {operation}")
 
     monkeypatch.setattr("app.ingestion.connectors.ashby.httpx.AsyncClient", _FakeClient)
 
@@ -52,11 +75,12 @@ async def test_ashby_connector_fetches_jobs_via_graphql(monkeypatch) -> None:
     company = Company(name="OpenAI", platform="ashby", board_token="openai", is_active=True)
     jobs = await connector.fetch_jobs(company)
 
-    assert captured["url"] == "https://jobs.ashbyhq.com/api/non-user-graphql?op=ApiJobBoardWithTeams"
-    assert captured["json"]["operationName"] == "ApiJobBoardWithTeams"
-    assert captured["json"]["variables"]["organizationHostedJobsPageName"] == "openai"
+    assert len(captured) == 2
+    assert captured[0]["json"]["operationName"] == "ApiJobBoardWithTeams"
+    assert captured[1]["json"]["operationName"] == "ApiJobPosting"
     assert len(jobs) == 1
     assert jobs[0]["id"] == "job-1"
+    assert jobs[0]["descriptionHtml"] == "<p>Build APIs with Python.</p>"
     assert jobs[0]["externalLink"] == "https://jobs.ashbyhq.com/openai/job-1"
 
 

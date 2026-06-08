@@ -48,6 +48,10 @@ def test_render_daily_briefing_includes_job_blocks() -> None:
         user_profile=profile,
         total_scanned=12,
     )
+    assert "DAILY BRIEFING" in html
     assert "Backend Engineer" in html
     assert "Acme" in html
-    assert "Quick Apply" in html
+    assert "#01" in html
+    assert "APPLY NOW" in html
+    assert "PROFILE MATCH" in html
+    assert "Why only 1 jobs?" in html

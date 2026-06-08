@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     consecutive_misses_before_inactive: int = 3
     llm_provider: str = "gemini"
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-1.5-flash"
+    gemini_model: str = "gemini-3.1-flash-lite"
     extraction_version: str = "v2"
     default_extraction_version: str = "v2"
     opportunity_score_freshness_decay: float = 0.01
@@ -25,7 +25,8 @@ class Settings(BaseSettings):
     token_spike_threshold: int = 8000
     enrichment_micro_batch_size: int = 5
     enrichment_window_seconds: int = 60
-    enrichment_max_jobs_per_window: int = 70
+    enrichment_max_batches_per_window: int = 15
+    enrichment_max_jobs_per_window: int = 75
     enrichment_cooldown_seconds: int = 120
     enrichment_max_retries: int = 3
     enrichment_max_input_tokens_per_batch: int = 12000

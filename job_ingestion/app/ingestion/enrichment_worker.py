@@ -80,13 +80,18 @@ class EnrichmentWorker:
 
     async def run_forever(self) -> None:
         while not self._stop.is_set():
+            batches_processed = 0
             try:
                 async with AsyncSessionLocal() as db:
-                    processed = await process_enrichment_window(db=db, settings=self._settings)
-                    if processed > 0:
-                        continue
+                    processed, batches_processed = await process_enrichment_window(
+                        db=db, settings=self._settings
+                    )
             except Exception:
-                pass
+                processed = 0
+
+            if batches_processed > 0:
+                await asyncio.sleep(self._settings.enrichment_window_seconds)
+                continue
 
             self._wake.clear()
             try:
@@ -422,6 +427,7 @@ async def _process_batch(
                 enrichment.tech_stack,
                 enrichment.skills,
                 description_chars=len(row.clean_text),
+                normalized_roles=list(enrichment.normalized_roles),
             ):
                 row.normalized.processing_state = ProcessingState.PARTIAL_SUCCESS
                 row.normalized.failure_reason = FailureReason.EMPTY_SKILL_EXTRACTION
@@ -556,7 +562,9 @@ async def _process_batch(
     batch.latency_ms = int((batch.completed_at - started).total_seconds() * 1000)
 
 
-async def process_enrichment_window(db: AsyncSession, settings: Optional[Settings] = None) -> int:
+async def process_enrichment_window(
+    db: AsyncSession, settings: Optional[Settings] = None
+) -> tuple[int, int]:
     settings = settings or get_settings()
     now = _utcnow()
     eligible = and_(
@@ -589,21 +597,22 @@ async def process_enrichment_window(db: AsyncSession, settings: Optional[Setting
     candidates = first_work + retry_work
     if not candidates:
         await db.commit()
-        return 0
+        return 0, 0
 
     batches, deferred = _pack_batches(settings=settings, items=candidates)
     for row in deferred:
         row.queue_row.status = "queued"
     if not batches:
         await db.commit()
-        return 0
+        return 0, 0
 
+    batches = batches[: settings.enrichment_max_batches_per_window]
     processed_jobs = 0
     for batch in batches:
         await _process_batch(db=db, settings=settings, batch_items=batch, source="worker")
         processed_jobs += len(batch)
         await db.commit()
-    return processed_jobs
+    return processed_jobs, len(batches)
 
 
 async def process_job_immediately(
