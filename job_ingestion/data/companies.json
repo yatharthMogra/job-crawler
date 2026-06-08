@@ -1,0 +1,74 @@
+[
+  {
+    "company": "Greenhouse",
+    "platform": "greenhouse",
+    "board_token": "greenhouse",
+    "is_active": true
+  },
+  {
+    "company": "OpenAI",
+    "platform": "ashby",
+    "board_token": "openai",
+    "is_active": false
+  },
+  {
+    "company": "ScaleAI",
+    "platform": "greenhouse",
+    "board_token": "scaleai",
+    "is_active": true
+  },
+  {
+    "company": "Anthropic",
+    "platform": "greenhouse",
+    "board_token": "anthropic",
+    "is_active": false
+  },
+  {
+    "company": "Notion",
+    "platform": "ashby",
+    "board_token": "notion",
+    "is_active": true
+  },
+  {
+    "company": "Linear",
+    "platform": "ashby",
+    "board_token": "linear",
+    "is_active": true
+  },
+  {
+    "company": "Ramp",
+    "platform": "ashby",
+    "board_token": "ramp",
+    "is_active": true
+  },
+  {
+    "company": "Figma",
+    "platform": "greenhouse",
+    "board_token": "figma",
+    "is_active": true
+  },
+  {
+    "company": "Basis",
+    "platform": "lever",
+    "board_token": "basis",
+    "is_active": true
+  },
+  {
+    "company": "Achievers",
+    "platform": "lever",
+    "board_token": "achievers",
+    "is_active": true
+  },
+  {
+    "company": "Palantir",
+    "platform": "lever",
+    "board_token": "palantir",
+    "is_active": true
+  },
+  {
+    "company": "Slate",
+    "platform": "lever",
+    "board_token": "slate",
+    "is_active": true
+  }
+]

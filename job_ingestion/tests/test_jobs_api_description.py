@@ -58,6 +58,7 @@ def _job_row() -> SimpleNamespace:
         llm_model="gemini-3.1-flash-lite",
         processing_state="success",
         failure_reason=None,
+        last_manual_review_at=None,
         extracted_at=now,
     )
 
@@ -79,6 +80,14 @@ def _enrichment_row() -> SimpleNamespace:
         remote_type="remote",
         tech_stack=["python"],
         skills=["sql"],
+        normalized_roles=["SWE"],
+        job_capabilities=["Backend Engineering"],
+        application_effort="MEDIUM",
+        retrieval_pools=["SWE_FULLTIME"],
+        salary_min=None,
+        salary_max=None,
+        opportunity_score=0.75,
+        opportunity_score_computed_at=now,
         input_tokens=100,
         output_tokens=50,
         latency_ms=1000,

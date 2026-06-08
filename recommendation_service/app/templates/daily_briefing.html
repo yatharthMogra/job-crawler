@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Your job opportunities</title>
+  <style>
+    body { font-family: Arial, sans-serif; color: #1a1a1a; line-height: 1.5; }
+    .job { border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .title { font-size: 20px; font-weight: bold; margin: 0 0 4px; }
+    .company { color: #4b5563; margin-bottom: 8px; }
+    .meta { color: #6b7280; font-size: 14px; margin-bottom: 8px; }
+    .badge { display: inline-block; background: #eef2ff; color: #3730a3; padding: 2px 8px; border-radius: 999px; font-size: 12px; }
+    .match { margin-top: 12px; }
+    .match ul { margin: 4px 0 0; padding-left: 18px; }
+    .apply { display: inline-block; margin-top: 12px; background: #2563eb; color: #fff; text-decoration: none; padding: 8px 14px; border-radius: 6px; }
+    .footer { margin-top: 24px; font-size: 13px; color: #6b7280; }
+  </style>
+</head>
+<body>
+  <p>Hi {{ user_name }},</p>
+  <p>Here are your top job opportunities from Career Match AI.</p>
+
+  {% for job in jobs %}
+  <div class="job">
+    <p class="title"><a href="{{ job.posting_url }}">{{ job.title }}</a></p>
+    <p class="company">{{ job.company_name }}</p>
+    {% if job.salary %}<p class="meta">{{ job.salary }}</p>{% endif %}
+    <p class="meta">{{ job.location }} · {{ job.remote_type }} · Posted {{ job.posted_ago }}</p>
+    <span class="badge">{{ job.effort_label }}</span>
+    <div class="match">
+      <strong>Profile Match</strong>
+      <ul>
+        {% for reason in job.explanations %}
+        <li>{{ reason }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    <a class="apply" href="{{ job.posting_url }}">Apply Now</a>
+  </div>
+  {% endfor %}
+
+  <div class="footer">
+    <p>Why only {{ jobs_sent }} jobs? We scanned {{ total_scanned }} total. We recommended {{ jobs_sent }} because they offered the strongest combination of relevance, freshness, and application efficiency.</p>
+  </div>
+</body>
+</html>

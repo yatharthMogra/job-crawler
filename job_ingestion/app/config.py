@@ -12,8 +12,14 @@ class Settings(BaseSettings):
     llm_provider: str = "gemini"
     gemini_api_key: str = ""
     gemini_model: str = "gemini-1.5-flash"
-    extraction_version: str = "v1"
+    extraction_version: str = "v2"
     default_extraction_version: str = "v2"
+    opportunity_score_freshness_decay: float = 0.01
+    comp_floor: int = 40_000
+    comp_ceiling: int = 250_000
+    freshness_weight: float = 0.40
+    compensation_weight: float = 0.40
+    effort_weight: float = 0.20
     alerts_file_path: str = "./alerts.json"
     fetch_concurrency: int = 10
     token_spike_threshold: int = 8000
@@ -38,6 +44,10 @@ class Settings(BaseSettings):
     @property
     def alerts_path(self) -> Path:
         return Path(self.alerts_file_path)
+
+    @property
+    def effort_scores(self) -> dict[str, float]:
+        return {"LOW": 1.0, "MEDIUM": 0.6, "HIGH": 0.2}
 
 
 @lru_cache(maxsize=1)

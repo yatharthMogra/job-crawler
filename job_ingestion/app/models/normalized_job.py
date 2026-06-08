@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -45,6 +45,14 @@ class NormalizedJob(Base):
     remote_type: Mapped[str] = mapped_column(String(32), nullable=False, default="unclear")
     tech_stack: Mapped[list[str]] = mapped_column(ARRAY(String(128)), nullable=False, default=list)
     skills: Mapped[list[str]] = mapped_column(ARRAY(String(128)), nullable=False, default=list)
+    normalized_roles: Mapped[list[str]] = mapped_column(ARRAY(String(64)), nullable=False, default=list)
+    job_capabilities: Mapped[list[str]] = mapped_column(ARRAY(String(128)), nullable=False, default=list)
+    application_effort: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
+    retrieval_pools: Mapped[list[str]] = mapped_column(ARRAY(String(128)), nullable=False, default=list)
+    salary_min: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    salary_max: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    opportunity_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    opportunity_score_computed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     llm_provider: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     llm_model: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     extraction_version: Mapped[str] = mapped_column(String(32), nullable=False)

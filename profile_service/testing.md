@@ -6,32 +6,34 @@ Start Postgres (shared with job ingestion):
 cd ../job_ingestion && docker compose up -d postgres
 ```
 
-Install and migrate:
+Install and migrate (uses the **repo-root** virtualenv — see [`../README.md`](../README.md)):
 
 ```bash
+cd ..   # repo root
+./scripts/setup-env.sh
+source job-crawler/bin/activate
 cd profile_service
-python3.11 -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"
 cp .env.example .env
 alembic upgrade head
 ```
 
 Note: profile service uses a separate Alembic version table (`alembic_version_profile`) so it can share the `jobingestion` database with job_ingestion without migration conflicts.
 
-Run the service (must use the project venv — Python 3.11+):
+Run the service:
 
 ```bash
-source .venv/bin/activate
+# from repo root
+./scripts/dev-profile-service.sh
+```
+
+Or from `profile_service/` after activating the root venv:
+
+```bash
+source ../job-crawler/bin/activate
 uvicorn app.main:app --port 8001 --reload
 ```
 
-Or without activating the venv:
-
-```bash
-./scripts/dev.sh
-```
-
-Do **not** run `uvicorn` from a global/conda Python 3.9 environment. The codebase uses Python 3.11 syntax (e.g. `str | None`) and will fail to import on 3.9.
+Do **not** run `uvicorn` from a global/conda Python 3.9 environment. The codebase requires Python 3.11+.
 
 Seed test data:
 
