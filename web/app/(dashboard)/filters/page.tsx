@@ -19,6 +19,7 @@ import {
   WORK_MODEL_OPTIONS,
 } from "@/lib/profile/job-filters"
 import { patchConstraints, patchPreferences } from "@/lib/profile/api"
+import { useJobs } from "@/components/jobs-provider"
 import { syncSubscriptionsForCandidate } from "@/lib/recommendation/sync-subscriptions"
 import { cn } from "@/lib/utils"
 
@@ -36,6 +37,7 @@ export default function FiltersPage() {
   const { candidateId } = useSession()
   const mockMode = useMockData()
   const { rawProfile, profileHome, loadProfileHome } = useProfileFlow()
+  const { refreshJobs } = useJobs()
   const [section, setSection] = useState<SectionId>("basic")
   const [state, setState] = useState(emptyJobFilters())
   const [saving, setSaving] = useState(false)
@@ -94,6 +96,7 @@ export default function FiltersPage() {
       await patchPreferences(candidateId, payload.preferences)
       await loadProfileHome(candidateId)
       await syncSubscriptionsForCandidate(candidateId)
+      await refreshJobs()
       router.push("/jobs/recommended")
     } finally {
       setSaving(false)

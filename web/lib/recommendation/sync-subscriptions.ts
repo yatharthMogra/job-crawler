@@ -8,7 +8,7 @@ export async function syncSubscriptionsForCandidate(candidateId: string): Promis
 
   try {
     const existing = await fetchSubscriptions(candidateId)
-    if (existing.length > 0) {
+    if (existing.subscriptions.length > 0) {
       await patchSubscriptions(candidateId, poolNames, true)
     } else {
       await createSubscriptions(candidateId, poolNames)
