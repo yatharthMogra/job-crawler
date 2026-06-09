@@ -42,6 +42,7 @@ class ConstraintsUpdate(BaseModel):
     minimum_hourly_rate: float | None = None
     exclude_security_clearance: bool | None = None
     exclude_us_citizen_only: bool | None = None
+    target_seniority: list[str] | None = None
     eeo: dict[str, Any] | None = None
 
 

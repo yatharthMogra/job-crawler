@@ -107,6 +107,7 @@ def default_constraints() -> dict:
         "fulltime_only": False,
         "minimum_salary": None,
         "minimum_hourly_rate": None,
+        "target_seniority": ["INTERN", "NEW_GRAD", "ENTRY", "MID", "JUNIOR"],
         "eeo": {},
     }
 

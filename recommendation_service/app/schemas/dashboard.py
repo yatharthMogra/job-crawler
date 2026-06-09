@@ -24,6 +24,7 @@ class DashboardJobOut(BaseModel):
     job_capabilities: list[str]
     tech_stack: list[str]
     skills: list[str]
+    seniority: str
 
 
 class DashboardRecommendedJobOut(DashboardJobOut):

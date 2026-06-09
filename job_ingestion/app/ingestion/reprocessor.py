@@ -117,7 +117,12 @@ async def reprocess_jobs(
             latency_ms = 0
         else:
             try:
-                llm_result = await enrich_job_text(llm_provider, clean_text)
+                llm_result = await enrich_job_text(
+                    llm_provider,
+                    clean_text,
+                    title=normalized.title,
+                    employment_type=normalized.employment_type,
+                )
                 enrichment = llm_result.output
                 failure_reason = None
                 status = "success"

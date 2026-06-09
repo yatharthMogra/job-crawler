@@ -40,3 +40,12 @@ def test_pack_batches_applies_batch_and_budget_limits() -> None:
     packed_total = sum(item.estimated_tokens for batch in batches for item in batch)
     assert packed_total <= 100
     assert packed_total + sum(item.estimated_tokens for item in deferred) == 110
+
+
+def test_batch_interval_respects_rpm_cap() -> None:
+    settings = Settings(
+        enrichment_window_seconds=60,
+        enrichment_max_batches_per_window=12,
+        enrichment_llm_max_rpm=12,
+    )
+    assert settings.enrichment_batch_interval_seconds == 5.0

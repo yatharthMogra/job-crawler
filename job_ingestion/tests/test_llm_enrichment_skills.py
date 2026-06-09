@@ -18,7 +18,7 @@ def test_enrichment_prompt_includes_tech_stack_and_skills_rules() -> None:
 
 def test_job_enrichment_parses_tech_stack_and_skills() -> None:
     payload = {
-        "seniority": "mid",
+        "seniority": "MID",
         "is_internship": False,
         "is_new_grad": False,
         "sponsorship_status": "unclear",

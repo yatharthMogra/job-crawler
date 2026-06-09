@@ -18,6 +18,7 @@ from app.ingestion.extractor.llm import (
     enrich_job_batch_text,
     enrichment_missing_skill_fields,
 )
+from app.ingestion.extractor.seniority import build_batch_job_payload
 from app.ingestion.extractor.text_cleaner import clean_job_description
 from app.ingestion.recommendation_fields import assign_retrieval_pools, compute_opportunity_score
 from app.llm.factory import get_llm_provider
@@ -272,6 +273,7 @@ def _apply_enrichment_to_job(
         settings=settings,
     )
     normalized.opportunity_score_computed_at = now
+    normalized.extraction_version = settings.extraction_version
     normalized.processing_state = ProcessingState.SUCCESS
     normalized.failure_reason = None
     normalized.last_failure_at = None
@@ -359,7 +361,15 @@ async def _process_batch(
         )
     await db.flush()
 
-    payload_jobs = [{"job_id": str(row.normalized.id), "text": row.clean_text} for row in batch_items]
+    payload_jobs = [
+        build_batch_job_payload(
+            job_id=str(row.normalized.id),
+            text=row.clean_text,
+            title=row.normalized.title,
+            employment_type=row.normalized.employment_type,
+        )
+        for row in batch_items
+    ]
     provider = get_llm_provider(settings)
     try:
         result = await enrich_job_batch_text(provider, payload_jobs)
@@ -606,9 +616,12 @@ async def process_enrichment_window(
         await db.commit()
         return 0, 0
 
-    batches = batches[: settings.enrichment_max_batches_per_window]
+    rpm_cap = max(settings.enrichment_llm_max_rpm, 1)
+    batches = batches[: min(settings.enrichment_max_batches_per_window, rpm_cap)]
     processed_jobs = 0
-    for batch in batches:
+    for idx, batch in enumerate(batches):
+        if idx > 0:
+            await asyncio.sleep(settings.enrichment_batch_interval_seconds)
         await _process_batch(db=db, settings=settings, batch_items=batch, source="worker")
         processed_jobs += len(batch)
         await db.commit()
