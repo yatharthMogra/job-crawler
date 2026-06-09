@@ -41,7 +41,7 @@ export function SkillsEditor({ skills, onChange, readOnly = true }: SkillsEditor
   }
 
   if (allNames.length === 0 && readOnly) {
-    return <p className="text-sm text-zinc-500">No skills on your profile yet.</p>
+    return <p className="text-sm text-muted-foreground">No skills on your profile yet.</p>
   }
 
   return (
@@ -50,11 +50,11 @@ export function SkillsEditor({ skills, onChange, readOnly = true }: SkillsEditor
         {allNames.map((name) => (
           <span
             key={name}
-            className="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2.5 py-1 text-sm text-zinc-800"
+            className="inline-flex items-center gap-1 rounded-md bg-accent px-2.5 py-1 text-sm text-accent-foreground"
           >
             {name}
             {!readOnly && onChange ? (
-              <button type="button" onClick={() => removeSkill(name)} className="rounded hover:bg-zinc-200">
+              <button type="button" onClick={() => removeSkill(name)} className="rounded hover:bg-primary/10">
                 <X className="size-3" />
               </button>
             ) : null}

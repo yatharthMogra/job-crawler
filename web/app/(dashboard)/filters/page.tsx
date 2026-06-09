@@ -101,8 +101,8 @@ export default function FiltersPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-50">
-      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-200 bg-white px-6 py-3">
+    <div className="dashboard-page-bg flex min-h-screen flex-col">
+      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border/80 bg-card/95 px-6 py-3 backdrop-blur-sm">
         <div className="flex flex-wrap gap-2">
           {state.primaryRoles.slice(0, 4).map((r) => (
             <FilterChip key={r} label={r} active />
@@ -112,7 +112,7 @@ export default function FiltersPage() {
           ) : null}
         </div>
         <Button
-          className="bg-zinc-900 text-white hover:bg-zinc-800"
+          className="btn-brand"
           onClick={() => void handleConfirm()}
           disabled={saving}
         >
@@ -121,7 +121,7 @@ export default function FiltersPage() {
       </div>
 
       <div className="flex flex-1">
-        <aside className="w-56 shrink-0 border-r border-zinc-200 bg-white p-3">
+        <aside className="w-56 shrink-0 border-r border-border/80 bg-card/60 p-3">
           {SECTIONS.map((s) => (
             <button
               key={s.id}
@@ -129,11 +129,11 @@ export default function FiltersPage() {
               onClick={() => setSection(s.id)}
               className={cn(
                 "mb-1 w-full rounded-lg px-3 py-2.5 text-left transition-colors",
-                section === s.id ? "bg-zinc-100" : "hover:bg-zinc-50",
+                section === s.id ? "bg-accent text-accent-foreground shadow-sm" : "hover:bg-secondary/80",
               )}
             >
-              <p className="text-sm font-medium text-zinc-900">{s.label}</p>
-              <p className="text-xs text-zinc-500">{s.sub}</p>
+              <p className="text-sm font-medium text-foreground">{s.label}</p>
+              <p className="text-xs text-muted-foreground">{s.sub}</p>
             </button>
           ))}
         </aside>
@@ -159,7 +159,7 @@ export default function FiltersPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <label className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white p-3">
+                <label className="flex items-center gap-2 rounded-lg border border-border/80 bg-card p-3">
                   <input
                     type="checkbox"
                     checked={state.fulltimeOnly}
@@ -167,7 +167,7 @@ export default function FiltersPage() {
                   />
                   <span className="text-sm">Full-time</span>
                 </label>
-                <label className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white p-3">
+                <label className="flex items-center gap-2 rounded-lg border border-border/80 bg-card p-3">
                   <input
                     type="checkbox"
                     checked={state.internshipOnly}
@@ -188,8 +188,8 @@ export default function FiltersPage() {
                       className={cn(
                         "rounded-lg border px-3 py-2 text-sm",
                         state.workModels.includes(m)
-                          ? "border-zinc-900 bg-zinc-100 text-zinc-900"
-                          : "border-zinc-200 bg-white",
+                          ? "border-primary bg-accent text-accent-foreground shadow-sm"
+                          : "border-border bg-card",
                       )}
                     >
                       {m}
@@ -206,7 +206,7 @@ export default function FiltersPage() {
                   {EXPERIENCE_LEVELS.map((level) => (
                     <label
                       key={level}
-                      className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white p-3"
+                      className="flex items-center gap-2 rounded-lg border border-border/80 bg-card p-3"
                     >
                       <input
                         type="checkbox"
@@ -225,7 +225,7 @@ export default function FiltersPage() {
                   {DATE_POSTED_OPTIONS.map((opt) => (
                     <label
                       key={opt.value}
-                      className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white p-3"
+                      className="flex items-center gap-2 rounded-lg border border-border/80 bg-card p-3"
                     >
                       <input
                         type="radio"
@@ -263,7 +263,7 @@ export default function FiltersPage() {
                 />
               ) : null}
 
-              <label className="flex items-start gap-3 rounded-lg border border-zinc-200 bg-white p-4">
+              <label className="flex items-start gap-3 rounded-lg border border-border/80 bg-card p-4">
                 <input
                   type="checkbox"
                   checked={state.sponsorshipRequired}
@@ -272,7 +272,7 @@ export default function FiltersPage() {
                 />
                 <div>
                   <p className="text-sm font-medium">H1B sponsorship</p>
-                  <p className="mt-1 text-xs text-zinc-500">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     Show jobs that explicitly support visa sponsorship or come from companies with
                     sponsorship history.
                   </p>
@@ -280,7 +280,7 @@ export default function FiltersPage() {
               </label>
 
               <div className="space-y-2">
-                <label className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white p-3">
+                <label className="flex items-center gap-2 rounded-lg border border-border/80 bg-card p-3">
                   <input
                     type="checkbox"
                     checked={state.excludeSecurityClearance}
@@ -288,7 +288,7 @@ export default function FiltersPage() {
                   />
                   <span className="text-sm">Exclude jobs requiring security clearance</span>
                 </label>
-                <label className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white p-3">
+                <label className="flex items-center gap-2 rounded-lg border border-border/80 bg-card p-3">
                   <input
                     type="checkbox"
                     checked={state.excludeUsCitizenOnly}
@@ -389,7 +389,7 @@ export default function FiltersPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <label className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white p-3">
+                <label className="flex items-center gap-2 rounded-lg border border-border/80 bg-card p-3">
                   <input
                     type="radio"
                     name="roleType"
@@ -398,7 +398,7 @@ export default function FiltersPage() {
                   />
                   <span className="text-sm">IC (Individual Contributor)</span>
                 </label>
-                <label className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white p-3">
+                <label className="flex items-center gap-2 rounded-lg border border-border/80 bg-card p-3">
                   <input
                     type="radio"
                     name="roleType"
@@ -413,7 +413,7 @@ export default function FiltersPage() {
 
           {section === "company" ? (
             <div className="mx-auto max-w-2xl">
-              <p className="text-sm text-zinc-500">
+              <p className="text-sm text-muted-foreground">
                 Company search and staffing agency filters coming soon. Use job function and industry
                 filters to narrow your target companies for now.
               </p>

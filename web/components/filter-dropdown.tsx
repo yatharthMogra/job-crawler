@@ -33,10 +33,10 @@ export function FilterDropdown({ label, value, options, onSelect, onClear }: Fil
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "inline-flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition-colors",
+          "inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-colors",
           isActive
-            ? "border-zinc-400 bg-white text-zinc-900"
-            : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:text-zinc-900",
+            ? "border-primary/40 bg-accent text-accent-foreground shadow-sm"
+            : "border-border bg-card text-muted-foreground hover:border-primary/25 hover:text-foreground",
         )}
       >
         {isActive ? activeOption?.label ?? value : label}
@@ -50,17 +50,17 @@ export function FilterDropdown({ label, value, options, onSelect, onClear }: Fil
               onClear()
               setOpen(false)
             }}
-            className="-mr-1 rounded p-0.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700"
+            className="-mr-1 rounded p-0.5 text-muted-foreground hover:bg-primary/10 hover:text-foreground"
           >
             <X className="size-3" />
           </span>
         ) : (
-          <ChevronDown className="size-3 text-zinc-400" />
+          <ChevronDown className="size-3 text-muted-foreground" />
         )}
       </button>
 
       {open && (
-        <div className="absolute left-0 top-9 z-40 min-w-[180px] overflow-hidden rounded-md border border-zinc-200 bg-white py-1 shadow-md">
+        <div className="absolute left-0 top-9 z-40 min-w-[180px] overflow-hidden rounded-xl border border-border/80 bg-card py-1 shadow-lg shadow-primary/5">
           {options.map((opt) => (
             <button
               key={opt.value}
@@ -70,8 +70,8 @@ export function FilterDropdown({ label, value, options, onSelect, onClear }: Fil
                 setOpen(false)
               }}
               className={cn(
-                "block w-full px-3 py-1.5 text-left text-xs transition-colors hover:bg-zinc-100",
-                value === opt.value ? "font-medium text-zinc-900" : "text-zinc-600",
+                "block w-full px-3 py-1.5 text-left text-xs transition-colors hover:bg-secondary/80",
+                value === opt.value ? "font-medium text-primary" : "text-muted-foreground",
               )}
             >
               {opt.label}
@@ -110,10 +110,10 @@ export function SalaryDropdown({ value, onSelect, onClear }: SalaryDropdownProps
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "inline-flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition-colors",
+          "inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-colors",
           isActive
-            ? "border-zinc-400 bg-white text-zinc-900"
-            : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:text-zinc-900",
+            ? "border-primary/40 bg-accent text-accent-foreground shadow-sm"
+            : "border-border bg-card text-muted-foreground hover:border-primary/25 hover:text-foreground",
         )}
       >
         {isActive ? `Min $${Math.round((value as number) / 1000)}k` : "Compensation"}
@@ -128,27 +128,27 @@ export function SalaryDropdown({ value, onSelect, onClear }: SalaryDropdownProps
               setInput("")
               setOpen(false)
             }}
-            className="-mr-1 rounded p-0.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700"
+            className="-mr-1 rounded p-0.5 text-muted-foreground hover:bg-primary/10 hover:text-foreground"
           >
             <X className="size-3" />
           </span>
         ) : (
-          <ChevronDown className="size-3 text-zinc-400" />
+          <ChevronDown className="size-3 text-muted-foreground" />
         )}
       </button>
 
       {open && (
-        <div className="absolute left-0 top-9 z-40 w-[220px] rounded-md border border-zinc-200 bg-white p-3 shadow-md">
-          <label className="mb-1.5 block text-xs font-medium text-zinc-700">Minimum salary</label>
+        <div className="absolute left-0 top-9 z-40 w-[220px] rounded-xl border border-border/80 bg-card p-3 shadow-lg shadow-primary/5">
+          <label className="mb-1.5 block text-xs font-medium text-foreground">Minimum salary</label>
           <div className="flex items-center gap-2">
-            <div className="flex h-8 flex-1 items-center rounded-md border border-zinc-200 px-2">
-              <span className="text-xs text-zinc-400">$</span>
+            <div className="flex h-8 flex-1 items-center rounded-lg border border-border px-2">
+              <span className="text-xs text-muted-foreground">$</span>
               <input
                 type="number"
                 value={input}
                 placeholder="120000"
                 onChange={(e) => setInput(e.target.value)}
-                className="w-full bg-transparent px-1 text-xs text-zinc-900 outline-none"
+                className="w-full bg-transparent px-1 text-xs text-foreground outline-none"
               />
             </div>
             <button
@@ -158,7 +158,7 @@ export function SalaryDropdown({ value, onSelect, onClear }: SalaryDropdownProps
                 if (n > 0) onSelect(n)
                 setOpen(false)
               }}
-              className="h-8 rounded-md bg-zinc-900 px-2.5 text-xs font-medium text-white hover:bg-zinc-800"
+              className="btn-brand h-8 rounded-lg px-2.5 text-xs font-medium"
             >
               Set
             </button>

@@ -20,11 +20,11 @@ export function DashboardShell({ children }: { children: ReactNode }) {
 
   if (loading || !candidateId) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-50">
+      <div className="flow-page-bg flex min-h-screen items-center justify-center">
         <div className="flex gap-1.5" aria-label="Loading">
-          <span className="size-1.5 animate-bounce rounded-full bg-zinc-300 [animation-delay:-0.3s]" />
-          <span className="size-1.5 animate-bounce rounded-full bg-zinc-300 [animation-delay:-0.15s]" />
-          <span className="size-1.5 animate-bounce rounded-full bg-zinc-300" />
+          <span className="size-1.5 animate-bounce rounded-full bg-primary/40 [animation-delay:-0.3s]" />
+          <span className="size-1.5 animate-bounce rounded-full bg-brand/50 [animation-delay:-0.15s]" />
+          <span className="size-1.5 animate-bounce rounded-full bg-primary/40" />
         </div>
       </div>
     )
@@ -33,7 +33,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   return (
     <ProfileFlowProvider candidateId={candidateId}>
       <JobsProvider>
-        <div className="min-h-screen bg-[#f8f9fa]">
+        <div className="dashboard-page-bg min-h-screen">
           <Sidebar />
           <main className="ml-[72px] min-h-screen sm:ml-[88px]">{children}</main>
           <JobDrawerMount />

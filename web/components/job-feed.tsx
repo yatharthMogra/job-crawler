@@ -94,8 +94,8 @@ export function JobFeed({
   }
 
   return (
-    <div className="px-6 py-4">
-      <div className="flex flex-col gap-4">
+    <div className="px-6 py-5">
+      <div className="flex flex-col gap-5">
         {visible.map((job) => (
           <JobCard key={job.id} job={job} showMatch={showMatch} showRecommendation={showRecommendation} />
         ))}
@@ -104,15 +104,15 @@ export function JobFeed({
       {hasMore && (
         <div ref={sentinelRef} className="flex justify-center py-8">
           <div className="flex gap-1.5" aria-label="Loading more jobs">
-            <span className="size-1.5 animate-bounce rounded-full bg-zinc-300 [animation-delay:-0.3s]" />
-            <span className="size-1.5 animate-bounce rounded-full bg-zinc-300 [animation-delay:-0.15s]" />
-            <span className="size-1.5 animate-bounce rounded-full bg-zinc-300" />
+            <span className="size-1.5 animate-bounce rounded-full bg-primary/40 [animation-delay:-0.3s]" />
+            <span className="size-1.5 animate-bounce rounded-full bg-brand/50 [animation-delay:-0.15s]" />
+            <span className="size-1.5 animate-bounce rounded-full bg-primary/40" />
           </div>
         </div>
       )}
 
       {!hasMore && filtered.length > 0 && (
-        <p className="py-8 text-center text-xs text-zinc-400">You&apos;ve seen all available opportunities.</p>
+        <p className="py-8 text-center text-xs text-muted-foreground">You&apos;ve seen all available opportunities.</p>
       )}
     </div>
   )

@@ -35,7 +35,7 @@ export function MatchTag({ label }: { label: string }) {
 
 export function StatPill({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-xs font-medium text-zinc-700">
+    <span className="inline-flex items-center rounded-md border border-border/80 bg-secondary/60 px-2 py-1 text-xs font-medium text-secondary-foreground">
       {children}
     </span>
   )

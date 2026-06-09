@@ -36,14 +36,14 @@ export function JobDrawer({ showMatch = false }: { showMatch?: boolean }) {
       <div
         onClick={() => selectJob(null)}
         className={cn(
-          "fixed inset-0 z-40 bg-black/20 transition-opacity lg:hidden",
+          "fixed inset-0 z-40 bg-primary/10 backdrop-blur-[2px] transition-opacity lg:hidden",
           open ? "opacity-100" : "pointer-events-none opacity-0",
         )}
         aria-hidden="true"
       />
       <aside
         className={cn(
-          "fixed inset-y-0 right-0 z-50 flex w-full max-w-[420px] flex-col border-l border-zinc-200 bg-white transition-transform duration-300 ease-out",
+          "fixed inset-y-0 right-0 z-50 flex w-full max-w-[420px] flex-col border-l border-border/80 bg-card shadow-2xl shadow-primary/10 transition-transform duration-300 ease-out",
           open ? "translate-x-0" : "translate-x-full",
         )}
         aria-hidden={!open}
@@ -51,22 +51,22 @@ export function JobDrawer({ showMatch = false }: { showMatch?: boolean }) {
         {job && (
           <>
             {/* Header */}
-            <div className="flex items-start justify-between gap-3 border-b border-zinc-200 p-5">
+            <div className="flex items-start justify-between gap-3 border-b border-border/80 bg-gradient-to-br from-accent/40 to-card p-5">
               <div className="flex min-w-0 gap-3">
                 <CompanyLogo company={job.company} size={48} />
                 <div className="min-w-0">
-                  <h2 className="text-pretty text-lg font-semibold leading-tight text-zinc-900">{job.title}</h2>
-                  <p className="mt-0.5 text-sm text-zinc-500">
+                  <h2 className="text-pretty text-lg font-semibold leading-tight text-foreground">{job.title}</h2>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
                     {job.company} · {job.location}
                   </p>
-                  <p className="mt-0.5 text-xs text-zinc-400">Posted {timeAgo(job.posted_at)}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground/80">Posted {timeAgo(job.posted_at)}</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => selectJob(null)}
                 aria-label="Close"
-                className="shrink-0 rounded-md p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700"
+                className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
               >
                 <X className="size-4" />
               </button>
@@ -79,7 +79,7 @@ export function JobDrawer({ showMatch = false }: { showMatch?: boolean }) {
                 target="_blank"
                 rel="noreferrer"
                 onClick={() => startApply(job)}
-                className="mb-5 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-md bg-zinc-900 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
+                className="btn-brand mb-5 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-lg text-sm font-medium"
               >
                 Apply Now <ExternalLink className="size-4" />
               </a>
@@ -96,27 +96,27 @@ export function JobDrawer({ showMatch = false }: { showMatch?: boolean }) {
               </div>
 
               {showMatch && (
-                <section className="mb-6">
-                  <h3 className="mb-2 text-sm font-semibold text-zinc-900">Why this fits your profile</h3>
+                <section className="mb-6 rounded-xl border border-brand-muted/80 bg-brand-muted/30 p-4">
+                  <h3 className="mb-2 text-sm font-semibold text-foreground">Why this fits your profile</h3>
                   <div className="flex flex-wrap gap-1.5">
                     {job.match_reasons.map((r) => (
                       <MatchTag key={r} label={r} />
                     ))}
                   </div>
-                  <p className="mt-2 text-xs italic text-zinc-500">{job.recommendation_reason}</p>
+                  <p className="mt-2 text-xs italic text-muted-foreground">{job.recommendation_reason}</p>
                 </section>
               )}
 
               <section className="mb-6">
-                <h3 className="mb-2 text-sm font-semibold text-zinc-900">About the role</h3>
+                <h3 className="mb-2 text-sm font-semibold text-foreground">About the role</h3>
                 <div className="job-description" dangerouslySetInnerHTML={{ __html: job.description_html }} />
               </section>
 
               <section>
-                <h3 className="mb-2 text-sm font-semibold text-zinc-900">Skills &amp; Requirements</h3>
+                <h3 className="mb-2 text-sm font-semibold text-foreground">Skills &amp; Requirements</h3>
                 <div className="flex flex-wrap gap-1.5">
                   {job.skills.map((s) => (
-                    <span key={s} className="rounded bg-zinc-100 px-2 py-1 text-xs text-zinc-700">
+                    <span key={s} className="rounded-md bg-secondary px-2 py-1 text-xs text-secondary-foreground">
                       {s}
                     </span>
                   ))}
@@ -125,13 +125,13 @@ export function JobDrawer({ showMatch = false }: { showMatch?: boolean }) {
             </div>
 
             {/* Sticky footer */}
-            <div className="flex gap-2 border-t border-zinc-200 p-4">
+            <div className="flex gap-2 border-t border-border/80 bg-card p-4">
               <a
                 href={job.posting_url}
                 target="_blank"
                 rel="noreferrer"
                 onClick={() => startApply(job)}
-                className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-md bg-zinc-900 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
+                className="btn-brand inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-lg text-sm font-medium"
               >
                 Apply <ExternalLink className="size-4" />
               </a>
@@ -139,10 +139,10 @@ export function JobDrawer({ showMatch = false }: { showMatch?: boolean }) {
                 type="button"
                 onClick={() => toggleSave(job.id)}
                 className={cn(
-                  "inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-md border text-sm font-medium transition-colors",
+                  "inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-lg border text-sm font-medium transition-colors",
                   job.is_saved
-                    ? "border-zinc-300 bg-zinc-100 text-zinc-900"
-                    : "border-zinc-200 text-zinc-700 hover:bg-zinc-50",
+                    ? "border-primary/30 bg-accent text-accent-foreground"
+                    : "border-border text-foreground hover:bg-secondary/80",
                 )}
               >
                 <Bookmark className={cn("size-4", job.is_saved && "fill-current")} />

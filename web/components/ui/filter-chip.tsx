@@ -17,9 +17,9 @@ export function FilterChip({ label, active, onRemove, onClick, className }: Filt
       className={cn(
         "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
         active
-          ? "border-zinc-300 bg-zinc-100 text-zinc-800"
-          : "border-zinc-200 bg-white text-zinc-700",
-        onClick && "cursor-pointer hover:bg-zinc-50",
+          ? "border-primary/25 bg-accent text-accent-foreground"
+          : "border-border bg-card text-muted-foreground",
+        onClick && "cursor-pointer hover:bg-accent/50",
         className,
       )}
       onClick={onClick}
@@ -33,7 +33,7 @@ export function FilterChip({ label, active, onRemove, onClick, className }: Filt
             e.stopPropagation()
             onRemove()
           }}
-          className="rounded-full p-0.5 hover:bg-zinc-200"
+          className="rounded-full p-0.5 hover:bg-primary/10"
           aria-label={`Remove ${label}`}
         >
           <X className="size-3" />

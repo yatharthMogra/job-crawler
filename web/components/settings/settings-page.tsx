@@ -40,7 +40,7 @@ function Toggle({
       onClick={() => onChange(!checked)}
       className={cn(
         "relative h-6 w-11 shrink-0 rounded-full transition-colors",
-        checked ? "bg-zinc-900" : "bg-zinc-200",
+        checked ? "bg-primary" : "bg-muted",
       )}
     >
       <span
@@ -63,10 +63,10 @@ function SettingRow({
   children: ReactNode
 }) {
   return (
-    <div className="flex items-start justify-between gap-6 border-b border-zinc-100 py-5 last:border-0">
+    <div className="flex items-start justify-between gap-6 border-b border-border/60 py-5 last:border-0">
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-zinc-900">{title}</p>
-        {description ? <p className="mt-1 text-sm leading-relaxed text-zinc-500">{description}</p> : null}
+        <p className="text-sm font-medium text-foreground">{title}</p>
+        {description ? <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p> : null}
       </div>
       <div className="shrink-0">{children}</div>
     </div>
@@ -111,14 +111,14 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-50">
-      <div className="border-b border-zinc-200 bg-white px-6 py-4">
-        <h1 className="text-lg font-bold tracking-tight text-zinc-900">Settings</h1>
-        <p className="text-xs text-zinc-500">Account, subscriptions, and notification preferences</p>
+    <div className="dashboard-page-bg flex min-h-screen flex-col">
+      <div className="border-b border-border/80 bg-card/80 px-6 py-4 backdrop-blur-sm">
+        <h1 className="text-lg font-bold tracking-tight text-foreground">Settings</h1>
+        <p className="text-xs text-muted-foreground">Account, subscriptions, and notification preferences</p>
       </div>
 
       <div className="flex flex-1">
-        <aside className="w-52 shrink-0 border-r border-zinc-200 bg-white p-3">
+        <aside className="w-52 shrink-0 border-r border-border/80 bg-card/60 p-3">
           {SECTIONS.map((s) => (
             <button
               key={s.id}
@@ -127,8 +127,8 @@ export function SettingsPage() {
               className={cn(
                 "mb-0.5 w-full rounded-lg px-3 py-2.5 text-left text-sm transition-colors",
                 section === s.id
-                  ? "bg-zinc-100 font-medium text-zinc-900"
-                  : "text-zinc-600 hover:bg-zinc-50",
+                  ? "bg-accent font-medium text-accent-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-secondary/80",
               )}
             >
               {s.label}
@@ -138,14 +138,14 @@ export function SettingsPage() {
 
         <main className="flex-1 p-6">
           {section === "login" ? (
-            <div className="mx-auto max-w-2xl rounded-xl border border-zinc-200 bg-white p-6">
-              <h2 className="text-base font-semibold text-zinc-900">Login & Security</h2>
+            <div className="mx-auto max-w-2xl rounded-xl card-elevated border-0 p-6">
+              <h2 className="text-base font-semibold text-foreground">Login & Security</h2>
               <div className="mt-6">
                 <SettingRow title="Email" description={candidate?.email ?? "—"}>
-                  <span className="text-xs text-zinc-400">Verified</span>
+                  <span className="text-xs text-muted-foreground/70">Verified</span>
                 </SettingRow>
                 <SettingRow title="Password" description="Last updated — not available in demo mode">
-                  <Button variant="outline" size="sm" className="border-zinc-300" disabled>
+                  <Button variant="outline" size="sm" className="border-border" disabled>
                     Change password
                   </Button>
                 </SettingRow>
@@ -153,7 +153,7 @@ export function SettingsPage() {
                   title="Two-factor authentication"
                   description="Add an extra layer of security to your account."
                 >
-                  <Button variant="outline" size="sm" className="border-zinc-300" disabled>
+                  <Button variant="outline" size="sm" className="border-border" disabled>
                     Enable
                   </Button>
                 </SettingRow>
@@ -162,19 +162,19 @@ export function SettingsPage() {
           ) : null}
 
           {section === "subscriptions" ? (
-            <div className="mx-auto max-w-2xl rounded-xl border border-zinc-200 bg-white p-6">
-              <h2 className="text-base font-semibold text-zinc-900">Subscriptions</h2>
-              <div className="mt-6 rounded-lg border border-zinc-200 bg-zinc-50 p-5">
+            <div className="mx-auto max-w-2xl rounded-xl card-elevated border-0 p-6">
+              <h2 className="text-base font-semibold text-foreground">Subscriptions</h2>
+              <div className="mt-6 rounded-lg border border-border/80 bg-surface p-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-zinc-900">Free Plan</p>
-                    <p className="mt-1 text-sm text-zinc-500">Up to 1 instant job alert per day</p>
+                    <p className="font-medium text-foreground">Free Plan</p>
+                    <p className="mt-1 text-sm text-muted-foreground">Up to 1 instant job alert per day</p>
                   </div>
-                  <span className="rounded-full border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-600">
+                  <span className="rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground">
                     Current
                   </span>
                 </div>
-                <Button className="mt-4 bg-zinc-900 text-white hover:bg-zinc-800" size="sm" disabled>
+                <Button className="mt-4 btn-brand" size="sm" disabled>
                   Upgrade to Turbo
                 </Button>
               </div>
@@ -183,7 +183,7 @@ export function SettingsPage() {
 
           {section === "alerts" && alerts ? (
             <div className="mx-auto max-w-2xl space-y-6">
-              <div className="rounded-xl border border-zinc-200 bg-white p-5">
+              <div className="rounded-xl card-elevated border-0 p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap gap-1.5">
                     {filterChips.slice(0, 6).map((chip) => (
@@ -194,7 +194,7 @@ export function SettingsPage() {
                     ) : null}
                   </div>
                   <Link href="/filters">
-                    <Button size="sm" className="gap-1.5 bg-zinc-900 text-white hover:bg-zinc-800">
+                    <Button size="sm" className="gap-1.5 btn-brand">
                       <Pencil className="size-3.5" />
                       Filters
                     </Button>
@@ -202,8 +202,8 @@ export function SettingsPage() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-zinc-200 bg-white px-6">
-                <h2 className="border-b border-zinc-100 py-4 text-base font-semibold text-zinc-900">
+              <div className="rounded-xl card-elevated border-0 px-6">
+                <h2 className="border-b border-border/60 py-4 text-base font-semibold text-foreground">
                   Instant Job Alerts
                 </h2>
                 <SettingRow
@@ -216,13 +216,13 @@ export function SettingsPage() {
                   title={
                     <span className="inline-flex items-center gap-1.5">
                       Job Alerts Frequency
-                      <Zap className="size-3.5 text-zinc-400" />
+                      <Zap className="size-3.5 text-muted-foreground/70" />
                     </span>
                   }
                   description="Turbo Plan gets unlimited job alerts per day, Free Plan gets up to 1."
                 >
                   <select
-                    className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700"
+                    className="rounded-lg card-elevated border-0 px-3 py-2 text-sm text-foreground"
                     value={alerts.instantFrequency}
                     disabled={!alerts.instantEnabled}
                     onChange={(e) =>
@@ -237,8 +237,8 @@ export function SettingsPage() {
                 </SettingRow>
               </div>
 
-              <div className="rounded-xl border border-zinc-200 bg-white px-6">
-                <h2 className="border-b border-zinc-100 py-4 text-base font-semibold text-zinc-900">
+              <div className="rounded-xl card-elevated border-0 px-6">
+                <h2 className="border-b border-border/60 py-4 text-base font-semibold text-foreground">
                   Digest Job Alerts
                 </h2>
                 <SettingRow
@@ -249,7 +249,7 @@ export function SettingsPage() {
                 </SettingRow>
                 <SettingRow title="Job Alerts Frequency">
                   <select
-                    className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700"
+                    className="rounded-lg card-elevated border-0 px-3 py-2 text-sm text-foreground"
                     value={alerts.digestFrequency}
                     disabled={!alerts.digestEnabled}
                     onChange={(e) =>
@@ -265,14 +265,14 @@ export function SettingsPage() {
           ) : null}
 
           {section === "logout" ? (
-            <div className="mx-auto max-w-2xl rounded-xl border border-zinc-200 bg-white p-6">
-              <h2 className="text-base font-semibold text-zinc-900">Log out</h2>
-              <p className="mt-2 text-sm text-zinc-500">
+            <div className="mx-auto max-w-2xl rounded-xl card-elevated border-0 p-6">
+              <h2 className="text-base font-semibold text-foreground">Log out</h2>
+              <p className="mt-2 text-sm text-muted-foreground">
                 Sign out of your account on this device. Your profile and saved jobs remain stored.
               </p>
               <Button
                 variant="outline"
-                className="mt-6 border-zinc-300 text-zinc-900 hover:bg-zinc-50"
+                className="mt-6 border-border text-foreground hover:bg-surface"
                 onClick={handleLogout}
               >
                 Log out

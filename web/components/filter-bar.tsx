@@ -31,7 +31,7 @@ export function FilterBar({ resultCount }: { resultCount: number }) {
   const { filters, setFilter, clearFilter } = useJobs()
 
   return (
-    <div className="sticky top-0 z-20 border-b border-zinc-200 bg-zinc-50/90 backdrop-blur">
+    <div className="sticky top-0 z-20 border-b border-border/80 bg-card/90 backdrop-blur-sm">
       <div className="flex flex-wrap items-center gap-2 px-6 py-3">
         <FilterDropdown
           label="Role"
@@ -67,7 +67,7 @@ export function FilterBar({ resultCount }: { resultCount: number }) {
           onClear={() => clearFilter("datePosted")}
         />
       </div>
-      <p className="px-6 pb-2 text-xs text-zinc-400">
+      <p className="px-6 pb-2 text-xs text-muted-foreground">
         {resultCount.toLocaleString()} {resultCount === 1 ? "opportunity" : "opportunities"}
       </p>
     </div>
