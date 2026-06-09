@@ -1,10 +1,15 @@
-import type {
-  CandidateResponse,
-  CapabilityResponse,
-  EvidenceResponse,
-  ProfileResponse,
-} from "@/lib/profile/api-types"
+import type { CandidateResponse, EvidenceResponse, ProfileResponse, ResumeResponse } from "@/lib/profile/api-types"
 import type { CommittedProfile } from "@/lib/profile/build-profile"
+import { withDefaultProfileFields } from "@/lib/profile/build-profile"
+import {
+  contactFromEducationJson,
+  educationEntriesFromProfile,
+  resumeSectionOrderFromProfile,
+  type ContactInfo,
+  type EducationEntry,
+  type ResumeSectionOrder,
+} from "@/lib/profile/contact"
+import { eeoFromApiPayload, eeoToDisplayRows, type EeoState } from "@/lib/profile/eeo"
 import type { ReviewState } from "@/lib/profile/profile-data"
 import { buildCommittedProfile } from "@/lib/profile/build-profile"
 
@@ -18,18 +23,7 @@ const SKILL_CATEGORY_LABELS: Record<string, string> = {
   product: "Product",
 }
 
-function formatEducationLine(education: Record<string, unknown>): string {
-  const parts: string[] = []
-  if (education.degree) parts.push(String(education.degree))
-  if (education.university) parts.push(String(education.university))
-  if (education.graduation_date) {
-    const date = String(education.graduation_date)
-    parts.push(`Graduating ${date.length === 7 ? date.replace("-", " ") : date}`)
-  }
-  return parts.join(" · ")
-}
-
-function formatConstraintLabel(key: string, value: unknown): string {
+function formatConstraintLabel(key: string): string {
   const labels: Record<string, string> = {
     sponsorship_required: "Sponsorship Required",
     visa_type: "Visa Type",
@@ -80,10 +74,27 @@ function deriveRoleType(constraints: Record<string, unknown>): string {
   return "Open to both"
 }
 
+export interface ProfileResumeItem {
+  id: string
+  originalFilename: string
+  displayLabel: string | null
+  uploadedAt: string
+  fileSizeBytes: number
+}
+
 export interface ProfileHomeData {
   candidateName: string
-  educationLine: string
+  email: string
+  contact: ContactInfo
+  educationEntries: EducationEntry[]
+  resumeSectionOrder: ResumeSectionOrder
+  eeo: EeoState
+  eeoRows: { label: string; value: string }[]
   profile: CommittedProfile
+  primaryRoles: string[]
+  secondaryRoles: string[]
+  hasTargetRoles: boolean
+  resumes: ProfileResumeItem[]
   constraints: { label: string; value: string }[]
   preferences: { label: string; value: string }[]
   version: number
@@ -94,9 +105,8 @@ export interface ProfileHomeData {
 export function mapApiToProfileHome(
   candidate: CandidateResponse,
   profile: ProfileResponse,
-  capabilities: CapabilityResponse[],
   evidence: EvidenceResponse[],
-  resumeCount: number,
+  resumes: ResumeResponse[],
 ): ProfileHomeData {
   const experiences = evidence
     .filter((e) => e.evidence_type === "experience")
@@ -137,16 +147,10 @@ export function mapApiToProfileHome(
       names,
     }))
 
-  const caps = capabilities.map((c) => ({
-    name: c.capability_name,
-    evidence: c.supporting_evidence,
-    depth: c.supporting_evidence.length,
-  }))
-
   const constraintsEntries = Object.entries(profile.constraints ?? {})
-    .filter(([, v]) => v !== null && v !== undefined && v !== "")
+    .filter(([key, v]) => key !== "eeo" && v !== null && v !== undefined && v !== "")
     .map(([key, value]) => ({
-      label: formatConstraintLabel(key, value),
+      label: formatConstraintLabel(key),
       value: formatConstraintValue(key, value),
     }))
 
@@ -157,46 +161,76 @@ export function mapApiToProfileHome(
     })
   }
 
+  const primaryRoles = (profile.preferences?.primary_roles as string[]) ?? []
+  const secondaryRoles = (profile.preferences?.secondary_roles as string[]) ?? []
+
   const preferencesEntries = Object.entries(profile.preferences ?? {})
-    .filter(([, v]) => v !== null && v !== undefined && v !== "" && !(Array.isArray(v) && v.length === 0))
+    .filter(([key, v]) => {
+      if (key === "primary_roles" || key === "secondary_roles" || key === "dream_companies") {
+        return false
+      }
+      return v !== null && v !== undefined && v !== "" && !(Array.isArray(v) && v.length === 0)
+    })
     .map(([key, value]) => ({
       label: formatPreferenceLabel(key),
       value: formatPreferenceValue(value),
     }))
 
-  const committedProfile: CommittedProfile = {
+  const resumeItems: ProfileResumeItem[] = resumes.map((r) => ({
+    id: r.id,
+    originalFilename: r.original_filename,
+    displayLabel: r.display_label ?? null,
+    uploadedAt: r.uploaded_at,
+    fileSizeBytes: r.file_size_bytes,
+  }))
+
+  const contact = contactFromEducationJson(profile.education)
+  const educationEntries = educationEntriesFromProfile(profile.education)
+  const resumeSectionOrder = resumeSectionOrderFromProfile(profile.education)
+  const eeo = eeoFromApiPayload(profile.constraints?.eeo as Record<string, unknown> | undefined)
+
+  const committedProfile = withDefaultProfileFields({
     skills: skillGroups,
     skillCount: skillGroups.reduce((n, g) => n + g.names.length, 0),
     experiences,
     projects,
     certifications,
-    capabilities: caps,
+    contact,
+    educationEntries,
+    resumeSectionOrder,
+    eeo,
+    primaryRoles,
+    secondaryRoles,
     preferences: [...constraintsEntries, ...preferencesEntries],
-  }
+  })
 
   return {
     candidateName: candidate.name,
-    educationLine: formatEducationLine(profile.education ?? {}),
+    email: candidate.email,
+    contact,
+    educationEntries,
+    resumeSectionOrder,
+    eeo,
+    eeoRows: eeoToDisplayRows(eeo),
     profile: committedProfile,
+    primaryRoles,
+    secondaryRoles,
+    hasTargetRoles: primaryRoles.length > 0,
+    resumes: resumeItems,
     constraints: constraintsEntries,
     preferences: preferencesEntries,
     version: profile.version,
     lastUpdated: profile.created_at,
-    resumeCount,
+    resumeCount: resumes.length,
   }
 }
 
-export function buildConfirmationProfile(
-  reviewState: ReviewState,
-  capabilities: CapabilityResponse[],
-): CommittedProfile {
-  const local = buildCommittedProfile(reviewState)
-  local.capabilities = capabilities.map((c) => ({
-    name: c.capability_name,
-    evidence: c.supporting_evidence,
-    depth: c.supporting_evidence.length,
-  }))
-  return local
+export function buildConfirmationProfile(reviewState: ReviewState): CommittedProfile {
+  return buildCommittedProfile(reviewState)
+}
+
+export function buildConfirmationFromProfileHome(data: ProfileHomeData): CommittedProfile {
+  return data.profile
 }
 
 export function formatRelativeTime(iso: string): string {

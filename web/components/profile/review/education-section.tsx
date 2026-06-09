@@ -1,5 +1,6 @@
 "use client"
 
+import { educationLevelLabel } from "@/lib/profile/contact"
 import type { EducationChange } from "@/lib/profile/profile-data"
 import { DecisionControls, KindBadge } from "@/components/profile/review/decision-controls"
 import { SectionHeader } from "@/components/profile/review/skills-section"
@@ -45,10 +46,14 @@ export function EducationSection({
                 <div className="mb-1">
                   <KindBadge kind={e.kind} withLabel={false} />
                 </div>
+                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  {educationLevelLabel(e.level)}
+                </p>
                 <h4 className="text-sm font-semibold text-foreground">{e.degree || "Degree"}</h4>
                 <p className="text-xs text-muted-foreground">
                   {e.university}
                   {e.graduationDate ? ` · ${e.graduationDate}` : ""}
+                  {e.gpa ? ` · GPA ${e.gpa}` : ""}
                 </p>
                 {e.kind === "update" && e.previousDegree ? (
                   <p className="mt-1 text-xs text-update-foreground">

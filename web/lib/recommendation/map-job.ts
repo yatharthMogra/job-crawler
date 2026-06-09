@@ -34,6 +34,7 @@ export function mapApiJobToUi(
     salary_min: job.salary_min,
     salary_max: job.salary_max,
     employment_type: inferEmploymentType(job.retrieval_pools ?? []),
+    seniority_level: "mid",
     remote_type: remote,
     application_effort: effort,
     posting_url: job.posting_url ?? "#",

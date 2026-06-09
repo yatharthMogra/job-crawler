@@ -1,6 +1,8 @@
 # Career Match AI — Web App
 
-Unified Next.js frontend for job discovery and profile review. Talks to:
+Unified Next.js frontend for job discovery and profile management.
+
+## Backends
 
 - **profile_service** (`:8001`) — candidate signup, resume upload, profile patches
 - **recommendation_service** (`:8002`) — job feed, recommendations, pool subscriptions
@@ -9,13 +11,10 @@ Unified Next.js frontend for job discovery and profile review. Talks to:
 
 ```bash
 cp .env.example .env.local
-# Edit .env.local with your profile API key
 pnpm install
 ```
 
 ## Run locally
-
-Start both backends, then the web app:
 
 ```bash
 ./scripts/dev-profile-service.sh           # :8001
@@ -23,33 +22,22 @@ Start both backends, then the web app:
 ./scripts/dev-web.sh                       # :3000
 ```
 
-Or from this directory:
+Mock mode: `NEXT_PUBLIC_USE_MOCK_DATA=true` in `.env.local`
 
-```bash
-pnpm dev
-```
-
-## Session
-
-Identity is stored in `localStorage` as `profile_candidate_id` (UUID from `POST /candidates`). No password auth in V1.
-
-## Routes
+## Navigation
 
 | Route | Purpose |
 |-------|---------|
-| `/onboarding` | Name + email signup |
-| `/profile/upload` | Resume PDF upload |
-| `/profile/processing` | Analysis in progress |
-| `/profile/review` | Approve/reject patch operations |
-| `/profile/confirm` | Post-commit summary |
-| `/jobs` | All jobs feed |
-| `/recommended` | Personal-score ranked feed |
-| `/saved` / `/applied` | Client-only state (localStorage) |
-| `/profile` | Profile home |
-| `/preferences` | Edit constraints & preferences |
+| `/jobs/recommended` | Personalized job feed |
+| `/jobs/liked` | Saved/liked jobs |
+| `/jobs/applied` | Applied jobs |
+| `/jobs/all` | All jobs with filters |
+| `/resume` | Resume library |
+| `/profile` | Tabbed profile (Personal, Education, Experience, Skills, EEO) |
+| `/filters` | Full job criteria editor |
+| `/onboarding` | Signup |
+| `/profile/upload` → `/profile/review` → `/profile/job-intent` → `/profile/confirm` | Onboarding flow |
 
-Root `/` redirects based on session state (onboarding → upload → review → jobs).
+## Role catalog
 
-## Mock mode
-
-Set `NEXT_PUBLIC_USE_MOCK_DATA=true` to use static job data without backends.
+Users select display labels (e.g. "Full Stack Engineer"); backend maps to ingestion pools via `preferences.role_pool_ids` (e.g. `SWE_FULLTIME`, `FULLSTACK_ENGINEER_FULLTIME`).

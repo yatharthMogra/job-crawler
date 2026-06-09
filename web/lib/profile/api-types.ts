@@ -11,6 +11,7 @@ export interface ResumeResponse {
   candidate_id: string
   file_path: string
   original_filename: string
+  display_label: string | null
   file_size_bytes: number
   extraction_method: string | null
   raw_text_char_count: number | null

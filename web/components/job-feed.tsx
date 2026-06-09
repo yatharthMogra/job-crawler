@@ -95,7 +95,7 @@ export function JobFeed({
 
   return (
     <div className="px-6 py-4">
-      <div className="flex flex-col gap-2.5">
+      <div className="flex flex-col gap-4">
         {visible.map((job) => (
           <JobCard key={job.id} job={job} showMatch={showMatch} showRecommendation={showRecommendation} />
         ))}

@@ -6,12 +6,19 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ApiError, createCandidate } from "@/lib/profile/api"
+import {
+  MOCK_CANDIDATE_ID,
+  setMockCandidateInfo,
+  setStoredCandidateId,
+  useMockData,
+} from "@/lib/session"
 
 interface OnboardingScreenProps {
   onComplete: (candidateId: string) => void
 }
 
 export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
+  const mockMode = useMockData()
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -26,6 +33,12 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
     }
     setLoading(true)
     try {
+      if (mockMode) {
+        setMockCandidateInfo(name.trim(), email.trim())
+        setStoredCandidateId(MOCK_CANDIDATE_ID)
+        onComplete(MOCK_CANDIDATE_ID)
+        return
+      }
       const candidate = await createCandidate(name.trim(), email.trim())
       onComplete(candidate.id)
     } catch (err) {

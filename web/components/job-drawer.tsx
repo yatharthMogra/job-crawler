@@ -6,18 +6,8 @@ import { useJobs } from "@/components/jobs-provider"
 import { CompanyLogo } from "@/components/company-logo"
 import { MatchTag, StatPill } from "@/components/badges"
 import { timeAgo, formatSalary } from "@/lib/jobs-data"
+import { EMP_LABEL, REMOTE_LABEL, SENIORITY_LABEL } from "@/lib/job-meta"
 import { cn } from "@/lib/utils"
-
-const EMP_LABEL: Record<string, string> = {
-  FULLTIME: "Full-time",
-  INTERNSHIP: "Internship",
-  CONTRACT: "Contract",
-}
-const REMOTE_LABEL: Record<string, string> = {
-  remote: "Remote",
-  hybrid: "Hybrid",
-  onsite: "Onsite",
-}
 const EFFORT_LABEL: Record<string, string> = {
   LOW: "Low effort",
   MEDIUM: "Medium effort",
@@ -25,7 +15,7 @@ const EFFORT_LABEL: Record<string, string> = {
 }
 
 export function JobDrawer({ showMatch = false }: { showMatch?: boolean }) {
-  const { jobs, recommendedJobs, selectedJobId, selectJob, toggleSave, markApplied } = useJobs()
+  const { jobs, recommendedJobs, selectedJobId, selectJob, toggleSave, startApply } = useJobs()
   const job =
     jobs.find((j) => j.id === selectedJobId) ??
     recommendedJobs.find((j) => j.id === selectedJobId) ??
@@ -88,7 +78,7 @@ export function JobDrawer({ showMatch = false }: { showMatch?: boolean }) {
                 href={job.posting_url}
                 target="_blank"
                 rel="noreferrer"
-                onClick={() => markApplied(job.id)}
+                onClick={() => startApply(job)}
                 className="mb-5 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-md bg-zinc-900 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
               >
                 Apply Now <ExternalLink className="size-4" />
@@ -100,6 +90,7 @@ export function JobDrawer({ showMatch = false }: { showMatch?: boolean }) {
                   <StatPill>{formatSalary(job.salary_min, job.salary_max)}</StatPill>
                 )}
                 <StatPill>{EMP_LABEL[job.employment_type]}</StatPill>
+                <StatPill>{SENIORITY_LABEL[job.seniority_level]}</StatPill>
                 <StatPill>{EFFORT_LABEL[job.application_effort]}</StatPill>
                 <StatPill>{REMOTE_LABEL[job.remote_type]}</StatPill>
               </div>
@@ -139,7 +130,7 @@ export function JobDrawer({ showMatch = false }: { showMatch?: boolean }) {
                 href={job.posting_url}
                 target="_blank"
                 rel="noreferrer"
-                onClick={() => markApplied(job.id)}
+                onClick={() => startApply(job)}
                 className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-md bg-zinc-900 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
               >
                 Apply <ExternalLink className="size-4" />

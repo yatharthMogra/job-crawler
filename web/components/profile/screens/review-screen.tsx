@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useRef, useState } from "react"
-import type { ExperienceChange, PreferenceSuggestion, ReviewState } from "@/lib/profile/profile-data"
+import type { ExperienceChange, ResumeSectionOrder, ReviewState } from "@/lib/profile/profile-data"
 import { Brand } from "@/components/profile/brand"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,8 +16,8 @@ import { SkillsSection } from "@/components/profile/review/skills-section"
 import { ExperiencesSection } from "@/components/profile/review/experiences-section"
 import { ProjectsSection } from "@/components/profile/review/projects-section"
 import { CertificationsSection } from "@/components/profile/review/certifications-section"
+import { ContactSection } from "@/components/profile/review/contact-section"
 import { EducationSection } from "@/components/profile/review/education-section"
-import { PreferencesSection } from "@/components/profile/review/preferences-section"
 import { cn } from "@/lib/utils"
 import { ArrowRight, Check, CircleDashed } from "lucide-react"
 
@@ -29,18 +29,33 @@ interface ReviewScreenProps {
   saving?: boolean
 }
 
-type SectionId = "skills" | "experiences" | "projects" | "certifications" | "education" | "preferences"
+type SectionId = "skills" | "experiences" | "projects" | "certifications" | "education"
 
-const SECTION_LABELS: { id: SectionId; label: string }[] = [
-  { id: "skills", label: "Skills" },
-  { id: "experiences", label: "Experiences" },
-  { id: "projects", label: "Projects" },
-  { id: "certifications", label: "Certifications" },
-  { id: "education", label: "Education" },
-  { id: "preferences", label: "Preferences & Constraints" },
-]
+function buildSectionNav(order: ResumeSectionOrder): { id: SectionId; label: string }[] {
+  const evidence =
+    order === "education_first"
+      ? [
+          { id: "education" as const, label: "Education" },
+          { id: "experiences" as const, label: "Experience" },
+        ]
+      : [
+          { id: "experiences" as const, label: "Experience" },
+          { id: "education" as const, label: "Education" },
+        ]
+
+  return [
+    { id: "skills", label: "Technical skills" },
+    ...evidence,
+    { id: "projects", label: "Projects" },
+    { id: "certifications", label: "Certifications" },
+  ]
+}
 
 export function ReviewScreen({ state, setState, onSave, onSkip, saving }: ReviewScreenProps) {
+  const sectionNav = useMemo(
+    () => buildSectionNav(state.resumeSectionOrder),
+    [state.resumeSectionOrder],
+  )
   const [active, setActive] = useState<SectionId>("skills")
   const [skipOpen, setSkipOpen] = useState(false)
   const refs = {
@@ -49,7 +64,6 @@ export function ReviewScreen({ state, setState, onSave, onSkip, saving }: Review
     projects: useRef<HTMLDivElement>(null),
     certifications: useRef<HTMLDivElement>(null),
     education: useRef<HTMLDivElement>(null),
-    preferences: useRef<HTMLDivElement>(null),
   }
 
   const counts = useMemo(() => {
@@ -75,8 +89,7 @@ export function ReviewScreen({ state, setState, onSave, onSkip, saving }: Review
       state.experiences.filter((e) => e.status === "approved").length +
       state.projects.filter((p) => p.status === "approved").length +
       state.certifications.filter((c) => c.status === "approved").length +
-      state.education.filter((e) => e.status === "approved").length +
-      state.preferences.filter((p) => p.status === "confirmed").length
+      state.education.filter((e) => e.status === "approved").length
     )
   }, [state])
 
@@ -86,14 +99,12 @@ export function ReviewScreen({ state, setState, onSave, onSkip, saving }: Review
     const projPending = state.projects.filter((p) => p.status === "pending").length
     const certPending = state.certifications.filter((c) => c.status === "pending").length
     const eduPending = state.education.filter((e) => e.status === "pending").length
-    const prefPending = state.preferences.filter((p) => p.status === "pending").length
     return {
       skills: { pending: state.skills.filter((s) => s.kind === "add").length, reviewed: skillsPending === 0 },
       experiences: { pending: state.experiences.length, reviewed: expPending === 0 },
       projects: { pending: state.projects.length, reviewed: projPending === 0 },
       certifications: { pending: state.certifications.length, reviewed: certPending === 0 },
       education: { pending: state.education.length, reviewed: eduPending === 0 },
-      preferences: { pending: state.preferences.length, reviewed: prefPending === 0 },
     }
   }, [state])
 
@@ -130,22 +141,14 @@ export function ReviewScreen({ state, setState, onSave, onSkip, saving }: Review
       ...s,
       education: s.education.map((x) => (x.id === id ? { ...x, status } : x)),
     }))
-  const setPref = (id: string, status: PreferenceSuggestion["status"], value?: string) =>
-    setState((s) => ({
-      ...s,
-      preferences: s.preferences.map((x) =>
-        x.id === id ? { ...x, status, value: value ?? x.value } : x,
-      ),
-    }))
-
   function approveAll() {
     setState((s) => ({
+      ...s,
       skills: s.skills.map((x) => ({ ...x, status: "approved" })),
       experiences: s.experiences.map((x) => ({ ...x, status: "approved" })),
       projects: s.projects.map((x) => ({ ...x, status: "approved" })),
       certifications: s.certifications.map((x) => ({ ...x, status: "approved" })),
       education: s.education.map((x) => ({ ...x, status: "approved" })),
-      preferences: s.preferences.map((x) => ({ ...x, status: "confirmed" })),
     }))
   }
 
@@ -166,11 +169,13 @@ export function ReviewScreen({ state, setState, onSave, onSkip, saving }: Review
 
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
         <div className="mb-6">
-          <h1 className="text-balance text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            Review your profile
+          <p className="text-sm font-medium text-primary">Step 1 of 2</p>
+          <h1 className="mt-1 text-balance text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+            Review what we found in your resume
           </h1>
           <p className="mt-2 text-pretty leading-relaxed text-muted-foreground">
-            We found the following information in your resume. Approve what looks right.
+            We parsed your dedicated technical skills section plus experience and projects. Approve
+            what belongs on your profile — you&apos;ll choose target roles next.
           </p>
         </div>
 
@@ -194,7 +199,7 @@ export function ReviewScreen({ state, setState, onSave, onSkip, saving }: Review
             aria-label="Profile sections"
             className="flex gap-2 overflow-x-auto pb-1 lg:sticky lg:top-20 lg:h-fit lg:w-60 lg:shrink-0 lg:flex-col lg:overflow-visible lg:pb-0"
           >
-            {SECTION_LABELS.map(({ id, label }) => {
+            {sectionNav.map(({ id, label }) => {
               const meta = sectionMeta[id]
               return (
                 <button
@@ -246,25 +251,16 @@ export function ReviewScreen({ state, setState, onSave, onSkip, saving }: Review
                 }
               />
             </div>
-            <div ref={refs.experiences} className="scroll-mt-24">
-              <ExperiencesSection
-                experiences={state.experiences}
-                onDecision={setExp}
-                onEdit={editExp}
-                onApproveAll={() =>
-                  setState((s) => ({
-                    ...s,
-                    experiences: s.experiences.map((x) => ({ ...x, status: "approved" })),
-                  }))
-                }
-                onRejectAll={() =>
-                  setState((s) => ({
-                    ...s,
-                    experiences: s.experiences.map((x) => ({ ...x, status: "rejected" })),
-                  }))
-                }
-              />
-            </div>
+            <ContactSection contact={state.contact} />
+            <OrderedReviewEducationExperience
+              order={state.resumeSectionOrder}
+              refs={refs}
+              state={state}
+              setExp={setExp}
+              editExp={editExp}
+              setEdu={setEdu}
+              setState={setState}
+            />
             <div ref={refs.projects} className="scroll-mt-24">
               <ProjectsSection
                 projects={state.projects}
@@ -301,29 +297,6 @@ export function ReviewScreen({ state, setState, onSave, onSkip, saving }: Review
                 }
               />
             </div>
-            {state.education.length > 0 ? (
-              <div ref={refs.education} className="scroll-mt-24">
-                <EducationSection
-                  education={state.education}
-                  onDecision={setEdu}
-                  onApproveAll={() =>
-                    setState((s) => ({
-                      ...s,
-                      education: s.education.map((x) => ({ ...x, status: "approved" })),
-                    }))
-                  }
-                  onRejectAll={() =>
-                    setState((s) => ({
-                      ...s,
-                      education: s.education.map((x) => ({ ...x, status: "rejected" })),
-                    }))
-                  }
-                />
-              </div>
-            ) : null}
-            <div ref={refs.preferences} className="scroll-mt-24">
-              <PreferencesSection preferences={state.preferences} onDecision={setPref} />
-            </div>
           </div>
         </div>
       </div>
@@ -338,8 +311,8 @@ export function ReviewScreen({ state, setState, onSave, onSkip, saving }: Review
             {saving
               ? "Saving..."
               : approvedCount > 0
-                ? `Save ${approvedCount} approved changes`
-                : "Save approved changes"}
+                ? `Save ${approvedCount} approved changes and continue`
+                : "Save approved changes and continue"}
             <ArrowRight className="size-4" aria-hidden="true" />
           </Button>
         </div>
@@ -364,5 +337,80 @@ export function ReviewScreen({ state, setState, onSave, onSkip, saving }: Review
         </DialogContent>
       </Dialog>
     </div>
+  )
+}
+
+function OrderedReviewEducationExperience({
+  order,
+  refs,
+  state,
+  setExp,
+  editExp,
+  setEdu,
+  setState,
+}: {
+  order: ResumeSectionOrder
+  refs: Record<"education" | "experiences", React.RefObject<HTMLDivElement | null>>
+  state: ReviewState
+  setExp: (id: string, status: ReviewState["experiences"][number]["status"]) => void
+  editExp: (updated: ExperienceChange) => void
+  setEdu: (id: string, status: ReviewState["education"][number]["status"]) => void
+  setState: React.Dispatch<React.SetStateAction<ReviewState>>
+}) {
+  const experienceSection =
+    state.experiences.length > 0 ? (
+      <div ref={refs.experiences} className="scroll-mt-24">
+        <ExperiencesSection
+          experiences={state.experiences}
+          onDecision={setExp}
+          onEdit={editExp}
+          onApproveAll={() =>
+            setState((s) => ({
+              ...s,
+              experiences: s.experiences.map((x) => ({ ...x, status: "approved" })),
+            }))
+          }
+          onRejectAll={() =>
+            setState((s) => ({
+              ...s,
+              experiences: s.experiences.map((x) => ({ ...x, status: "rejected" })),
+            }))
+          }
+        />
+      </div>
+    ) : null
+
+  const educationSection =
+    state.education.length > 0 ? (
+      <div ref={refs.education} className="scroll-mt-24">
+        <EducationSection
+          education={state.education}
+          onDecision={setEdu}
+          onApproveAll={() =>
+            setState((s) => ({
+              ...s,
+              education: s.education.map((x) => ({ ...x, status: "approved" })),
+            }))
+          }
+          onRejectAll={() =>
+            setState((s) => ({
+              ...s,
+              education: s.education.map((x) => ({ ...x, status: "rejected" })),
+            }))
+          }
+        />
+      </div>
+    ) : null
+
+  return order === "education_first" ? (
+    <>
+      {educationSection}
+      {experienceSection}
+    </>
+  ) : (
+    <>
+      {experienceSection}
+      {educationSection}
+    </>
   )
 }

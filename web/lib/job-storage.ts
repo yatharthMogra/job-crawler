@@ -1,4 +1,11 @@
-function key(candidateId: string, kind: "saved" | "applied" | "hidden") {
+export interface PendingApply {
+  jobId: string
+  jobTitle: string
+  company: string
+  startedAt: string
+}
+
+function key(candidateId: string, kind: "saved" | "applied" | "hidden" | "pending_apply") {
   return `cma_${kind}_${candidateId}`
 }
 
@@ -40,4 +47,25 @@ export function persistAppliedIds(candidateId: string, ids: Set<string>) {
 
 export function persistHiddenIds(candidateId: string, ids: Set<string>) {
   writeIds(candidateId, "hidden", ids)
+}
+
+export function setPendingApply(candidateId: string, pending: PendingApply) {
+  if (typeof window === "undefined") return
+  sessionStorage.setItem(key(candidateId, "pending_apply"), JSON.stringify(pending))
+}
+
+export function getPendingApply(candidateId: string): PendingApply | null {
+  if (typeof window === "undefined") return null
+  try {
+    const raw = sessionStorage.getItem(key(candidateId, "pending_apply"))
+    if (!raw) return null
+    return JSON.parse(raw) as PendingApply
+  } catch {
+    return null
+  }
+}
+
+export function clearPendingApply(candidateId: string) {
+  if (typeof window === "undefined") return
+  sessionStorage.removeItem(key(candidateId, "pending_apply"))
 }

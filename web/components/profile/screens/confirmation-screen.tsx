@@ -1,10 +1,11 @@
 "use client"
 
 import type { CommittedProfile } from "@/lib/profile/build-profile"
+import { educationLevelLabel } from "@/lib/profile/contact"
 import { Brand } from "@/components/profile/brand"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { ArrowRight, Check, FolderGit2, Award as AwardIcon, Briefcase, Sparkles } from "lucide-react"
+import { ArrowRight, Check, FolderGit2, Award as AwardIcon, Briefcase, GraduationCap, Sparkles } from "lucide-react"
 
 interface ConfirmationScreenProps {
   profile: CommittedProfile
@@ -63,26 +64,30 @@ export function ConfirmationScreen({ profile, onViewProfile }: ConfirmationScree
               body={profile.certifications.map((c) => c.name).join(", ")}
             />
           ) : null}
-        </Card>
 
-        {profile.capabilities.length > 0 ? (
-          <div className="mt-4 rounded-xl border border-primary/30 bg-accent/50 p-4">
-            <p className="text-sm font-medium text-accent-foreground">Capabilities generated</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {profile.capabilities.map((c) => (
-                <span
-                  key={c.name}
-                  className="rounded-full bg-card px-3 py-1 text-sm font-medium text-foreground shadow-sm"
-                >
-                  {c.name}
-                </span>
-              ))}
-            </div>
-            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-              Your capabilities have been automatically updated based on your approved evidence.
-            </p>
-          </div>
-        ) : null}
+          {profile.primaryRoles.length > 0 ? (
+            <SummaryRow
+              icon={<Briefcase className="size-4" aria-hidden="true" />}
+              title={`Target roles (${profile.primaryRoles.length})`}
+              body={profile.primaryRoles.join(", ")}
+            />
+          ) : null}
+
+          {profile.educationEntries.length > 0 ? (
+            <SummaryRow
+              icon={<GraduationCap className="size-4" aria-hidden="true" />}
+              title={`Education (${profile.educationEntries.length})`}
+              body={profile.educationEntries
+                .map(
+                  (e) =>
+                    `${educationLevelLabel(e.level)}: ${e.degree} at ${e.university}${
+                      e.gpa ? ` (GPA ${e.gpa})` : ""
+                    }`,
+                )
+                .join(" · ")}
+            />
+          ) : null}
+        </Card>
 
         <Button className="mt-6 w-full" size="lg" onClick={onViewProfile}>
           View my profile

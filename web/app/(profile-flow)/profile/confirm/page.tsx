@@ -19,7 +19,7 @@ export default function ConfirmPage() {
   return (
     <ConfirmationScreen
       profile={confirmationProfile}
-      onViewProfile={() => router.push("/jobs")}
+      onViewProfile={() => router.push("/jobs/recommended")}
     />
   )
 }
