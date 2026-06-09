@@ -34,10 +34,17 @@ export interface RecommendedJobsResponse {
   total: number
 }
 
-export interface SubscriptionResponse {
+export interface SubscriptionOut {
+  id: string
   candidate_id: string
-  pool_names: string[]
+  pool_name: string
   is_active: boolean
+  created_at: string
+}
+
+export interface SubscriptionListResponse {
+  candidate_id: string
+  subscriptions: SubscriptionOut[]
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -89,7 +96,7 @@ export function fetchDashboardJob(candidateId: string, jobId: string) {
 }
 
 export function fetchSubscriptions(candidateId: string) {
-  return request<SubscriptionResponse[]>(`/subscriptions/${candidateId}`)
+  return request<SubscriptionListResponse>(`/subscriptions/${candidateId}`)
 }
 
 export function patchSubscriptions(
@@ -97,14 +104,14 @@ export function patchSubscriptions(
   poolNames: string[],
   isActive = true,
 ) {
-  return request<SubscriptionResponse>(`/subscriptions/${candidateId}`, {
+  return request<SubscriptionOut[]>(`/subscriptions/${candidateId}`, {
     method: "PATCH",
     body: JSON.stringify({ pool_names: poolNames, is_active: isActive }),
   })
 }
 
 export function createSubscriptions(candidateId: string, poolNames: string[]) {
-  return request<SubscriptionResponse>("/subscriptions", {
+  return request<SubscriptionOut[]>("/subscriptions", {
     method: "POST",
     body: JSON.stringify({ candidate_id: candidateId, pool_names: poolNames }),
   })

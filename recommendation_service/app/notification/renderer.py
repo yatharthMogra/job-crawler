@@ -49,7 +49,7 @@ def render_daily_briefing(
         total_scanned=total_scanned,
         time_saved_minutes=estimate_time_saved_minutes(total_scanned, jobs_sent),
         total_review_minutes=estimate_total_review_minutes(total_scanned),
-        manage_prefs_url=f"{base_url}/preferences?candidate_id={candidate_id}",
-        dashboard_url=f"{base_url}/dashboard?candidate_id={candidate_id}",
+        manage_prefs_url=f"{base_url}/filters?candidate_id={candidate_id}",
+        dashboard_url=f"{base_url}/jobs/recommended?candidate_id={candidate_id}",
         unsubscribe_url=f"{base_url}/unsubscribe?candidate_id={candidate_id}",
     )

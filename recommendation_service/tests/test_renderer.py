@@ -55,3 +55,6 @@ def test_render_daily_briefing_includes_job_blocks() -> None:
     assert "APPLY NOW" in html
     assert "PROFILE MATCH" in html
     assert "Why only 1 jobs?" in html
+    assert f"/jobs/recommended?candidate_id={profile.candidate_id}" in html
+    assert f"/filters?candidate_id={profile.candidate_id}" in html
+    assert f"/unsubscribe?candidate_id={profile.candidate_id}" in html
