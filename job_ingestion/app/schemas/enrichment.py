@@ -21,6 +21,14 @@ class JobEnrichmentOut(BaseModel):
     remote_type: Optional[str]
     tech_stack: list[str]
     skills: list[str]
+    normalized_roles: list[str] = []
+    job_capabilities: list[str] = []
+    application_effort: Optional[str] = None
+    retrieval_pools: list[str] = []
+    salary_min: Optional[int] = None
+    salary_max: Optional[int] = None
+    opportunity_score: Optional[float] = None
+    opportunity_score_computed_at: Optional[datetime] = None
     input_tokens: Optional[int]
     output_tokens: Optional[int]
     latency_ms: Optional[int]

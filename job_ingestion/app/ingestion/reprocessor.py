@@ -14,6 +14,7 @@ from app.ingestion.events import write_event
 from app.ingestion.extractor.deterministic import extract_deterministic_fields
 from app.ingestion.extractor.llm import DEFAULT_ENRICHMENT, enrich_job_text
 from app.ingestion.extractor.text_cleaner import clean_job_description
+from app.ingestion.recommendation_fields import assign_retrieval_pools, compute_opportunity_score
 from app.llm.factory import get_llm_provider
 from app.models.company import Company
 from app.models.job_enrichment import JobEnrichment
@@ -131,6 +132,33 @@ async def reprocess_jobs(
                 output_tokens = 0
                 latency_ms = 0
 
+        recommendation_fields: dict = {}
+        if status == "success":
+            normalized_roles = list(enrichment.normalized_roles)
+            retrieval_pools = assign_retrieval_pools(
+                normalized_roles,
+                enrichment.is_internship,
+                enrichment.is_new_grad,
+            )
+            computed_at = _utcnow()
+            opportunity_score = compute_opportunity_score(
+                normalized.posted_at,
+                enrichment.salary_min,
+                enrichment.salary_max,
+                enrichment.application_effort,
+                settings=settings,
+            )
+            recommendation_fields = {
+                "normalized_roles": normalized_roles,
+                "job_capabilities": list(enrichment.job_capabilities),
+                "application_effort": enrichment.application_effort,
+                "retrieval_pools": retrieval_pools,
+                "salary_min": enrichment.salary_min,
+                "salary_max": enrichment.salary_max,
+                "opportunity_score": opportunity_score,
+                "opportunity_score_computed_at": computed_at,
+            }
+
         db.add(
             JobEnrichment(
                 normalized_job_id=normalized.id,
@@ -146,6 +174,7 @@ async def reprocess_jobs(
                 remote_type=enrichment.remote_type,
                 tech_stack=enrichment.tech_stack,
                 skills=enrichment.skills,
+                **recommendation_fields,
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
                 latency_ms=latency_ms,
@@ -167,6 +196,14 @@ async def reprocess_jobs(
             normalized.remote_type = enrichment.remote_type
             normalized.tech_stack = enrichment.tech_stack
             normalized.skills = enrichment.skills
+            normalized.normalized_roles = recommendation_fields.get("normalized_roles", [])
+            normalized.job_capabilities = recommendation_fields.get("job_capabilities", [])
+            normalized.application_effort = recommendation_fields.get("application_effort")
+            normalized.retrieval_pools = recommendation_fields.get("retrieval_pools", [])
+            normalized.salary_min = recommendation_fields.get("salary_min")
+            normalized.salary_max = recommendation_fields.get("salary_max")
+            normalized.opportunity_score = recommendation_fields.get("opportunity_score")
+            normalized.opportunity_score_computed_at = recommendation_fields.get("opportunity_score_computed_at")
             success_count += 1
         else:
             normalized.processing_state = ProcessingState.PARTIAL_SUCCESS
