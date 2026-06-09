@@ -1,10 +1,8 @@
+import type { ContactInfo, EducationEntry, ResumeSectionOrder } from "@/lib/profile/contact"
+import type { EeoState } from "@/lib/profile/eeo"
 import type { ReviewState } from "@/lib/profile/profile-data"
-
-export interface Capability {
-  name: string
-  evidence: string[]
-  depth: number
-}
+import { emptyContact } from "@/lib/profile/contact"
+import { emptyEeo } from "@/lib/profile/eeo"
 
 export interface CommittedProfile {
   skills: { category: string; names: string[] }[]
@@ -12,7 +10,12 @@ export interface CommittedProfile {
   experiences: { id: string; title: string; company: string; durationMonths: number; domains: string[]; keywords: string[] }[]
   projects: { id: string; name: string; type: string; domain: string; keywords: string[] }[]
   certifications: { id: string; name: string; issuer: string }[]
-  capabilities: Capability[]
+  contact: ContactInfo
+  educationEntries: EducationEntry[]
+  resumeSectionOrder: ResumeSectionOrder
+  eeo: EeoState
+  primaryRoles: string[]
+  secondaryRoles: string[]
   preferences: { label: string; value: string }[]
 }
 
@@ -21,50 +24,27 @@ export function buildCommittedProfile(state: ReviewState): CommittedProfile {
   const experiences = state.experiences.filter((e) => e.status === "approved")
   const projects = state.projects.filter((p) => p.status === "approved")
   const certifications = state.certifications.filter((c) => c.status === "approved")
-  const preferences = state.preferences.filter((p) => p.status === "confirmed")
 
   const skillCategories = Array.from(new Set(skills.map((s) => s.category))).map((category) => ({
     category,
     names: skills.filter((s) => s.category === category).map((s) => s.name),
   }))
 
-  // Derive capabilities from approved evidence keywords + sources.
-  const capabilityRules: { name: string; match: string[] }[] = [
-    { name: "Backend Engineering", match: ["backend apis", "java", "fastapi", "kafka", "data pipelines", "apis"] },
-    { name: "AI Systems", match: ["rag", "llms", "multi-agent systems", "voice ai", "ai product"] },
-    { name: "Distributed Systems", match: ["distributed systems", "kafka", "real-time systems", "monitoring"] },
-    { name: "Full Stack Development", match: ["react", "next.js", "typescript", "web app"] },
-    { name: "Cloud Infrastructure", match: ["aws", "cloud"] },
-  ]
-
-  const evidenceItems: { source: string; tokens: string[] }[] = [
-    ...experiences.map((e) => ({
-      source: e.company,
-      tokens: [...e.keywords, ...e.domains].map((t) => t.toLowerCase()),
-    })),
-    ...projects.map((p) => ({
-      source: p.name,
-      tokens: [...p.keywords, p.type, p.domain].map((t) => t.toLowerCase()),
-    })),
-    ...skills.map((s) => ({ source: s.name, tokens: [s.name.toLowerCase(), s.category.toLowerCase()] })),
-  ]
-
-  const capabilities: Capability[] = capabilityRules
-    .map((rule) => {
-      const evidence = new Set<string>()
-      evidenceItems.forEach((item) => {
-        if (item.tokens.some((tok) => rule.match.some((m) => tok.includes(m) || m.includes(tok)))) {
-          evidence.add(item.source)
-        }
-      })
-      return { name: rule.name, evidence: Array.from(evidence), depth: evidence.size }
-    })
-    .filter((c) => c.depth > 0)
-    .sort((a, b) => b.depth - a.depth)
+  const approvedEducation = state.education.filter((e) => e.status === "approved")
 
   return {
     skills: skillCategories,
     skillCount: skills.length,
+    contact: { ...state.contact },
+    educationEntries: approvedEducation.map((e) => ({
+      level: e.level,
+      degree: e.degree,
+      university: e.university,
+      graduationDate: e.graduationDate,
+      gpa: e.gpa,
+    })),
+    resumeSectionOrder: state.resumeSectionOrder,
+    eeo: emptyEeo(),
     experiences: experiences.map((e) => ({
       id: e.id,
       title: e.title,
@@ -81,7 +61,18 @@ export function buildCommittedProfile(state: ReviewState): CommittedProfile {
       keywords: p.keywords,
     })),
     certifications: certifications.map((c) => ({ id: c.id, name: c.name, issuer: c.issuer })),
-    capabilities,
-    preferences: preferences.map((p) => ({ label: p.label, value: p.value })),
+    primaryRoles: [],
+    secondaryRoles: [],
+    preferences: [],
+  }
+}
+
+export function withDefaultProfileFields(profile: CommittedProfile): CommittedProfile {
+  return {
+    ...profile,
+    contact: profile.contact ?? emptyContact(),
+    educationEntries: profile.educationEntries ?? [],
+    resumeSectionOrder: profile.resumeSectionOrder ?? "education_first",
+    eeo: profile.eeo ?? emptyEeo(),
   }
 }

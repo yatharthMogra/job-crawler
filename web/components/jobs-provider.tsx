@@ -12,16 +12,25 @@ import {
 import { useSession } from "@/components/session-provider"
 import type { JobWithRole } from "@/lib/jobs-data"
 import {
+  clearPendingApply,
+  getPendingApply,
   loadAppliedIds,
   loadHiddenIds,
   loadSavedIds,
   persistAppliedIds,
   persistHiddenIds,
   persistSavedIds,
+  setPendingApply,
+  type PendingApply,
 } from "@/lib/job-storage"
 import { fetchDashboardJobs, fetchRecommendedJobs } from "@/lib/recommendation/api"
 import { mapApiJobToUi, mapRecommendedApiJob } from "@/lib/recommendation/map-job"
 import { syncSubscriptionsForCandidate } from "@/lib/recommendation/sync-subscriptions"
+import {
+  appendJobFeedback,
+  type NotInterestedReason,
+  type ReportIssueReason,
+} from "@/lib/job-feedback"
 import { useMockData } from "@/lib/session"
 import { ALL_JOBS } from "@/lib/jobs-data"
 
@@ -54,9 +63,14 @@ interface JobsContextValue {
   recommendedLoading: boolean
   error: string | null
   hasProfile: boolean
+  pendingApply: PendingApply | null
   toggleSave: (id: string) => void
   markApplied: (id: string) => void
+  startApply: (job: JobWithRole) => void
+  resolvePendingApply: (applied: boolean) => void
   hideJob: (id: string) => void
+  submitNotInterested: (id: string, reason: NotInterestedReason) => void
+  submitReportIssue: (id: string, reason: ReportIssueReason) => void
   setFilter: (key: keyof Filters, value: Filters[keyof Filters]) => void
   clearFilter: (key: keyof Filters) => void
   selectJob: (id: string | null) => void
@@ -80,6 +94,7 @@ export function JobsProvider({ children }: { children: ReactNode }) {
   const [recommendedLoading, setRecommendedLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [hasProfile, setHasProfile] = useState(true)
+  const [pendingApply, setPendingApplyState] = useState<PendingApply | null>(null)
 
   const refreshJobs = useCallback(async () => {
     if (!candidateId) {
@@ -93,6 +108,7 @@ export function JobsProvider({ children }: { children: ReactNode }) {
     setSavedIds(loadSavedIds(candidateId))
     setAppliedIds(loadAppliedIds(candidateId))
     setHiddenIds(loadHiddenIds(candidateId))
+    setPendingApplyState(getPendingApply(candidateId))
 
     if (mockMode) {
       setAllJobs(ALL_JOBS as JobWithRole[])
@@ -163,8 +179,42 @@ export function JobsProvider({ children }: { children: ReactNode }) {
         persistAppliedIds(candidateId, next)
         return next
       })
+      clearPendingApply(candidateId)
+      setPendingApplyState(null)
     },
     [candidateId],
+  )
+
+  const startApply = useCallback(
+    (job: JobWithRole) => {
+      if (!candidateId) return
+      const pending: PendingApply = {
+        jobId: job.id,
+        jobTitle: job.title,
+        company: job.company,
+        startedAt: new Date().toISOString(),
+      }
+      setPendingApply(candidateId, pending)
+      setPendingApplyState(pending)
+    },
+    [candidateId],
+  )
+
+  const resolvePendingApply = useCallback(
+    (applied: boolean) => {
+      if (!candidateId || !pendingApply) return
+      if (applied) {
+        setAppliedIds((prev) => {
+          const next = new Set(prev)
+          next.add(pendingApply.jobId)
+          persistAppliedIds(candidateId, next)
+          return next
+        })
+      }
+      clearPendingApply(candidateId)
+      setPendingApplyState(null)
+    },
+    [candidateId, pendingApply],
   )
 
   const hideJob = useCallback(
@@ -179,6 +229,24 @@ export function JobsProvider({ children }: { children: ReactNode }) {
       setSelectedJobId((cur) => (cur === id ? null : cur))
     },
     [candidateId],
+  )
+
+  const submitNotInterested = useCallback(
+    (id: string, reason: NotInterestedReason) => {
+      if (!candidateId) return
+      appendJobFeedback(candidateId, { jobId: id, type: "not_interested", reason })
+      hideJob(id)
+    },
+    [candidateId, hideJob],
+  )
+
+  const submitReportIssue = useCallback(
+    (id: string, reason: ReportIssueReason) => {
+      if (!candidateId) return
+      appendJobFeedback(candidateId, { jobId: id, type: "report_issue", reason })
+      hideJob(id)
+    },
+    [candidateId, hideJob],
   )
 
   const setFilter = useCallback((key: keyof Filters, value: Filters[keyof Filters]) => {
@@ -228,9 +296,14 @@ export function JobsProvider({ children }: { children: ReactNode }) {
       recommendedLoading,
       error,
       hasProfile,
+      pendingApply,
       toggleSave,
       markApplied,
+      startApply,
+      resolvePendingApply,
       hideJob,
+      submitNotInterested,
+      submitReportIssue,
       setFilter,
       clearFilter,
       selectJob: setSelectedJobId,
@@ -249,9 +322,14 @@ export function JobsProvider({ children }: { children: ReactNode }) {
       recommendedLoading,
       error,
       hasProfile,
+      pendingApply,
       toggleSave,
       markApplied,
+      startApply,
+      resolvePendingApply,
       hideJob,
+      submitNotInterested,
+      submitReportIssue,
       setFilter,
       clearFilter,
       refreshJobs,

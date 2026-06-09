@@ -10,7 +10,13 @@ import {
   type ReactNode,
 } from "react"
 import { getCandidate } from "@/lib/profile/api"
-import { getStoredCandidateId, setStoredCandidateId } from "@/lib/session"
+import {
+  getMockCandidateInfo,
+  getStoredCandidateId,
+  MOCK_CANDIDATE_ID,
+  setStoredCandidateId,
+  useMockData,
+} from "@/lib/session"
 
 interface CandidateInfo {
   id: string
@@ -33,11 +39,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [candidate, setCandidate] = useState<CandidateInfo | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const mockMode = useMockData()
+
   const refreshCandidate = useCallback(async () => {
     const id = getStoredCandidateId()
     setCandidateIdState(id)
     if (!id) {
       setCandidate(null)
+      return
+    }
+    if (mockMode && id === MOCK_CANDIDATE_ID) {
+      const info = getMockCandidateInfo()
+      setCandidate({ id: MOCK_CANDIDATE_ID, name: info.name, email: info.email })
       return
     }
     try {
@@ -46,7 +59,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     } catch {
       setCandidate(null)
     }
-  }, [])
+  }, [mockMode])
 
   useEffect(() => {
     void (async () => {

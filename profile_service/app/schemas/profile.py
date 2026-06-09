@@ -40,18 +40,29 @@ class ConstraintsUpdate(BaseModel):
     fulltime_only: bool | None = None
     minimum_salary: float | None = None
     minimum_hourly_rate: float | None = None
+    exclude_security_clearance: bool | None = None
+    exclude_us_citizen_only: bool | None = None
     eeo: dict[str, Any] | None = None
 
 
 class PreferencesUpdate(BaseModel):
     primary_roles: list[str] | None = None
     secondary_roles: list[str] | None = None
+    role_pool_ids: list[str] | None = None
     preferred_locations: list[str] | None = None
     acceptable_locations: list[str] | None = None
     remote_preference: str | None = None
     relocation_allowed: bool | None = None
     preferred_company_stages: list[str] | None = None
     preferred_industries: list[str] | None = None
+    excluded_industries: list[str] | None = None
+    preferred_skills: list[str] | None = None
+    excluded_skills: list[str] | None = None
+    work_models: list[str] | None = None
+    experience_levels: list[str] | None = None
+    min_years_experience: float | None = None
+    max_job_age_days: int | None = None
+    role_type: str | None = None
 
 
 class EducationContactUpdate(BaseModel):

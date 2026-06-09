@@ -14,19 +14,26 @@ import { useRouter } from "next/navigation"
 import type { CommittedProfile } from "@/lib/profile/build-profile"
 import { buildCommittedProfile } from "@/lib/profile/build-profile"
 import type { ProfileResponse } from "@/lib/profile/api-types"
+import type { ContactInfo } from "@/lib/profile/contact"
+import { eeoFromApiPayload, eeoToDisplayRows } from "@/lib/profile/eeo"
 import { initialReviewState, type ReviewState } from "@/lib/profile/profile-data"
 import {
   ApiError,
   commitPatch,
   discardPatch,
-  getCapabilities,
+  getCandidate,
   getEvidence,
   getPendingPatch,
   getProfile,
+  listResumes,
+  patchConstraints,
+  patchEducation,
+  patchPreferences,
+  patchResumeLabel,
   uploadResume,
 } from "@/lib/profile/api"
 import {
-  buildConfirmationProfile,
+  buildConfirmationFromProfileHome,
   mapApiToProfileHome,
   type ProfileHomeData,
 } from "@/lib/profile/map-profile"
@@ -35,16 +42,17 @@ import {
   emptyReviewState,
   mapPendingPatchToReviewState,
 } from "@/lib/profile/map-patch"
+import {
+  emptyJobIntent,
+  jobIntentToApiPayload,
+  needsJobIntent,
+  profileToJobIntent,
+  type JobIntentState,
+} from "@/lib/profile/job-intent"
+import { buildMockProfileHome, defaultMockJobIntent } from "@/lib/profile/mock-profile-home"
 import { syncSubscriptionsForCandidate } from "@/lib/recommendation/sync-subscriptions"
 import { useMockData } from "@/lib/session"
 import type { EditSection } from "@/components/profile/profile-edit-dialog"
-import {
-  getCandidate,
-  listResumes,
-  patchConstraints,
-  patchEducation,
-  patchPreferences,
-} from "@/lib/profile/api"
 
 interface ProfileFlowContextValue {
   file: File | null
@@ -52,6 +60,8 @@ interface ProfileFlowContextValue {
   patchId: string | null
   reviewState: ReviewState
   setReviewState: Dispatch<SetStateAction<ReviewState>>
+  jobIntent: JobIntentState
+  setJobIntent: Dispatch<SetStateAction<JobIntentState>>
   confirmationProfile: CommittedProfile | null
   profileHome: ProfileHomeData | null
   rawProfile: ProfileResponse | null
@@ -64,10 +74,13 @@ interface ProfileFlowContextValue {
   processUpload: () => Promise<void>
   saveReview: () => Promise<void>
   skipReview: () => Promise<void>
+  saveJobIntent: (redirectTo?: "confirm" | "profile" | "jobs") => Promise<void>
   loadProfileHome: (id: string) => Promise<void>
   handleProfileEdit: (section: EditSection, values: Record<string, unknown>) => Promise<void>
+  handleResumeLabelSave: (resumeId: string, label: string | null) => Promise<void>
   resetForNewResume: () => void
   loadPendingReview: (id: string) => Promise<void>
+  openJobIntent: () => void
 }
 
 const ProfileFlowContext = createContext<ProfileFlowContextValue | null>(null)
@@ -86,6 +99,7 @@ export function ProfileFlowProvider({
   const [fileName, setFileName] = useState("")
   const [patchId, setPatchId] = useState<string | null>(null)
   const [reviewState, setReviewState] = useState<ReviewState>(emptyReviewState())
+  const [jobIntent, setJobIntent] = useState<JobIntentState>(emptyJobIntent())
   const [confirmationProfile, setConfirmationProfile] = useState<CommittedProfile | null>(null)
   const [profileHome, setProfileHome] = useState<ProfileHomeData | null>(null)
   const [rawProfile, setRawProfile] = useState<ProfileResponse | null>(null)
@@ -94,20 +108,28 @@ export function ProfileFlowProvider({
   const [editSection, setEditSection] = useState<EditSection | null>(null)
   const [hasExistingProfile, setHasExistingProfile] = useState(false)
 
-  const loadProfileHome = useCallback(async (id: string) => {
-    const [candidate, profile, capabilities, evidence, resumes] = await Promise.all([
-      getCandidate(id),
-      getProfile(id),
-      getCapabilities(id),
-      getEvidence(id),
-      listResumes(id),
-    ])
-    setRawProfile(profile)
-    setProfileHome(
-      mapApiToProfileHome(candidate, profile, capabilities.capabilities, evidence.evidence, resumes.length),
-    )
-    setHasExistingProfile(true)
-  }, [])
+  const loadProfileHome = useCallback(
+    async (id: string) => {
+      if (mockMode) {
+        setProfileHome((prev) => prev ?? buildMockProfileHome(defaultMockJobIntent()))
+        setJobIntent((prev) => (prev.primaryRoles.length > 0 ? prev : defaultMockJobIntent()))
+        setHasExistingProfile(true)
+        return
+      }
+
+      const [candidate, profile, evidence, resumes] = await Promise.all([
+        getCandidate(id),
+        getProfile(id),
+        getEvidence(id),
+        listResumes(id),
+      ])
+      setRawProfile(profile)
+      setProfileHome(mapApiToProfileHome(candidate, profile, evidence.evidence, resumes))
+      setJobIntent(profileToJobIntent(profile))
+      setHasExistingProfile(true)
+    },
+    [mockMode],
+  )
 
   const loadPendingReview = useCallback(async (id: string) => {
     const [pending, evidence] = await Promise.all([getPendingPatch(id), getEvidence(id)])
@@ -161,10 +183,21 @@ export function ProfileFlowProvider({
 
   const saveReview = useCallback(async () => {
     if (mockMode) {
-      const built = buildCommittedProfile(reviewState)
-      setConfirmationProfile(built)
-      setHasExistingProfile(true)
-      router.push("/profile/confirm")
+      setJobIntent({
+        ...emptyJobIntent(),
+        eeo: {
+          authorizedToWorkUs: true,
+          hasDisability: false,
+          gender: "Male",
+          requiresSponsorship: true,
+          identifiesLgbtq: false,
+          isVeteran: false,
+          race: "Asian",
+          hispanicLatino: false,
+          sexualOrientation: "Heterosexual",
+        },
+      })
+      router.push("/profile/job-intent")
       return
     }
     if (!patchId) return
@@ -173,15 +206,15 @@ export function ProfileFlowProvider({
     try {
       const approvedIds = collectApprovedOperationIds(reviewState)
       await commitPatch(candidateId, patchId, approvedIds)
-      const capabilities = await getCapabilities(candidateId)
-      setConfirmationProfile(buildConfirmationProfile(reviewState, capabilities.capabilities))
-      await loadProfileHome(candidateId)
-      await syncSubscriptionsForCandidate(candidateId)
-      router.push("/profile/confirm")
+      const profile = await getProfile(candidateId)
+      setRawProfile(profile)
+      setHasExistingProfile(true)
+      setJobIntent(profileToJobIntent(profile))
+      router.push("/profile/job-intent")
     } finally {
       setSaving(false)
     }
-  }, [mockMode, candidateId, patchId, reviewState, loadProfileHome, router])
+  }, [mockMode, candidateId, patchId, reviewState, router])
 
   const skipReview = useCallback(async () => {
     if (mockMode) {
@@ -192,22 +225,130 @@ export function ProfileFlowProvider({
       await discardPatch(candidateId, patchId)
     }
     if (hasExistingProfile) {
-      await loadProfileHome(candidateId)
-      router.push("/profile")
+      const profile = await getProfile(candidateId)
+      if (needsJobIntent(profile)) {
+        setJobIntent(profileToJobIntent(profile))
+        router.push("/profile/job-intent")
+      } else {
+        await loadProfileHome(candidateId)
+        router.push("/profile")
+      }
     } else {
       router.push("/profile/upload")
     }
   }, [mockMode, candidateId, patchId, hasExistingProfile, loadProfileHome, router])
 
+  const saveJobIntent = useCallback(
+    async (redirectTo: "confirm" | "profile" | "jobs" = "confirm") => {
+      if (mockMode) {
+        const built = buildCommittedProfile(reviewState)
+        built.primaryRoles = jobIntent.primaryRoles
+        built.secondaryRoles = jobIntent.secondaryRoles
+        built.eeo = jobIntent.eeo
+        setConfirmationProfile(built)
+        setProfileHome(buildMockProfileHome(jobIntent))
+        setHasExistingProfile(true)
+        if (redirectTo === "profile") {
+          router.push("/profile")
+        } else if (redirectTo === "jobs") {
+          router.push("/jobs/recommended")
+        } else {
+          router.push("/profile/confirm")
+        }
+        return
+      }
+
+      setSaving(true)
+      try {
+        const { constraints, preferences } = jobIntentToApiPayload(jobIntent)
+        await patchConstraints(candidateId, constraints)
+        await patchPreferences(candidateId, preferences)
+        await loadProfileHome(candidateId)
+        await syncSubscriptionsForCandidate(candidateId)
+        if (redirectTo === "profile") {
+          router.push("/profile")
+        } else if (redirectTo === "jobs") {
+          router.push("/jobs/recommended")
+        } else {
+          const home = profileHome ?? (await (async () => {
+            const [candidate, profile, evidence, resumes] = await Promise.all([
+              getCandidate(candidateId),
+              getProfile(candidateId),
+              getEvidence(candidateId),
+              listResumes(candidateId),
+            ])
+            return mapApiToProfileHome(candidate, profile, evidence.evidence, resumes)
+          })())
+          setConfirmationProfile(buildConfirmationFromProfileHome(home))
+          router.push("/profile/confirm")
+        }
+      } finally {
+        setSaving(false)
+      }
+    },
+    [mockMode, candidateId, jobIntent, reviewState, profileHome, loadProfileHome, router],
+  )
+
   const handleProfileEdit = useCallback(
     async (section: EditSection, values: Record<string, unknown>) => {
-      if (section === "constraints") await patchConstraints(candidateId, values)
-      else if (section === "preferences") await patchPreferences(candidateId, values)
-      else await patchEducation(candidateId, values)
+      if (mockMode) {
+        if (section === "eeo" && values.eeo) {
+          const nextEeo = eeoFromApiPayload(values.eeo as Record<string, unknown>)
+          setJobIntent((prev) => ({ ...prev, eeo: nextEeo }))
+          setProfileHome((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  eeo: nextEeo,
+                  eeoRows: eeoToDisplayRows(nextEeo),
+                  profile: { ...prev.profile, eeo: nextEeo },
+                }
+              : prev,
+          )
+        }
+        if (section === "contact" && values.contact) {
+          const contact = values.contact as ContactInfo
+          setProfileHome((prev) =>
+            prev
+              ? { ...prev, contact, profile: { ...prev.profile, contact } }
+              : prev,
+          )
+        }
+        return
+      }
+      if (section === "constraints" || section === "eeo") {
+        await patchConstraints(candidateId, values)
+      } else if (section === "preferences") {
+        await patchPreferences(candidateId, values)
+      } else {
+        await patchEducation(candidateId, values)
+      }
       await loadProfileHome(candidateId)
-      await syncSubscriptionsForCandidate(candidateId)
+      if (section === "preferences" || section === "constraints") {
+        await syncSubscriptionsForCandidate(candidateId)
+      }
     },
-    [candidateId, loadProfileHome],
+    [mockMode, candidateId, loadProfileHome],
+  )
+
+  const handleResumeLabelSave = useCallback(
+    async (resumeId: string, label: string | null) => {
+      if (mockMode) {
+        setProfileHome((prev) => {
+          if (!prev) return prev
+          return {
+            ...prev,
+            resumes: prev.resumes.map((r) =>
+              r.id === resumeId ? { ...r, displayLabel: label } : r,
+            ),
+          }
+        })
+        return
+      }
+      await patchResumeLabel(candidateId, resumeId, label)
+      await loadProfileHome(candidateId)
+    },
+    [mockMode, candidateId, loadProfileHome],
   )
 
   const resetForNewResume = useCallback(() => {
@@ -219,6 +360,13 @@ export function ProfileFlowProvider({
     router.push("/profile/upload")
   }, [router])
 
+  const openJobIntent = useCallback(() => {
+    if (rawProfile) {
+      setJobIntent(profileToJobIntent(rawProfile))
+    }
+    router.push("/profile/job-intent")
+  }, [rawProfile, router])
+
   const value = useMemo(
     () => ({
       file,
@@ -226,6 +374,8 @@ export function ProfileFlowProvider({
       patchId,
       reviewState,
       setReviewState,
+      jobIntent,
+      setJobIntent,
       confirmationProfile,
       profileHome,
       rawProfile,
@@ -238,16 +388,20 @@ export function ProfileFlowProvider({
       processUpload,
       saveReview,
       skipReview,
+      saveJobIntent,
       loadProfileHome,
       handleProfileEdit,
+      handleResumeLabelSave,
       resetForNewResume,
       loadPendingReview,
+      openJobIntent,
     }),
     [
       file,
       fileName,
       patchId,
       reviewState,
+      jobIntent,
       confirmationProfile,
       profileHome,
       rawProfile,
@@ -259,10 +413,13 @@ export function ProfileFlowProvider({
       processUpload,
       saveReview,
       skipReview,
+      saveJobIntent,
       loadProfileHome,
       handleProfileEdit,
+      handleResumeLabelSave,
       resetForNewResume,
       loadPendingReview,
+      openJobIntent,
     ],
   )
 

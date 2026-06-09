@@ -33,9 +33,9 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   return (
     <ProfileFlowProvider candidateId={candidateId}>
       <JobsProvider>
-        <div className="min-h-screen bg-zinc-50">
+        <div className="min-h-screen bg-[#f8f9fa]">
           <Sidebar />
-          <main className="ml-[220px] min-h-screen">{children}</main>
+          <main className="ml-[72px] min-h-screen sm:ml-[88px]">{children}</main>
           <JobDrawerMount />
         </div>
       </JobsProvider>

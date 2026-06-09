@@ -49,17 +49,29 @@ export interface CertificationChange {
   issuer: string
 }
 
+export type EducationLevel = "masters" | "undergrad" | "doctoral" | "other"
+
+export interface ContactChange {
+  location: string
+  phone: string
+  linkedin: string
+  github: string
+}
+
 export interface EducationChange {
   id: string
   operationIds?: string[]
   kind: ChangeKind
   status: ItemStatus
+  level: EducationLevel
   degree: string
   university: string
   graduationDate: string
+  gpa: string
   previousDegree?: string
   previousUniversity?: string
   previousGraduationDate?: string
+  previousGpa?: string
 }
 
 export type PrefStatus = "pending" | "confirmed" | "declined"
@@ -76,26 +88,60 @@ export interface PreferenceSuggestion {
   isConstraint?: boolean
 }
 
+export type ResumeSectionOrder = "education_first" | "experience_first"
+
 export interface ReviewState {
   skills: SkillChange[]
   experiences: ExperienceChange[]
   projects: ProjectChange[]
   certifications: CertificationChange[]
+  contact: ContactChange
   education: EducationChange[]
+  resumeSectionOrder: ResumeSectionOrder
   preferences: PreferenceSuggestion[]
 }
 
+const MOCK_PARSED_TECHNICAL_SKILLS: Omit<SkillChange, "id" | "status">[] = [
+  { kind: "add", category: "Languages", name: "Python" },
+  { kind: "add", category: "Languages", name: "Java" },
+  { kind: "add", category: "Languages", name: "TypeScript" },
+  { kind: "add", category: "Languages", name: "JavaScript" },
+  { kind: "add", category: "Languages", name: "C++" },
+  { kind: "add", category: "Languages", name: "SQL" },
+  { kind: "add", category: "Languages", name: "Go" },
+  { kind: "add", category: "Frameworks", name: "FastAPI" },
+  { kind: "add", category: "Frameworks", name: "React" },
+  { kind: "add", category: "Frameworks", name: "Next.js" },
+  { kind: "add", category: "Frameworks", name: "Node.js" },
+  { kind: "add", category: "Frameworks", name: "Spring Boot" },
+  { kind: "add", category: "Frameworks", name: "Django" },
+  { kind: "add", category: "Frameworks", name: "Flask" },
+  { kind: "add", category: "Databases", name: "PostgreSQL" },
+  { kind: "add", category: "Databases", name: "MongoDB" },
+  { kind: "add", category: "Databases", name: "Redis" },
+  { kind: "add", category: "Databases", name: "MySQL" },
+  { kind: "add", category: "Cloud", name: "AWS" },
+  { kind: "add", category: "Cloud", name: "GCP" },
+  { kind: "add", category: "Cloud", name: "Docker" },
+  { kind: "add", category: "Cloud", name: "Kubernetes" },
+  { kind: "add", category: "AI / ML", name: "RAG" },
+  { kind: "add", category: "AI / ML", name: "LLMs" },
+  { kind: "add", category: "AI / ML", name: "PyTorch" },
+  { kind: "add", category: "AI / ML", name: "TensorFlow" },
+  { kind: "add", category: "AI / ML", name: "scikit-learn" },
+  { kind: "add", category: "Infrastructure", name: "Kafka" },
+  { kind: "add", category: "Infrastructure", name: "RabbitMQ" },
+  { kind: "add", category: "Infrastructure", name: "CI/CD" },
+  { kind: "add", category: "Infrastructure", name: "Terraform" },
+  { kind: "add", category: "Infrastructure", name: "Linux" },
+]
+
 export const initialReviewState: ReviewState = {
-  skills: [
-    { id: "s1", kind: "add", category: "Languages", name: "Python", status: "pending" },
-    { id: "s2", kind: "add", category: "Languages", name: "Java", status: "pending" },
-    { id: "s3", kind: "add", category: "Languages", name: "TypeScript", status: "pending" },
-    { id: "s4", kind: "add", category: "Frameworks", name: "FastAPI", status: "pending" },
-    { id: "s5", kind: "add", category: "Frameworks", name: "React", status: "pending" },
-    { id: "s6", kind: "add", category: "Cloud", name: "AWS", status: "pending" },
-    { id: "s7", kind: "add", category: "AI / ML", name: "RAG", status: "pending" },
-    { id: "s8", kind: "add", category: "AI / ML", name: "LLMs", status: "pending" },
-  ],
+  skills: MOCK_PARSED_TECHNICAL_SKILLS.map((skill, index) => ({
+    ...skill,
+    id: `s${index + 1}`,
+    status: "pending",
+  })),
   experiences: [
     {
       id: "e1",
@@ -144,52 +190,41 @@ export const initialReviewState: ReviewState = {
     { id: "c1", kind: "add", status: "pending", name: "AWS Solutions Architect", issuer: "AWS" },
     { id: "c2", kind: "add", status: "pending", name: "Deep Learning Specialization", issuer: "DeepLearning.AI" },
   ],
-  education: [],
-  preferences: [
+  contact: {
+    location: "New York, NY",
+    phone: "+1 (212) 555-0142",
+    linkedin: "linkedin.com/in/alexrivera",
+    github: "github.com/alexrivera",
+  },
+  education: [
     {
-      id: "pref1",
-      label: "Sponsorship Required",
-      suggestion: "Yes",
-      detail: "Detected F1 visa indicators",
-      detected: true,
-      value: "Yes",
+      id: "edu1",
+      kind: "add",
       status: "pending",
-      kind: "text",
+      level: "masters",
+      degree: "MS Computer Science",
+      university: "NYU",
+      graduationDate: "2027-05",
+      gpa: "3.92",
     },
     {
-      id: "pref2",
-      label: "Primary Roles",
-      suggestion: "Software Engineer Intern, AI Engineer Intern",
-      detected: true,
-      value: "Software Engineer Intern, AI Engineer Intern",
+      id: "edu2",
+      kind: "add",
       status: "pending",
-      kind: "text",
-    },
-    {
-      id: "pref3",
-      label: "Preferred Locations",
-      suggestion: "NYC, Remote",
-      detected: true,
-      value: "NYC, Remote",
-      status: "pending",
-      kind: "text",
-    },
-    {
-      id: "pref4",
-      label: "Minimum Hourly Rate",
-      suggestion: "Not detected",
-      detail: "Leave blank or set now",
-      detected: false,
-      value: "",
-      status: "pending",
-      kind: "input",
+      level: "undergrad",
+      degree: "B.Tech Computer Science",
+      university: "IIT Mandi",
+      graduationDate: "2023-05",
+      gpa: "3.78",
     },
   ],
+  resumeSectionOrder: "education_first",
+  preferences: [],
 }
 
 export const PROCESSING_MESSAGES = [
   "Reading your resume...",
   "Extracting your experience...",
   "Identifying your skills...",
-  "Generating your profile...",
+  "Preparing your review...",
 ]

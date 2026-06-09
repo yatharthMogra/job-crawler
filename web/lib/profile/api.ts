@@ -123,3 +123,17 @@ export function patchEducation(candidateId: string, updates: Record<string, unkn
     body: JSON.stringify(updates),
   })
 }
+
+export function patchResumeLabel(
+  candidateId: string,
+  resumeId: string,
+  displayLabel: string | null,
+) {
+  return request<import("@/lib/profile/api-types").ResumeResponse>(
+    `/candidates/${candidateId}/resumes/${resumeId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ display_label: displayLabel }),
+    },
+  )
+}

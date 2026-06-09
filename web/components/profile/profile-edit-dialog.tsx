@@ -1,6 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import type { ContactInfo } from "@/lib/profile/contact"
+import { eeoFromApiPayload, eeoToApiPayload, emptyEeo, type EeoState } from "@/lib/profile/eeo"
+import { EeoForm } from "@/components/profile/eeo-form"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -11,22 +14,51 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 
-export type EditSection = "constraints" | "preferences" | "education"
+export type EditSection = "constraints" | "preferences" | "education" | "eeo" | "contact"
 
 interface ProfileEditDialogProps {
   section: EditSection | null
   onClose: () => void
   onSave: (section: EditSection, values: Record<string, unknown>) => Promise<void>
   initialValues?: Record<string, unknown>
+  contactValues?: ContactInfo
+  eeoValues?: EeoState
 }
 
-export function ProfileEditDialog({ section, onClose, onSave, initialValues }: ProfileEditDialogProps) {
+export function ProfileEditDialog({
+  section,
+  onClose,
+  onSave,
+  initialValues,
+  contactValues,
+  eeoValues,
+}: ProfileEditDialogProps) {
   const [values, setValues] = useState<Record<string, string>>({})
+  const [eeo, setEeo] = useState<EeoState>(emptyEeo())
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!section || !initialValues) {
+    if (!section) {
+      setValues({})
+      setEeo(emptyEeo())
+      return
+    }
+    if (section === "eeo") {
+      setEeo(eeoValues ?? eeoFromApiPayload(initialValues))
+      setValues({})
+      return
+    }
+    if (section === "contact") {
+      setValues({
+        location: contactValues?.location ?? "",
+        phone: contactValues?.phone ?? "",
+        linkedin: contactValues?.linkedin ?? "",
+        github: contactValues?.github ?? "",
+      })
+      return
+    }
+    if (!initialValues) {
       setValues({})
       return
     }
@@ -48,6 +80,9 @@ export function ProfileEditDialog({ section, onClose, onSave, initialValues }: P
         primary_roles: Array.isArray(initialValues.primary_roles)
           ? initialValues.primary_roles.join(", ")
           : "",
+        secondary_roles: Array.isArray(initialValues.secondary_roles)
+          ? initialValues.secondary_roles.join(", ")
+          : "",
         preferred_locations: Array.isArray(initialValues.preferred_locations)
           ? initialValues.preferred_locations.join(", ")
           : "",
@@ -58,7 +93,7 @@ export function ProfileEditDialog({ section, onClose, onSave, initialValues }: P
       })
     }
     setError(null)
-  }, [section, initialValues])
+  }, [section, initialValues, contactValues, eeoValues])
 
   async function handleSave() {
     if (!section) return
@@ -66,7 +101,16 @@ export function ProfileEditDialog({ section, onClose, onSave, initialValues }: P
     setError(null)
     try {
       const payload: Record<string, unknown> = {}
-      if (section === "education") {
+      if (section === "eeo") {
+        payload.eeo = eeoToApiPayload(eeo)
+      } else if (section === "contact") {
+        payload.contact = {
+          location: values.location || null,
+          phone: values.phone || null,
+          linkedin: values.linkedin || null,
+          github: values.github || null,
+        }
+      } else if (section === "education") {
         payload.degree = values.degree || null
         payload.university = values.university || null
         payload.graduation_date = values.graduation_date || null
@@ -80,6 +124,9 @@ export function ProfileEditDialog({ section, onClose, onSave, initialValues }: P
       } else {
         payload.primary_roles = values.primary_roles
           ? values.primary_roles.split(",").map((s) => s.trim()).filter(Boolean)
+          : []
+        payload.secondary_roles = values.secondary_roles
+          ? values.secondary_roles.split(",").map((s) => s.trim()).filter(Boolean)
           : []
         payload.preferred_locations = values.preferred_locations
           ? values.preferred_locations.split(",").map((s) => s.trim()).filter(Boolean)
@@ -102,6 +149,8 @@ export function ProfileEditDialog({ section, onClose, onSave, initialValues }: P
     constraints: "Edit constraints",
     preferences: "Edit preferences",
     education: "Edit education",
+    eeo: "Edit equal employment authorization",
+    contact: "Edit contact information",
   }
 
   return (
@@ -141,11 +190,23 @@ export function ProfileEditDialog({ section, onClose, onSave, initialValues }: P
         {section === "preferences" ? (
           <div className="space-y-3">
             <Field label="Primary roles (comma-separated)" value={values.primary_roles ?? ""} onChange={(v) => setValues((s) => ({ ...s, primary_roles: v }))} />
+            <Field label="Secondary roles (comma-separated)" value={values.secondary_roles ?? ""} onChange={(v) => setValues((s) => ({ ...s, secondary_roles: v }))} />
             <Field label="Preferred locations (comma-separated)" value={values.preferred_locations ?? ""} onChange={(v) => setValues((s) => ({ ...s, preferred_locations: v }))} />
             <Field label="Remote preference" value={values.remote_preference ?? ""} onChange={(v) => setValues((s) => ({ ...s, remote_preference: v }))} />
             <Field label="Industries (comma-separated)" value={values.preferred_industries ?? ""} onChange={(v) => setValues((s) => ({ ...s, preferred_industries: v }))} />
           </div>
         ) : null}
+
+        {section === "contact" ? (
+          <div className="space-y-3">
+            <Field label="Location" value={values.location ?? ""} onChange={(v) => setValues((s) => ({ ...s, location: v }))} />
+            <Field label="Phone" value={values.phone ?? ""} onChange={(v) => setValues((s) => ({ ...s, phone: v }))} />
+            <Field label="LinkedIn" value={values.linkedin ?? ""} onChange={(v) => setValues((s) => ({ ...s, linkedin: v }))} />
+            <Field label="GitHub" value={values.github ?? ""} onChange={(v) => setValues((s) => ({ ...s, github: v }))} />
+          </div>
+        ) : null}
+
+        {section === "eeo" ? <EeoForm state={eeo} onChange={setEeo} compact /> : null}
 
         {error ? <p className="text-sm text-remove">{error}</p> : null}
 

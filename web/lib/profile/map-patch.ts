@@ -1,7 +1,10 @@
 import type { EvidenceResponse, PendingPatchResponse, PatchOperationResponse } from "@/lib/profile/api-types"
+import { emptyContact } from "@/lib/profile/contact"
 import type {
   CertificationChange,
+  ContactChange,
   EducationChange,
+  EducationLevel,
   ExperienceChange,
   PreferenceSuggestion,
   ProjectChange,
@@ -246,17 +249,27 @@ function mapCertification(op: PatchOperationResponse): CertificationChange {
   }
 }
 
+function inferEducationLevel(degree: string): EducationLevel {
+  if (/^(ms|m\.s|master|mba)/i.test(degree)) return "masters"
+  if (/^(bs|b\.s|b\.tech|bachelor|ba|b\.a)/i.test(degree)) return "undergrad"
+  if (/^(phd|doctor)/i.test(degree)) return "doctoral"
+  return "other"
+}
+
 function mapEducation(op: PatchOperationResponse): EducationChange {
-  if (op.op === "ADD_EDUCATION") {
+  if (op.op === "ADD_EDUCATION" || op.op === "ADD_EDUCATION_ENTRY") {
     const data = op.data ?? {}
+    const degree = String(data.degree ?? "")
     return {
       id: op.id,
       operationIds: [op.id],
       kind: "add",
       status: "pending",
-      degree: String(data.degree ?? ""),
+      level: (data.level as EducationLevel) ?? inferEducationLevel(degree),
+      degree,
       university: String(data.university ?? ""),
       graduationDate: String(data.graduation_date ?? ""),
+      gpa: String(data.gpa ?? ""),
     }
   }
 
@@ -265,13 +278,33 @@ function mapEducation(op: PatchOperationResponse): EducationChange {
     operationIds: [op.id],
     kind: "update",
     status: "pending",
+    level: "other",
     degree: op.field === "degree" ? String(op.to ?? "") : "",
     university: op.field === "university" ? String(op.to ?? "") : "",
     graduationDate: op.field === "graduation_date" ? String(op.to ?? "") : "",
+    gpa: op.field === "gpa" ? String(op.to ?? "") : "",
     previousDegree: op.field === "degree" ? String(op.from_value ?? "") : undefined,
     previousUniversity: op.field === "university" ? String(op.from_value ?? "") : undefined,
     previousGraduationDate: op.field === "graduation_date" ? String(op.from_value ?? "") : undefined,
+    previousGpa: op.field === "gpa" ? String(op.from_value ?? "") : undefined,
   }
+}
+
+function mapContactFromOps(ops: PatchOperationResponse[]): ContactChange {
+  const contact = emptyContact()
+  for (const op of ops) {
+    if (op.op !== "ADD_CONTACT" && op.op !== "UPDATE_CONTACT") continue
+    const data = (op.data ?? {}) as Record<string, unknown>
+    if (data.location) contact.location = String(data.location)
+    if (data.phone) contact.phone = String(data.phone)
+    if (data.linkedin) contact.linkedin = String(data.linkedin)
+    if (data.github) contact.github = String(data.github)
+    if (op.field === "location") contact.location = String(op.to ?? "")
+    if (op.field === "phone") contact.phone = String(op.to ?? "")
+    if (op.field === "linkedin") contact.linkedin = String(op.to ?? "")
+    if (op.field === "github") contact.github = String(op.to ?? "")
+  }
+  return contact
 }
 
 function mapSuggestion(op: PatchOperationResponse): PreferenceSuggestion {
@@ -326,17 +359,26 @@ export function mapPendingPatchToReviewState(
     projects.push(mergeProjectUpdates(ops, evidenceById))
   }
 
-  const education = patch.education.map(mapEducation)
-  const constraints = patch.constraints.map(mapSuggestion)
-  const preferences = patch.preferences.map(mapSuggestion)
+  const education = patch.education
+    .filter((op) => op.op === "ADD_EDUCATION" || op.op === "ADD_EDUCATION_ENTRY" || op.op === "UPDATE_EDUCATION")
+    .map(mapEducation)
+  const contactOps = patch.education.filter(
+    (op) => op.op === "ADD_CONTACT" || op.op === "UPDATE_CONTACT",
+  )
+  const contact = contactOps.length > 0 ? mapContactFromOps(contactOps) : emptyContact()
+  const sectionOrderOp = patch.education.find((op) => op.op === "SET_SECTION_ORDER")
+  const resumeSectionOrder =
+    sectionOrderOp?.value === "experience_first" ? "experience_first" : "education_first"
 
   return {
     skills: patch.skills.map(mapSkill),
     experiences,
     projects,
     certifications: patch.certifications.map(mapCertification),
-    education,
-    preferences: [...constraints, ...preferences],
+    contact,
+    education: education.filter((e) => e.degree || e.university),
+    resumeSectionOrder,
+    preferences: [],
   }
 }
 
@@ -360,10 +402,6 @@ export function collectApprovedOperationIds(state: ReviewState): string[] {
   collect(state.projects, "approved")
   collect(state.certifications, "approved")
   collect(state.education, "approved")
-  collect(
-    state.preferences.map((p) => ({ id: p.id, status: p.status, operationIds: [p.id] })),
-    "confirmed",
-  )
 
   return ids
 }
@@ -374,7 +412,9 @@ export function emptyReviewState(): ReviewState {
     experiences: [],
     projects: [],
     certifications: [],
+    contact: emptyContact(),
     education: [],
+    resumeSectionOrder: "education_first",
     preferences: [],
   }
 }

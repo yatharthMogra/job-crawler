@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect } from "react"
-import { ProfileHome } from "@/components/profile/screens/profile-home"
+import { ProfileTabs } from "@/components/profile/profile-tabs"
+import { ProfileEditDialog } from "@/components/profile/profile-edit-dialog"
 import { useProfileFlow } from "@/components/profile/profile-flow-provider"
 import { useSession } from "@/components/session-provider"
 import { FeedSkeleton } from "@/components/card-skeleton"
@@ -15,7 +16,7 @@ export default function ProfilePage() {
     setEditSection,
     handleProfileEdit,
     loadProfileHome,
-    resetForNewResume,
+    openJobIntent,
   } = useProfileFlow()
 
   useEffect(() => {
@@ -27,8 +28,8 @@ export default function ProfilePage() {
   if (!profileHome) {
     return (
       <div>
-        <div className="border-b border-zinc-200 bg-zinc-50 px-6 py-3">
-          <h1 className="text-sm font-semibold text-zinc-900">Profile</h1>
+        <div className="border-b border-zinc-200/80 bg-white px-6 py-4">
+          <h1 className="text-lg font-bold tracking-tight text-zinc-900">Profile</h1>
         </div>
         <div className="px-6 py-4">
           <FeedSkeleton count={3} />
@@ -38,13 +39,28 @@ export default function ProfilePage() {
   }
 
   return (
-    <ProfileHome
-      data={profileHome}
-      rawProfile={rawProfile}
-      editSection={editSection}
-      onEditSection={setEditSection}
-      onEditSave={handleProfileEdit}
-      onUploadNew={resetForNewResume}
-    />
+    <>
+      <ProfileTabs
+        data={profileHome}
+        onEditSection={setEditSection}
+        onSetTargetRoles={openJobIntent}
+      />
+      <ProfileEditDialog
+        section={editSection}
+        onClose={() => setEditSection(null)}
+        onSave={handleProfileEdit}
+        initialValues={
+          editSection === "constraints"
+            ? (rawProfile?.constraints as Record<string, unknown>)
+            : editSection === "preferences"
+              ? (rawProfile?.preferences as Record<string, unknown>)
+              : editSection === "education"
+                ? (rawProfile?.education as Record<string, unknown>)
+                : undefined
+        }
+        contactValues={profileHome.contact}
+        eeoValues={profileHome.eeo}
+      />
+    </>
   )
 }

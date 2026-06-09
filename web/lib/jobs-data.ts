@@ -1,5 +1,13 @@
-export type EmploymentType = "FULLTIME" | "INTERNSHIP" | "CONTRACT"
+export type EmploymentType = "FULLTIME" | "PARTTIME" | "INTERNSHIP" | "CONTRACT"
 export type RemoteType = "remote" | "hybrid" | "onsite"
+export type SeniorityLevel =
+  | "internship"
+  | "new_grad"
+  | "early_career"
+  | "entry"
+  | "mid"
+  | "senior"
+  | "staff"
 export type Effort = "LOW" | "MEDIUM" | "HIGH"
 
 export interface Job {
@@ -10,6 +18,7 @@ export interface Job {
   salary_min: number | null
   salary_max: number | null
   employment_type: EmploymentType
+  seniority_level: SeniorityLevel
   remote_type: RemoteType
   application_effort: Effort
   posting_url: string
@@ -127,8 +136,31 @@ export const ALL_JOBS: Job[] = Array.from({ length: TOTAL }).map((_, i) => {
   const company = COMPANIES[Math.floor(rand() * COMPANIES.length)]
   const location = LOCATIONS[Math.floor(rand() * LOCATIONS.length)]
   const isIntern = role.title.includes("Intern")
-  const base = isIntern ? 8000 : 140000
-  const span = isIntern ? 4000 : 90000
+  const isNewGrad = role.title.includes("New Grad")
+  const isSenior = role.title.includes("Senior") || role.title.includes("Staff")
+  const seniority: SeniorityLevel = isIntern
+    ? "internship"
+    : isNewGrad
+      ? "new_grad"
+      : isSenior
+        ? "senior"
+        : rand() > 0.7
+          ? "early_career"
+          : rand() > 0.5
+            ? "mid"
+            : "entry"
+
+  const empRoll = rand()
+  const employment_type: EmploymentType = isIntern
+    ? "INTERNSHIP"
+    : empRoll > 0.88
+      ? "CONTRACT"
+      : empRoll > 0.82
+        ? "PARTTIME"
+        : "FULLTIME"
+
+  const base = isIntern ? 8000 : employment_type === "PARTTIME" ? 45000 : 140000
+  const span = isIntern ? 4000 : employment_type === "PARTTIME" ? 25000 : 90000
   const salaryMin = Math.round((base + rand() * span) / 1000) * 1000
   const salaryMax = salaryMin + Math.round((20000 + rand() * 45000) / 1000) * 1000
   const hoursAgo = Math.floor(rand() * 240)
@@ -139,9 +171,10 @@ export const ALL_JOBS: Job[] = Array.from({ length: TOTAL }).map((_, i) => {
     title: role.title,
     company,
     location: location.loc,
-    salary_min: salaryMin,
-    salary_max: salaryMax,
-    employment_type: isIntern ? "INTERNSHIP" : "FULLTIME",
+    salary_min: rand() > 0.08 ? salaryMin : null,
+    salary_max: rand() > 0.08 ? salaryMax : null,
+    employment_type,
+    seniority_level: seniority,
     remote_type: location.remote,
     application_effort: EFFORTS[Math.floor(rand() * EFFORTS.length)],
     posting_url: "https://vercel.com/careers",
