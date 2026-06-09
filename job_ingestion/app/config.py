@@ -12,8 +12,8 @@ class Settings(BaseSettings):
     llm_provider: str = "gemini"
     gemini_api_key: str = ""
     gemini_model: str = "gemini-3.1-flash-lite"
-    extraction_version: str = "v2"
-    default_extraction_version: str = "v2"
+    extraction_version: str = "v4"
+    default_extraction_version: str = "v4"
     opportunity_score_freshness_decay: float = 0.01
     comp_floor: int = 40_000
     comp_ceiling: int = 250_000
@@ -25,13 +25,14 @@ class Settings(BaseSettings):
     token_spike_threshold: int = 8000
     enrichment_micro_batch_size: int = 5
     enrichment_window_seconds: int = 60
-    enrichment_max_batches_per_window: int = 15
-    enrichment_max_jobs_per_window: int = 75
+    enrichment_max_batches_per_window: int = 12
+    enrichment_max_jobs_per_window: int = 60
+    enrichment_llm_max_rpm: int = 12
     enrichment_cooldown_seconds: int = 120
     enrichment_max_retries: int = 3
     enrichment_max_input_tokens_per_batch: int = 12000
     enrichment_window_token_budget: int = 200000
-    enrichment_token_estimation_strategy: str = "count_tokens"
+    enrichment_token_estimation_strategy: str = "chars"
     llm_input_token_cost_per_1k: float = 0.0015
     llm_output_token_cost_per_1k: float = 0.002
     log_level: str = "INFO"
@@ -49,6 +50,12 @@ class Settings(BaseSettings):
     @property
     def effort_scores(self) -> dict[str, float]:
         return {"LOW": 1.0, "MEDIUM": 0.6, "HIGH": 0.2}
+
+    @property
+    def enrichment_batch_interval_seconds(self) -> float:
+        rpm_cap = max(self.enrichment_llm_max_rpm, 1)
+        window_batches = min(self.enrichment_max_batches_per_window, rpm_cap)
+        return self.enrichment_window_seconds / window_batches
 
 
 @lru_cache(maxsize=1)

@@ -70,5 +70,293 @@
     "platform": "lever",
     "board_token": "slate",
     "is_active": true
+  },
+  {
+    "company": "Solink",
+    "platform": "ashby",
+    "board_token": "solink",
+    "is_active": true
+  },
+  {
+    "company": "Clarity Innovations",
+    "platform": "greenhouse",
+    "board_token": "clarityinnovates",
+    "is_active": true
+  },
+  {
+    "company": "iSpot",
+    "platform": "greenhouse",
+    "board_token": "ispottv",
+    "is_active": true
+  },
+  {
+    "company": "BillionToOne",
+    "platform": "greenhouse",
+    "board_token": "billiontoone",
+    "is_active": true
+  },
+  {
+    "company": "GenBio AI",
+    "platform": "lever",
+    "board_token": "genbio",
+    "is_active": true
+  },
+  {
+    "company": "Base Power Company",
+    "platform": "ashby",
+    "board_token": "base-power",
+    "is_active": true
+  },
+  {
+    "company": "PlusAI",
+    "platform": "lever",
+    "board_token": "plus-2",
+    "is_active": true
+  },
+  {
+    "company": "iHerb",
+    "platform": "greenhouse",
+    "board_token": "iherb",
+    "is_active": true
+  },
+  {
+    "company": "MaintainX",
+    "platform": "greenhouse",
+    "board_token": "maintainx",
+    "is_active": true
+  },
+  {
+    "company": "Great Question",
+    "platform": "ashby",
+    "board_token": "greatquestion",
+    "is_active": true
+  },
+  {
+    "company": "Reply",
+    "platform": "lever",
+    "board_token": "reply",
+    "is_active": true
+  },
+  {
+    "company": "Nuclear Promise X",
+    "platform": "ashby",
+    "board_token": "NPX",
+    "is_active": true
+  },
+  {
+    "company": "Nash",
+    "platform": "ashby",
+    "board_token": "Nash",
+    "is_active": true
+  },
+  {
+    "company": "Podium",
+    "platform": "greenhouse",
+    "board_token": "podium81",
+    "is_active": true
+  },
+  {
+    "company": "Docugami",
+    "platform": "greenhouse",
+    "board_token": "docugami",
+    "is_active": true
+  },
+  {
+    "company": "Astera Institute",
+    "platform": "ashby",
+    "board_token": "astera",
+    "is_active": true
+  },
+  {
+    "company": "Super.com",
+    "platform": "ashby",
+    "board_token": "super.com",
+    "is_active": true
+  },
+  {
+    "company": "EnergyHub",
+    "platform": "greenhouse",
+    "board_token": "energyhub",
+    "is_active": true
+  },
+  {
+    "company": "Zus Health",
+    "platform": "lever",
+    "board_token": "zushealth",
+    "is_active": true
+  },
+  {
+    "company": "NewsBreak",
+    "platform": "greenhouse",
+    "board_token": "newsbreak",
+    "is_active": true
+  },
+  {
+    "company": "Labelbox",
+    "platform": "greenhouse",
+    "board_token": "labelbox",
+    "is_active": true
+  },
+  {
+    "company": "Rainmaker Technology",
+    "platform": "lever",
+    "board_token": "make-rain",
+    "is_active": true
+  },
+  {
+    "company": "Kira",
+    "platform": "ashby",
+    "board_token": "kira",
+    "is_active": true
+  },
+  {
+    "company": "Axiomatic AI",
+    "platform": "greenhouse",
+    "board_token": "axiomaticai",
+    "is_active": true
+  },
+  {
+    "company": "Constant Contact",
+    "platform": "greenhouse",
+    "board_token": "constantcontact",
+    "is_active": true
+  },
+  {
+    "company": "Visier",
+    "platform": "greenhouse",
+    "board_token": "visiersolutionsinc",
+    "is_active": true
+  },
+  {
+    "company": "d-Matrix",
+    "platform": "ashby",
+    "board_token": "d-Matrix",
+    "is_active": true
+  },
+  {
+    "company": "Gelber Group",
+    "platform": "greenhouse",
+    "board_token": "gelbergroup",
+    "is_active": true
+  },
+  {
+    "company": "Mariana Minerals",
+    "platform": "ashby",
+    "board_token": "marianaminerals",
+    "is_active": true
+  },
+  {
+    "company": "Context",
+    "platform": "ashby",
+    "board_token": "context",
+    "is_active": true
+  },
+  {
+    "company": "XPENG",
+    "platform": "greenhouse",
+    "board_token": "xpengmotors",
+    "is_active": true
+  },
+  {
+    "company": "GeoComply",
+    "platform": "lever",
+    "board_token": "geocomply-2",
+    "is_active": true
+  },
+  {
+    "company": "EarnIn",
+    "platform": "greenhouse",
+    "board_token": "earnin",
+    "is_active": true
+  },
+  {
+    "company": "Lendbuzz",
+    "platform": "lever",
+    "board_token": "lendbuzz",
+    "is_active": true
+  },
+  {
+    "company": "Sunwater Capital",
+    "platform": "lever",
+    "board_token": "sunwatercapital",
+    "is_active": true
+  },
+  {
+    "company": "QuEra Computing",
+    "platform": "greenhouse",
+    "board_token": "queracomputinginc",
+    "is_active": true
+  },
+  {
+    "company": "Lambda",
+    "platform": "ashby",
+    "board_token": "lambda",
+    "is_active": true
+  },
+  {
+    "company": "Prosper",
+    "platform": "lever",
+    "board_token": "prosper",
+    "is_active": true
+  },
+  {
+    "company": "60 Decibels",
+    "platform": "greenhouse",
+    "board_token": "60decibelsinc",
+    "is_active": true
+  },
+  {
+    "company": "Voltus",
+    "platform": "lever",
+    "board_token": "voltus",
+    "is_active": true
+  },
+  {
+    "company": "Zone 5 Technologies",
+    "platform": "greenhouse",
+    "board_token": "zone5technologies",
+    "is_active": true
+  },
+  {
+    "company": "Anterior",
+    "platform": "ashby",
+    "board_token": "anterior",
+    "is_active": true
+  },
+  {
+    "company": "Mercedes-Benz R&D North America",
+    "platform": "lever",
+    "board_token": "MBRDNA",
+    "is_active": true
+  },
+  {
+    "company": "Per Scholas",
+    "platform": "greenhouse",
+    "board_token": "perscholashires",
+    "is_active": true
+  },
+  {
+    "company": "BrightAI",
+    "platform": "greenhouse",
+    "board_token": "brightai",
+    "is_active": true
+  },
+  {
+    "company": "Lila Sciences",
+    "platform": "greenhouse",
+    "board_token": "lilasciences",
+    "is_active": true
+  },
+  {
+    "company": "Melotech",
+    "platform": "ashby",
+    "board_token": "melotech",
+    "is_active": true
+  },
+  {
+    "company": "Wealth.com",
+    "platform": "ashby",
+    "board_token": "wealth-com",
+    "is_active": true
   }
 ]

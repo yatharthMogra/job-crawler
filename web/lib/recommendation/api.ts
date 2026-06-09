@@ -17,6 +17,7 @@ export interface DashboardJobApi {
   job_capabilities: string[]
   tech_stack: string[]
   skills: string[]
+  seniority: string
 }
 
 export interface RecommendedJobApi extends DashboardJobApi {

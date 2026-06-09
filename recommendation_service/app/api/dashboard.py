@@ -43,6 +43,7 @@ def _job_to_out(job: NormalizedJob) -> DashboardJobOut:
         job_capabilities=job.job_capabilities,
         tech_stack=job.tech_stack,
         skills=job.skills,
+        seniority=job.seniority,
     )
 
 

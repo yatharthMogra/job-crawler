@@ -7,6 +7,7 @@ import structlog
 from app.config import Settings
 from app.models.shared import NormalizedJob
 from app.scoring.location import location_alignment_score
+from app.scoring.seniority import seniority_score_multiplier
 from app.services.profile_loader import UserProfile
 
 log = structlog.get_logger(__name__)
@@ -22,13 +23,15 @@ def score_job(job: NormalizedJob, user_profile: UserProfile, settings: Settings)
         job_title=job.title,
     )
     comp_score = _compensation_alignment(job.salary_min, job.salary_max, user_profile.constraints)
+    seniority_multiplier = seniority_score_multiplier(job.seniority, user_profile.constraints)
 
-    return (
+    base_score = (
         settings.score_capability_weight * cap_score
         + settings.score_skill_weight * skill_score
         + settings.score_location_weight * loc_score
         + settings.score_compensation_weight * comp_score
     )
+    return base_score * seniority_multiplier
 
 
 def _capability_overlap(job_caps: list[str], user_caps: list[Any]) -> float:

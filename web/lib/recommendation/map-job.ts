@@ -1,5 +1,6 @@
 import type { DashboardJobApi, RecommendedJobApi } from "@/lib/recommendation/api"
 import type { Effort, EmploymentType, Job, RemoteType } from "@/lib/jobs-data"
+import { mapApiSeniorityToUi } from "@/lib/profile/seniority"
 
 function inferEmploymentType(pools: string[]): EmploymentType {
   if (pools.some((p) => p.endsWith("_INTERNSHIP"))) return "INTERNSHIP"
@@ -34,7 +35,7 @@ export function mapApiJobToUi(
     salary_min: job.salary_min,
     salary_max: job.salary_max,
     employment_type: inferEmploymentType(job.retrieval_pools ?? []),
-    seniority_level: "mid",
+    seniority_level: mapApiSeniorityToUi(job.seniority),
     remote_type: remote,
     application_effort: effort,
     posting_url: job.posting_url ?? "#",

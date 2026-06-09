@@ -26,21 +26,27 @@ def fmt_user(u: dict) -> list[str]:
     out.append("")
     out.append("| Field | Value |")
     out.append("|-------|-------|")
-    out.append(f"| Capabilities | {', '.join(u['capabilities'])} |")
+    out.append(f"| Capabilities | {', '.join(u['capabilities']) or '—'} |")
     prefs = u["preferences"]
     out.append(
         f"| Preferred locations | {', '.join(prefs.get('preferred_locations') or []) or '—'} |"
     )
     out.append(f"| Primary roles | {', '.join(prefs.get('primary_roles') or []) or '—'} |")
     constraints = u["constraints"]
+    target_seniority = constraints.get("target_seniority")
+    seniority_str = ", ".join(target_seniority) if isinstance(target_seniority, list) else "—"
     out.append(
         f"| Hard constraints | sponsorship={constraints.get('sponsorship_required')}, "
-        f"min_salary={constraints.get('minimum_salary')} |"
+        f"min_salary={constraints.get('minimum_salary')}, target_seniority={seniority_str} |"
     )
     out.append("")
     out.append("### Match summary")
     out.append("")
     out.append(f"- **Total jobs matching subscribed pools (after filters):** {u['total_matching_jobs']}")
+    out.append(
+        f"- **Personal score range:** {u.get('personal_score_min')} – {u.get('personal_score_max')} "
+        f"({u.get('personal_score_unique')} unique tiers)"
+    )
     out.append("- Pool tag counts (jobs can appear in multiple pools):")
     out.append("")
     out.append("| Pool | Job tag count |")
@@ -90,55 +96,38 @@ def fmt_user(u: dict) -> list[str]:
 
 def main() -> None:
     data = json.loads(JSON_PATH.read_text(encoding="utf-8"))
-    yatharth, ram = data[0], data[1]
-    y_scores = [j["personal_score"] for j in yatharth["personalized_ranked_all"] if j["personal_score"]]
-    r_scores = [j["personal_score"] for j in ram["personalized_ranked_all"] if j["personal_score"]]
-    y_ashby = sum(
-        1 for j in yatharth["personalized_ranked_all"] if j["company"] in ("Ramp", "Notion", "Linear")
-    )
-    r_ashby = sum(
-        1 for j in ram["personalized_ranked_all"] if j["company"] in ("Ramp", "Notion", "Linear")
-    )
+    generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     lines = [
         "# User Recommendation Results",
         "",
-        f"Generated {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')} after location scoring "
-        "fix + notification dedup (889/889 enriched jobs).",
+        f"Generated {generated} after v4 taxonomy enrichment (899/899 jobs, "
+        "Tier 1+2 business pools, seniority v3, gemini-3.1-flash-lite).",
         "",
-        "Pools synced via `PATCH /subscriptions`. Same subscription buckets as prior run.",
+        "Pools synced via `PATCH /subscriptions` from profile preferences or existing subscriptions.",
         "",
         "**Ranking modes:**",
         "- **Dashboard** — sorted by global `opportunity_score` (freshness + comp + effort)",
         "- **Personalized / Email** — sorted by profile match score "
-        "(capabilities 40%, skills 25%, location 20%, comp 15%)",
+        "(capabilities 40%, skills 25%, location 20%, comp 15%, seniority soft penalty)",
         "",
         "Full machine-readable export: [`exports/user_recommendations.json`](exports/user_recommendations.json)",
         "",
-        "## Changes vs prior run (pre-Ashby fix)",
+        "## Run summary",
         "",
-        "| Metric | Yatharth (before → now) | Ram (before → now) |",
-        "|--------|--------------------------|---------------------|",
-        f"| Matching jobs | 260 → **{yatharth['total_matching_jobs']}** | "
-        f"263 → **{ram['total_matching_jobs']}** |",
-        f"| Unique personal scores | ~6 flat tiers → **{len(set(y_scores))}** | "
-        f"~5 flat tiers → **{len(set(r_scores))}** |",
-        f"| Personal score range | 0.075–0.3417 → **{min(y_scores):.4f}–{max(y_scores):.4f}** | "
-        f"0.075–0.375 → **{min(r_scores):.4f}–{max(r_scores):.4f}** |",
-        "| Skills in top-4 | empty on most | **populated** |",
-        "| Ashby jobs in pool | 0 | **281 enriched** |",
-        f"| Ramp/Notion/Linear visible | 0 → **{y_ashby}** | 0 → **{r_ashby}** |",
-        "",
-        "**Observations:**",
-        "- Segment-aware location matcher now boosts NY-listed jobs when prefs are `NY, USA` / `New York, USA`.",
-        "- Notification top-4 dedupes same company+title across cities (keeps highest personal score).",
-        "- Yatharth top-4 is NY/SF-multi-city heavy (ScaleAI, Figma, Ramp) — no Doha/London/Mexico outliers.",
-        "- Ram top-4 includes Figma data science (#1) and Ramp data platform (#2).",
-        f"- Personal score spread: Yatharth {len(set(y_scores))} unique tiers, Ram {len(set(r_scores))} unique tiers.",
-        "",
-        "---",
-        "",
+        "| User | Matching jobs | Personal score range | Unique score tiers | Subscribed pools |",
+        "|------|---------------|----------------------|--------------------|------------------|",
     ]
+    for u in data:
+        pools = ", ".join(f"`{p}`" for p in u["subscribed_pools"][:4])
+        if len(u["subscribed_pools"]) > 4:
+            pools += f" (+{len(u['subscribed_pools']) - 4})"
+        lines.append(
+            f"| {u['name']} | {u['total_matching_jobs']} | "
+            f"{u.get('personal_score_min')}–{u.get('personal_score_max')} | "
+            f"{u.get('personal_score_unique')} | {pools} |"
+        )
+    lines.extend(["", "---", ""])
     for user in data:
         lines.extend(fmt_user(user))
 

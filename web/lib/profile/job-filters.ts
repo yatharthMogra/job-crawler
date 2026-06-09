@@ -2,6 +2,11 @@ import type { ProfileResponse } from "@/lib/profile/api-types"
 import { eeoFromApiPayload, eeoToApiPayload, type EeoState } from "@/lib/profile/eeo"
 import { poolIdsForRoles } from "@/lib/profile/role-catalog"
 import type { EmploymentSuffix } from "@/lib/profile/role-catalog"
+import {
+  experienceLevelsToTargetSeniority,
+  targetSeniorityToExperienceLevels,
+} from "@/lib/profile/seniority"
+import { EXPERIENCE_LEVELS } from "@/lib/profile/job-filters-constants"
 
 export interface JobFiltersState {
   primaryRoles: string[]
@@ -70,6 +75,13 @@ export function profileToJobFilters(profile: ProfileResponse): JobFiltersState {
         fulltimeOnly: Boolean(constraints.fulltime_only),
       } as JobFiltersState))
 
+  const targetSeniority = constraints.target_seniority as string[] | undefined
+  const experienceFromTarget = targetSeniorityToExperienceLevels(targetSeniority)
+  const experienceLevels =
+    experienceFromTarget.length > 0
+      ? experienceFromTarget
+      : ((preferences.experience_levels as string[]) ?? [])
+
   return {
     primaryRoles: (preferences.primary_roles as string[]) ?? [],
     secondaryRoles: (preferences.secondary_roles as string[]) ?? [],
@@ -77,7 +89,7 @@ export function profileToJobFilters(profile: ProfileResponse): JobFiltersState {
     internshipOnly: Boolean(constraints.internship_only),
     fulltimeOnly: Boolean(constraints.fulltime_only),
     workModels: (preferences.work_models as string[]) ?? [],
-    experienceLevels: (preferences.experience_levels as string[]) ?? [],
+    experienceLevels,
     minYearsExperience:
       preferences.min_years_experience != null
         ? Number(preferences.min_years_experience)
@@ -123,6 +135,7 @@ export function jobFiltersToApiPayload(state: JobFiltersState): {
           : null,
       exclude_security_clearance: state.excludeSecurityClearance,
       exclude_us_citizen_only: state.excludeUsCitizenOnly,
+      target_seniority: experienceLevelsToTargetSeniority(state.experienceLevels),
       eeo: eeoToApiPayload(state.eeo),
     },
     preferences: {
@@ -144,14 +157,7 @@ export function jobFiltersToApiPayload(state: JobFiltersState): {
   }
 }
 
-export const EXPERIENCE_LEVELS = [
-  "Intern/New Grad",
-  "Entry Level",
-  "Mid Level",
-  "Senior Level",
-  "Lead/Staff",
-  "Director/Executive",
-]
+export { EXPERIENCE_LEVELS } from "@/lib/profile/job-filters-constants"
 
 export const DATE_POSTED_OPTIONS = [
   { value: 1, label: "Past 24 hours" },

@@ -4,11 +4,16 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import and_, not_, select
+from sqlalchemy import and_, not_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.notification import NotificationJobHistory
 from app.models.shared import NormalizedJob
+from app.scoring.seniority import (
+    seniority_hard_block_values,
+    seniority_retrieval_values,
+    get_target_seniority,
+)
 from app.services.profile_loader import UserProfile
 
 
@@ -59,6 +64,20 @@ def build_constraint_filters(user_profile: UserProfile) -> list[Any]:
     if minimum_salary:
         filters.append(
             (NormalizedJob.salary_max.is_(None)) | (NormalizedJob.salary_max >= minimum_salary)
+        )
+
+    target_seniority = get_target_seniority(constraints)
+    allowed_values = seniority_retrieval_values(target_seniority)
+    if allowed_values:
+        filters.append(NormalizedJob.seniority.in_(list(allowed_values)))
+
+    blocked_values = seniority_hard_block_values(target_seniority)
+    if blocked_values:
+        filters.append(
+            or_(
+                NormalizedJob.seniority.is_(None),
+                NormalizedJob.seniority.notin_(list(blocked_values)),
+            )
         )
 
     return filters
