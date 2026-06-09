@@ -12,14 +12,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import Settings, get_settings
 from app.database import AsyncSessionLocal
 from app.ingestion.constants import FailureReason, ProcessingState
-from app.ingestion.extractor.llm import (
-    BatchJobEnrichment,
-    DEFAULT_ENRICHMENT,
-    enrich_job_batch_text,
-    enrichment_missing_skill_fields,
-)
+from app.ingestion.extractor.llm import BatchJobEnrichment, DEFAULT_ENRICHMENT, enrich_job_batch_text
 from app.ingestion.extractor.text_cleaner import clean_job_description
-from app.ingestion.recommendation_fields import assign_retrieval_pools, compute_opportunity_score
 from app.llm.factory import get_llm_provider
 from app.models.company import Company
 from app.models.enrichment_batch import EnrichmentBatch
@@ -80,18 +74,13 @@ class EnrichmentWorker:
 
     async def run_forever(self) -> None:
         while not self._stop.is_set():
-            batches_processed = 0
             try:
                 async with AsyncSessionLocal() as db:
-                    processed, batches_processed = await process_enrichment_window(
-                        db=db, settings=self._settings
-                    )
+                    processed = await process_enrichment_window(db=db, settings=self._settings)
+                    if processed > 0:
+                        continue
             except Exception:
-                processed = 0
-
-            if batches_processed > 0:
-                await asyncio.sleep(self._settings.enrichment_window_seconds)
-                continue
+                pass
 
             self._wake.clear()
             try:
@@ -240,11 +229,7 @@ def _allocate_tokens(total_tokens: int, estimates: list[int]) -> list[int]:
     return allocations
 
 
-def _apply_enrichment_to_job(
-    normalized: NormalizedJob,
-    enrichment: BatchJobEnrichment,
-    settings: Settings,
-) -> None:
+def _apply_enrichment_to_job(normalized: NormalizedJob, enrichment: BatchJobEnrichment) -> None:
     normalized.seniority = enrichment.seniority
     normalized.is_internship = enrichment.is_internship
     normalized.is_new_grad = enrichment.is_new_grad
@@ -253,59 +238,9 @@ def _apply_enrichment_to_job(
     normalized.remote_type = enrichment.remote_type
     normalized.tech_stack = enrichment.tech_stack
     normalized.skills = enrichment.skills
-    normalized.normalized_roles = list(enrichment.normalized_roles)
-    normalized.job_capabilities = list(enrichment.job_capabilities)
-    normalized.application_effort = enrichment.application_effort
-    normalized.salary_min = enrichment.salary_min
-    normalized.salary_max = enrichment.salary_max
-    normalized.retrieval_pools = assign_retrieval_pools(
-        normalized.normalized_roles,
-        normalized.is_internship,
-        normalized.is_new_grad,
-    )
-    now = _utcnow()
-    normalized.opportunity_score = compute_opportunity_score(
-        normalized.posted_at,
-        normalized.salary_min,
-        normalized.salary_max,
-        normalized.application_effort,
-        settings=settings,
-    )
-    normalized.opportunity_score_computed_at = now
     normalized.processing_state = ProcessingState.SUCCESS
     normalized.failure_reason = None
     normalized.last_failure_at = None
-
-
-def _recommendation_fields_from_enrichment(
-    normalized: NormalizedJob,
-    enrichment: BatchJobEnrichment,
-    settings: Settings,
-) -> dict:
-    normalized_roles = list(enrichment.normalized_roles)
-    retrieval_pools = assign_retrieval_pools(
-        normalized_roles,
-        enrichment.is_internship,
-        enrichment.is_new_grad,
-    )
-    computed_at = _utcnow()
-    opportunity_score = compute_opportunity_score(
-        normalized.posted_at,
-        enrichment.salary_min,
-        enrichment.salary_max,
-        enrichment.application_effort,
-        settings=settings,
-    )
-    return {
-        "normalized_roles": normalized_roles,
-        "job_capabilities": list(enrichment.job_capabilities),
-        "application_effort": enrichment.application_effort,
-        "retrieval_pools": retrieval_pools,
-        "salary_min": enrichment.salary_min,
-        "salary_max": enrichment.salary_max,
-        "opportunity_score": opportunity_score,
-        "opportunity_score_computed_at": computed_at,
-    }
 
 
 def _mark_for_retry(
@@ -423,53 +358,7 @@ async def _process_batch(
                 )
                 continue
 
-            if enrichment_missing_skill_fields(
-                enrichment.tech_stack,
-                enrichment.skills,
-                description_chars=len(row.clean_text),
-                normalized_roles=list(enrichment.normalized_roles),
-            ):
-                row.normalized.processing_state = ProcessingState.PARTIAL_SUCCESS
-                row.normalized.failure_reason = FailureReason.EMPTY_SKILL_EXTRACTION
-                row.normalized.last_failure_at = _utcnow()
-                _mark_for_retry(
-                    queue_row=row.queue_row,
-                    settings=settings,
-                    failure_reason=FailureReason.EMPTY_SKILL_EXTRACTION,
-                    error_message="LLM returned empty tech_stack and skills for substantive description.",
-                )
-                if item is not None:
-                    item.status = "failed"
-                    item.failure_reason = FailureReason.EMPTY_SKILL_EXTRACTION
-                    item.actual_input_tokens = input_tokens
-                    item.actual_output_tokens = output_tokens
-                db.add(
-                    JobEnrichment(
-                        normalized_job_id=row.normalized.id,
-                        raw_job_id=row.raw_job.id,
-                        enrichment_batch_id=batch.id,
-                        llm_provider=settings.llm_provider,
-                        llm_model=settings.gemini_model if settings.llm_provider == "gemini" else None,
-                        extraction_version=settings.extraction_version,
-                        seniority=enrichment.seniority,
-                        is_internship=enrichment.is_internship,
-                        is_new_grad=enrichment.is_new_grad,
-                        sponsorship_status=enrichment.sponsorship_status,
-                        sponsorship_confidence=enrichment.sponsorship_confidence,
-                        remote_type=enrichment.remote_type,
-                        tech_stack=enrichment.tech_stack,
-                        skills=enrichment.skills,
-                        input_tokens=input_tokens,
-                        output_tokens=output_tokens,
-                        latency_ms=result.latency_ms,
-                        status="failed",
-                        failure_reason=FailureReason.EMPTY_SKILL_EXTRACTION,
-                    )
-                )
-                continue
-
-            _apply_enrichment_to_job(row.normalized, enrichment, settings)
-            recommendation_fields = _recommendation_fields_from_enrichment(row.normalized, enrichment, settings)
+            _apply_enrichment_to_job(row.normalized, enrichment)
             row.queue_row.status = "completed"
             row.queue_row.next_retry_at = None
             row.queue_row.last_failure_reason = None
@@ -494,7 +383,6 @@ async def _process_batch(
                     remote_type=enrichment.remote_type,
                     tech_stack=enrichment.tech_stack,
                     skills=enrichment.skills,
-                    **recommendation_fields,
                     input_tokens=input_tokens,
                     output_tokens=output_tokens,
                     latency_ms=result.latency_ms,
@@ -562,9 +450,7 @@ async def _process_batch(
     batch.latency_ms = int((batch.completed_at - started).total_seconds() * 1000)
 
 
-async def process_enrichment_window(
-    db: AsyncSession, settings: Optional[Settings] = None
-) -> tuple[int, int]:
+async def process_enrichment_window(db: AsyncSession, settings: Optional[Settings] = None) -> int:
     settings = settings or get_settings()
     now = _utcnow()
     eligible = and_(
@@ -597,22 +483,21 @@ async def process_enrichment_window(
     candidates = first_work + retry_work
     if not candidates:
         await db.commit()
-        return 0, 0
+        return 0
 
     batches, deferred = _pack_batches(settings=settings, items=candidates)
     for row in deferred:
         row.queue_row.status = "queued"
     if not batches:
         await db.commit()
-        return 0, 0
+        return 0
 
-    batches = batches[: settings.enrichment_max_batches_per_window]
     processed_jobs = 0
     for batch in batches:
         await _process_batch(db=db, settings=settings, batch_items=batch, source="worker")
         processed_jobs += len(batch)
         await db.commit()
-    return processed_jobs, len(batches)
+    return processed_jobs
 
 
 async def process_job_immediately(

@@ -15,7 +15,13 @@ from app.exceptions import ConflictError, NotFoundError
 from app.models.candidate import Candidate
 from app.models.resume import CandidateResume
 from app.pipeline.patch_engine import process_resume_upload
-from app.schemas.candidate import CandidateCreate, CandidateResponse, ResumeResponse, ResumeUploadResponse
+from app.schemas.candidate import (
+    CandidateCreate,
+    CandidateResponse,
+    ResumeLabelUpdate,
+    ResumeResponse,
+    ResumeUploadResponse,
+)
 
 router = APIRouter(prefix="/candidates", tags=["candidates"], dependencies=[Depends(require_api_key)])
 
@@ -112,4 +118,21 @@ async def get_resume(
     resume = await db.get(CandidateResume, resume_id)
     if resume is None or resume.candidate_id != candidate_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resume not found")
+    return ResumeResponse.model_validate(resume)
+
+
+@router.patch("/{candidate_id}/resumes/{resume_id}", response_model=ResumeResponse)
+async def update_resume_label(
+    candidate_id: uuid.UUID,
+    resume_id: uuid.UUID,
+    payload: ResumeLabelUpdate,
+    db: AsyncSession = Depends(get_db),
+) -> ResumeResponse:
+    await _get_candidate_or_404(db, candidate_id)
+    resume = await db.get(CandidateResume, resume_id)
+    if resume is None or resume.candidate_id != candidate_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resume not found")
+    resume.display_label = payload.display_label
+    await db.commit()
+    await db.refresh(resume)
     return ResumeResponse.model_validate(resume)

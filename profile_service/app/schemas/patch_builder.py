@@ -34,7 +34,14 @@ def build_pending_patch_response(patch: CandidatePatch) -> PendingPatchResponse:
                 projects.append(operation)
             case "ADD_CERTIFICATION":
                 certifications.append(operation)
-            case "ADD_EDUCATION" | "UPDATE_EDUCATION":
+            case (
+                "ADD_EDUCATION"
+                | "UPDATE_EDUCATION"
+                | "ADD_EDUCATION_ENTRY"
+                | "ADD_CONTACT"
+                | "UPDATE_CONTACT"
+                | "SET_SECTION_ORDER"
+            ):
                 education.append(operation)
             case "ADD_CONSTRAINT_SUGGESTION":
                 constraints.append(operation)

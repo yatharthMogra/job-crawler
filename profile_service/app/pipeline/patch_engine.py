@@ -129,11 +129,31 @@ def _apply_preference_ops(ops: list[dict[str, Any]], preferences: dict[str, Any]
 
 def _apply_education_ops(ops: list[dict[str, Any]], education: dict[str, Any]) -> dict[str, Any]:
     updated = dict(education)
+    contact = dict(updated.get("contact") or {})
+    entries = list(updated.get("entries") or [])
+
     for op in ops:
         if op["op"] == "ADD_EDUCATION":
             updated.update(op["data"])
+            if "contact" in op["data"]:
+                contact.update(op["data"]["contact"] or {})
+            if "entries" in op["data"]:
+                entries.extend(op["data"]["entries"] or [])
         elif op["op"] == "UPDATE_EDUCATION":
             updated[op["field"]] = op["to"]
+        elif op["op"] == "ADD_CONTACT":
+            contact.update(op["data"])
+        elif op["op"] == "UPDATE_CONTACT":
+            contact[op["field"]] = op["to"]
+        elif op["op"] == "ADD_EDUCATION_ENTRY":
+            entries.append(op["data"])
+        elif op["op"] == "SET_SECTION_ORDER":
+            updated["section_order"] = op["value"]
+
+    if contact:
+        updated["contact"] = contact
+    if entries:
+        updated["entries"] = entries
     return updated
 
 
@@ -365,11 +385,26 @@ async def write_profile_section(
         current_version = 0
 
     if section == "constraints":
-        constraints.update(new_values)
+        if "eeo" in new_values and isinstance(new_values["eeo"], dict):
+            merged_eeo = dict(constraints.get("eeo") or {})
+            merged_eeo.update(new_values["eeo"])
+            constraints = {**constraints, **{k: v for k, v in new_values.items() if k != "eeo"}}
+            constraints["eeo"] = merged_eeo
+        else:
+            constraints.update(new_values)
     elif section == "preferences":
         preferences.update(new_values)
     elif section == "education":
-        education.update(new_values)
+        if "contact" in new_values and isinstance(new_values["contact"], dict):
+            merged_contact = dict(education.get("contact") or {})
+            merged_contact.update(new_values["contact"])
+            education = {**education, **{k: v for k, v in new_values.items() if k != "contact"}}
+            education["contact"] = merged_contact
+        elif "entries" in new_values and isinstance(new_values["entries"], list):
+            education = {**education, **{k: v for k, v in new_values.items() if k != "entries"}}
+            education["entries"] = new_values["entries"]
+        else:
+            education.update(new_values)
     else:
         raise ValueError(f"Unknown section: {section}")
 

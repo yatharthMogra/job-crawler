@@ -67,3 +67,24 @@ class TestDiffEngine:
         ops = compute_proposed_operations(extracted, None, [evidence])
         update_ops = [op for op in ops if op["op"] == "UPDATE_EXPERIENCE"]
         assert update_ops
+
+    def test_does_not_emit_constraint_or_preference_suggestions(self) -> None:
+        extracted = LLMExtractionOutput(
+            skills=ExtractedSkills(languages=["Python"]),
+            experiences=[
+                ExtractedExperience(
+                    title="Software Engineer Intern",
+                    company="Acme",
+                    duration_months=6,
+                    domains=["FinTech"],
+                    evidence_keywords=["Python", "APIs"],
+                )
+            ],
+        )
+        ops = compute_proposed_operations(extracted, None, [])
+        suggestion_ops = {
+            op["op"]
+            for op in ops
+            if op["op"] in ("ADD_CONSTRAINT_SUGGESTION", "ADD_PREFERENCE_SUGGESTION")
+        }
+        assert suggestion_ops == set()

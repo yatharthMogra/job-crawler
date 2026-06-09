@@ -40,6 +40,7 @@ class ConstraintsUpdate(BaseModel):
     fulltime_only: bool | None = None
     minimum_salary: float | None = None
     minimum_hourly_rate: float | None = None
+    eeo: dict[str, Any] | None = None
 
 
 class PreferencesUpdate(BaseModel):
@@ -53,10 +54,28 @@ class PreferencesUpdate(BaseModel):
     preferred_industries: list[str] | None = None
 
 
+class EducationContactUpdate(BaseModel):
+    location: str | None = None
+    phone: str | None = None
+    linkedin: str | None = None
+    github: str | None = None
+
+
+class EducationEntryUpdate(BaseModel):
+    level: str
+    degree: str | None = None
+    university: str | None = None
+    graduation_date: str | None = None
+    gpa: str | None = None
+
+
 class EducationUpdate(BaseModel):
     degree: str | None = None
     university: str | None = None
     graduation_date: str | None = None
+    gpa: str | None = None
+    contact: EducationContactUpdate | None = None
+    entries: list[EducationEntryUpdate] | None = None
 
 
 class CapabilityResponse(BaseModel):

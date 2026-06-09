@@ -32,8 +32,13 @@ class ResumeResponse(BaseModel):
     extraction_status: str
     uploaded_at: datetime
     parsed_at: datetime | None
+    display_label: str | None = None
 
     model_config = {"from_attributes": True}
+
+
+class ResumeLabelUpdate(BaseModel):
+    display_label: str | None = Field(default=None, max_length=128)
 
 
 class ResumeUploadResponse(BaseModel):

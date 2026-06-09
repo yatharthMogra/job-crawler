@@ -68,15 +68,40 @@ candidate_profile:
 
         type: string
 
+      contact:
+        description: >
+          Contact details parsed from resume and editable on profile home.
+
+        fields:
+          location:
+            examples: ["New York, NY"]
+          phone:
+            examples: ["+1 (212) 555-0142"]
+          linkedin:
+            examples: ["linkedin.com/in/alexrivera"]
+          github:
+            examples: ["github.com/alexrivera"]
+
       education:
         description: >
-          Current or most recent educational qualification.
+          Education history parsed from resume. Supports multiple degrees.
 
         fields:
 
+          entries:
+            description: >
+              List of education records (undergrad, masters, etc.).
+
+            object_structure:
+              level: "masters | undergrad | doctoral | other"
+              degree: "MS Computer Science"
+              university: "NYU"
+              graduation_date: "2027-05"
+              gpa: "3.92"
+
           degree:
             description: >
-              Degree currently being pursued or completed.
+              Legacy single-degree field for backward compatibility.
 
             examples:
               - "MS Computer Science"
@@ -97,6 +122,12 @@ candidate_profile:
             type: string
 
             example: "2027-05"
+
+          gpa:
+            description: >
+              GPA when present on resume.
+
+            example: "3.92"
 
   constraints:
     description: >
@@ -155,6 +186,22 @@ candidate_profile:
         type: integer
 
         example: 25
+
+      eeo:
+        description: >
+          Equal employment authorization responses for US job applications.
+          User-entered during job intent; used for future auto-fill.
+
+        fields:
+          authorized_to_work_us: boolean
+          has_disability: boolean
+          gender: string
+          requires_sponsorship: boolean
+          identifies_lgbtq: boolean
+          is_veteran: boolean
+          race: string
+          hispanic_latino: boolean
+          sexual_orientation: string
 
   preferences:
     description: >

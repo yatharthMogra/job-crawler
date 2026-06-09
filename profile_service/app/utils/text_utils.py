@@ -107,6 +107,7 @@ def default_constraints() -> dict:
         "fulltime_only": False,
         "minimum_salary": None,
         "minimum_hourly_rate": None,
+        "eeo": {},
     }
 
 
@@ -137,7 +138,16 @@ def default_skills() -> dict:
 
 def default_education() -> dict:
     return {
+        "section_order": "education_first",
+        "contact": {
+            "location": None,
+            "phone": None,
+            "linkedin": None,
+            "github": None,
+        },
+        "entries": [],
         "degree": None,
         "university": None,
         "graduation_date": None,
+        "gpa": None,
     }

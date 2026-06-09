@@ -68,13 +68,8 @@ def _extract_lever(job: dict[str, Any]) -> dict[str, Any]:
 
 
 def _extract_ashby(job: dict[str, Any]) -> dict[str, Any]:
-    secondary_names = job.get("secondaryLocationNames")
-    if isinstance(secondary_names, list):
-        secondary_location_names = [name for name in secondary_names if name]
-    else:
-        secondary_locations = job.get("secondaryLocations") or []
-        secondary_location_names = [loc.get("locationName") for loc in secondary_locations if loc.get("locationName")]
-    location_parts = [job.get("locationName")] + secondary_location_names
+    secondary_locations = job.get("secondaryLocations") or []
+    location_parts = [job.get("locationName")] + [loc.get("locationName") for loc in secondary_locations]
     location = " | ".join([part for part in location_parts if part])
     return {
         "external_job_id": str(job.get("id")),
@@ -82,7 +77,7 @@ def _extract_ashby(job: dict[str, Any]) -> dict[str, Any]:
         "location": location or None,
         "department": job.get("departmentName"),
         "posting_url": job.get("externalLink"),
-        "posted_at": _parse_iso_datetime(job.get("publishedDate") or job.get("publishedAt")),
+        "posted_at": _parse_iso_datetime(job.get("publishedAt")),
         "employment_type": job.get("employmentType"),
         "raw_html": job.get("descriptionHtml") or "",
     }

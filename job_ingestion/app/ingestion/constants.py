@@ -22,7 +22,6 @@ class FailureReason:
     TOKEN_LIMIT_EXCEEDED = "token_limit_exceeded"
     UNSUPPORTED_PLATFORM = "unsupported_platform"
     EXTRACTION_EXCEPTION = "extraction_exception"
-    EMPTY_SKILL_EXTRACTION = "empty_skill_extraction"
 
 
 class EventType:

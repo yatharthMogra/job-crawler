@@ -44,10 +44,27 @@ class ExtractedCertification(BaseModel):
     issuer: str
 
 
+class ExtractedContact(BaseModel):
+    location: str | None = None
+    phone: str | None = None
+    linkedin: str | None = None
+    github: str | None = None
+    email: str | None = None
+
+
+class ExtractedEducationEntry(BaseModel):
+    level: Literal["masters", "undergrad", "doctoral", "other"] = "other"
+    degree: str | None = None
+    university: str | None = None
+    graduation_date: str | None = None
+    gpa: str | None = None
+
+
 class ExtractedEducation(BaseModel):
     degree: str | None = None
     university: str | None = None
     graduation_date: str | None = None
+    gpa: str | None = None
 
 
 class ExtractedSkills(BaseModel):
@@ -60,20 +77,7 @@ class ExtractedSkills(BaseModel):
     product: list[str] = Field(default_factory=list)
 
 
-class ConstraintSuggestions(BaseModel):
-    sponsorship_required: bool | None = None
-    visa_type: str | None = None
-    work_authorization: str | None = None
-    internship_only: bool | None = None
-    fulltime_only: bool | None = None
-
-
-class PreferenceSuggestions(BaseModel):
-    primary_roles: list[str] = Field(default_factory=list)
-    secondary_roles: list[str] = Field(default_factory=list)
-    preferred_locations: list[str] = Field(default_factory=list)
-    remote_preference: str | None = None
-    preferred_industries: list[str] = Field(default_factory=list)
+SectionOrder = Literal["education_first", "experience_first"]
 
 
 class LLMExtractionOutput(BaseModel):
@@ -81,9 +85,10 @@ class LLMExtractionOutput(BaseModel):
     projects: list[ExtractedProject] = Field(default_factory=list)
     certifications: list[ExtractedCertification] = Field(default_factory=list)
     education: ExtractedEducation = Field(default_factory=ExtractedEducation)
+    education_entries: list[ExtractedEducationEntry] = Field(default_factory=list)
+    contact: ExtractedContact = Field(default_factory=ExtractedContact)
     skills: ExtractedSkills = Field(default_factory=ExtractedSkills)
-    constraint_suggestions: ConstraintSuggestions = Field(default_factory=ConstraintSuggestions)
-    preference_suggestions: PreferenceSuggestions = Field(default_factory=PreferenceSuggestions)
+    section_order: SectionOrder = "education_first"
 
 
 class InferredCapability(BaseModel):
@@ -101,9 +106,17 @@ Rules:
 - Extract ONLY information explicitly present in the resume text.
 - Do not infer, embellish, or hallucinate details.
 - evidence_keywords must be normalized technical/architectural signals, not raw bullet text.
-- For constraint and preference suggestions: only suggest when there are clear signals. Leave null if uncertain.
+- Do NOT infer job search preferences, target roles, visa status, sponsorship needs, or location preferences.
+- Experience titles are historical job titles from the resume, not target roles the candidate wants to pursue.
 - duration_months: compute from date ranges if present. If only year given, estimate conservatively.
-- education: extract degree, university, and graduation_date when present.
+- education_entries: extract each degree separately (undergrad, masters, doctoral) with school, degree, graduation_date, and GPA when present.
+- contact: extract location, phone, linkedin, github, and email when explicitly present in the resume header or contact section.
+- education (legacy single object): populate with the most recent or highest degree when education_entries is empty.
+- section_order: set to education_first when the Education section appears before Experience/Work Experience in the resume; set to experience_first when Experience appears first. Default to education_first for students and early-career resumes when unclear.
+- skills: exhaustively parse dedicated Technical Skills / Skills / Core Competencies sections.
+  Include every skill listed there (comma-separated lists, bullet lists, and category subsections).
+  Map each skill to the best matching category (languages, frameworks, databases, cloud, ai_ml, infrastructure, product).
+  Do not omit skills that appear only in a skills section and not in job bullets.
 
 Return a single JSON object matching the provided schema exactly."""
 

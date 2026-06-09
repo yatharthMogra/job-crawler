@@ -26,7 +26,9 @@ Resume Upload Screen
         ↓
 Processing State (loading)
         ↓
-Review Screen  ←──── (most important screen)
+Evidence Review Screen  ←──── Step 1: skills & experience only
+        ↓
+Job Intent Screen       ←──── Step 2: user-defined roles & constraints
         ↓
 Confirmation Screen
         ↓
@@ -49,7 +51,7 @@ Clean centered card. Minimal chrome.
 
 **Header:**
 - Title: "Build your profile"
-- Subtitle: "Upload your resume and we'll extract your experience, skills, and projects."
+- Subtitle: "Upload your resume and we'll extract your experience, skills, and projects. You choose what roles to pursue."
 
 **Upload Zone:**
 - Large drag-and-drop area
@@ -138,9 +140,9 @@ Sections in order:
 2. Experiences
 3. Projects
 4. Certifications
-5. Preferences & Constraints
-
 Clicking a section scrolls right panel to that section.
+
+Note: Target roles, constraints, and location preferences are **not** part of resume review. They are collected on the separate Job Intent screen (Step 2).
 
 ---
 
@@ -334,12 +336,12 @@ Experiences (1)
 Projects (2)
   SpecterRossAI, DocuFlow
 
-Capabilities generated:
-  Backend Engineering · AI Systems · Distributed Systems
+Target roles:
+  Primary: Software Engineer Intern
 ```
 
 **Note:**
-- "Your capabilities have been automatically updated based on your approved evidence."
+- Capability inference runs in the background for future job matching; it is not shown on Profile Home.
 
 **Action button:**
 - "View my profile →"
@@ -365,22 +367,34 @@ Single-column, structured sections. Not a dense dashboard — clean and readable
 
 ---
 
-### Capabilities Section (top of profile)
+### Target Roles Section (top of profile)
 
-Shown prominently since this is what the recommendation engine uses.
+User-chosen roles drive job recommendations — not resume inference.
 
 ```
-Your Capabilities  ──────────────────────────────
+Target Roles  ──────────────────────────────  [Edit]
 
-  Backend Engineering      ████████████  Supported by: Walmart, APIs
-  AI Systems               ████████████  Supported by: SpecterRossAI, RAG
-  Distributed Systems      ████████         Supported by: Walmart, Kafka
-  Full Stack Development   ██████           Supported by: SpecterRossAI
+  Primary: Software Engineer Intern · AI Engineer Intern
+  Secondary: Data Scientist Intern
 ```
 
-Visual bar is proportional to evidence depth (number of supporting evidence items), not a numeric score.
+---
 
-Hovering/tapping a capability shows the evidence list in a tooltip.
+### Your Resumes Section
+
+Multiple resumes are supported. Users label each resume on the profile home (not at upload time).
+
+```
+Your Resumes
+
+  resume_swe.pdf · uploaded 2 days ago
+  Label: [Software Engineering focused]
+
+  resume_de.pdf · uploaded 1 week ago
+  Label: [Data Engineering backup]
+
+  [+ Upload another resume]
+```
 
 ---
 
@@ -452,5 +466,6 @@ Profile version 4 · Last updated 2 hours ago · Built from 3 resumes
 - **Every mutation requires a decision.** No auto-approve. No silent saves.
 - **Reject is always safe.** Rejecting a change has no side effects. Users can always re-upload.
 - **Edit is always available.** If the LLM got something slightly wrong, users can fix it inline before approving.
-- **Capabilities are shown as outcomes, not scores.** No percentages or numeric confidence values. Evidence links tell the story.
+- **Capabilities are not shown on Profile Home.** Inference runs internally for future job matching only; the UI avoids bias-inducing strength bars.
+- **Target roles are user-defined.** They drive recommendations, not resume-derived domain labels.
 - **Preferences section is clearly flagged as suggestions.** These are not facts — the UI language reflects that.

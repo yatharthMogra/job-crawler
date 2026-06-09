@@ -34,6 +34,7 @@ class CandidateResume(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     parsed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    display_label: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
 
     candidate: Mapped["Candidate"] = relationship(back_populates="resumes")
     evidence: Mapped[list["CandidateEvidence"]] = relationship(back_populates="source_resume")
