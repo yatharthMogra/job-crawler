@@ -3,9 +3,15 @@
 import { useCallback, useRef, useState } from "react"
 import { Brand } from "@/components/profile/brand"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
+import {
+  FlowPage,
+  FlowPageContent,
+  FlowPageHeader,
+  FlowPageHero,
+  FlowPanel,
+} from "@/components/ui/flow-page"
 import { cn } from "@/lib/utils"
-import { CheckCircle2, FileText, UploadCloud, X } from "lucide-react"
+import { CheckCircle2, FileText, ShieldCheck, UploadCloud, X } from "lucide-react"
 
 interface UploadScreenProps {
   onAnalyze: (file: File) => void
@@ -49,22 +55,21 @@ export function UploadScreen({ onAnalyze, error: externalError }: UploadScreenPr
     : ""
 
   return (
-    <main className="flex min-h-screen flex-col items-center bg-background px-6 py-10">
-      <header className="w-full max-w-xl">
+    <FlowPage>
+      <FlowPageHeader>
         <Brand />
-      </header>
+      </FlowPageHeader>
 
-      <div className="flex w-full max-w-xl flex-1 flex-col justify-center py-10">
-        <div className="mb-8 text-center">
-          <h1 className="text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-            Build your profile
-          </h1>
-          <p className="mx-auto mt-3 max-w-md text-pretty leading-relaxed text-muted-foreground">
-            Upload your resume and we&apos;ll extract your experience, skills, and projects.
-          </p>
-        </div>
+      <FlowPageContent>
+        <FlowPageHero
+          icon={UploadCloud}
+          iconTone="brand"
+          step={{ current: 2, total: 4, label: "Upload resume" }}
+          title="Build your profile"
+          description="Drop your resume and we'll extract experience, skills, and education — you'll approve every change before it's saved."
+        />
 
-        <Card className="p-6 sm:p-8">
+        <FlowPanel>
           <div
             role="button"
             tabIndex={0}
@@ -81,9 +86,11 @@ export function UploadScreen({ onAnalyze, error: externalError }: UploadScreenPr
             }}
             onClick={() => inputRef.current?.click()}
             className={cn(
-              "flex cursor-pointer flex-col items-center rounded-xl border-2 border-dashed px-6 py-10 text-center transition-colors",
-              dragging ? "border-primary bg-accent/50" : "border-border hover:border-primary/40",
-              error ? "border-remove" : file ? "border-add/50" : "",
+              "flex cursor-pointer flex-col items-center rounded-xl border-2 border-dashed px-6 py-12 text-center transition-all",
+              dragging
+                ? "scale-[1.01] border-primary bg-accent/60 shadow-inner"
+                : "border-border bg-gradient-to-b from-surface/80 to-accent/20 hover:border-primary/50 hover:shadow-md",
+              error ? "border-remove" : file ? "border-add/60 bg-add-muted/20" : "",
             )}
           >
             <input
@@ -95,15 +102,30 @@ export function UploadScreen({ onAnalyze, error: externalError }: UploadScreenPr
             />
             {file ? (
               <>
-                <CheckCircle2 className="mb-3 size-10 text-add" aria-hidden="true" />
-                <p className="font-medium text-foreground">{file.name}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{displaySize}</p>
+                <span className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-add-muted text-add">
+                  <CheckCircle2 className="size-7" aria-hidden="true" />
+                </span>
+                <p className="text-base font-semibold text-foreground">{file.name}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{displaySize} · Ready to analyze</p>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setFile(null)
+                  }}
+                  className="mt-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <X className="size-3" />
+                  Choose a different file
+                </button>
               </>
             ) : (
               <>
-                <UploadCloud className="mb-3 size-10 text-muted-foreground" aria-hidden="true" />
-                <p className="font-medium text-foreground">Drag your resume here or click to browse</p>
-                <p className="mt-2 text-sm text-muted-foreground">PDF only · Max 5MB</p>
+                <span className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-accent text-primary">
+                  <UploadCloud className="size-7" aria-hidden="true" />
+                </span>
+                <p className="text-base font-semibold text-foreground">Drag your resume here</p>
+                <p className="mt-1 text-sm text-muted-foreground">or click to browse · PDF only · Max 5MB</p>
               </>
             )}
           </div>
@@ -111,7 +133,7 @@ export function UploadScreen({ onAnalyze, error: externalError }: UploadScreenPr
           {error ? <p className="mt-3 text-sm text-remove">{error}</p> : null}
 
           <Button
-            className="mt-6 w-full"
+            className="btn-brand mt-6 h-11 w-full"
             size="lg"
             disabled={!file || uploading}
             onClick={handleAnalyze}
@@ -121,16 +143,20 @@ export function UploadScreen({ onAnalyze, error: externalError }: UploadScreenPr
             ) : (
               <>
                 <FileText className="size-4" aria-hidden="true" />
-                Analyze Resume
+                Analyze my resume
               </>
             )}
           </Button>
 
-          <p className="mt-4 text-center text-xs leading-relaxed text-muted-foreground">
-            We&apos;ll show you exactly what we found before anything is saved to your profile.
-          </p>
-        </Card>
-      </div>
-    </main>
+          <div className="mt-5 flex items-start gap-2 rounded-lg border border-border/60 bg-surface/60 px-3 py-2.5">
+            <ShieldCheck className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden="true" />
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Nothing is saved until you review and approve. You&apos;ll see every addition, update,
+              and removal first.
+            </p>
+          </div>
+        </FlowPanel>
+      </FlowPageContent>
+    </FlowPage>
   )
 }

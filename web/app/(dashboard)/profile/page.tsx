@@ -28,8 +28,8 @@ export default function ProfilePage() {
   if (!profileHome) {
     return (
       <div>
-        <div className="border-b border-zinc-200/80 bg-white px-6 py-4">
-          <h1 className="text-lg font-bold tracking-tight text-zinc-900">Profile</h1>
+        <div className="border-b border-border/80 bg-card/80 px-6 py-4 backdrop-blur-sm">
+          <h1 className="text-lg font-bold tracking-tight text-foreground">Profile</h1>
         </div>
         <div className="px-6 py-4">
           <FeedSkeleton count={3} />

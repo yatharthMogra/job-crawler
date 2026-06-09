@@ -5,7 +5,7 @@ interface CompanyLogoProps {
 }
 
 const COLORS = [
-  "bg-zinc-800",
+  "bg-primary",
   "bg-indigo-600",
   "bg-emerald-700",
   "bg-rose-600",

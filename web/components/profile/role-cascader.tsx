@@ -108,7 +108,7 @@ export function RoleCascader({
                 className={cn(
                   "w-full px-3 py-2 text-left text-sm transition-colors",
                   activeCategory === cat
-                    ? "bg-zinc-100 font-medium text-zinc-900"
+                    ? "bg-accent font-medium text-accent-foreground"
                     : "text-foreground hover:bg-muted",
                 )}
                 onClick={() => setActiveCategory(cat)}
@@ -136,7 +136,7 @@ export function RoleCascader({
                         className={cn(
                           "rounded-md border px-2.5 py-1.5 text-xs transition-colors",
                           isSelected
-                            ? "border-zinc-900 bg-zinc-100 font-medium text-zinc-900"
+                            ? "border-primary bg-accent font-medium text-accent-foreground shadow-sm"
                             : "border-border bg-background text-foreground hover:bg-muted",
                         )}
                         onClick={() => toggleRole(role.label)}
@@ -173,7 +173,7 @@ export function RoleCascader({
         {selected.map((role) => (
           <span
             key={role}
-            className="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-800"
+            className="inline-flex items-center gap-1 rounded-md bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground"
           >
             {role}
             <button
@@ -182,7 +182,7 @@ export function RoleCascader({
                 e.stopPropagation()
                 removeRole(role)
               }}
-              className="rounded hover:bg-zinc-200"
+              className="rounded hover:bg-primary/10"
             >
               <X className="size-3" />
             </button>

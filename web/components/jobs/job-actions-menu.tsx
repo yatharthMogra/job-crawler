@@ -44,7 +44,7 @@ export function JobActionsMenu({
           e.stopPropagation()
           setOpen((v) => !v)
         }}
-        className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
+        className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
         aria-label="Job actions"
       >
         <X className="size-4" />
@@ -52,31 +52,31 @@ export function JobActionsMenu({
 
       {open ? (
         <div
-          className="absolute right-0 top-full z-20 mt-1 min-w-[180px] overflow-hidden rounded-lg border border-zinc-200 bg-white py-1 shadow-lg"
+          className="absolute right-0 top-full z-20 mt-1 min-w-[180px] overflow-hidden rounded-xl border border-border/80 bg-card py-1 shadow-lg shadow-primary/10"
           onClick={(e) => e.stopPropagation()}
         >
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50"
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground hover:bg-secondary/80"
             onClick={() => run(onApplied)}
           >
-            <CheckCircle2 className="size-4 text-zinc-700" />
+            <CheckCircle2 className="size-4 text-add" />
             {isApplied ? "Applied" : "Mark as applied"}
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50"
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground hover:bg-secondary/80"
             onClick={() => run(onNotInterested)}
           >
-            <ThumbsDown className="size-4 text-zinc-500" />
+            <ThumbsDown className="size-4 text-muted-foreground" />
             Not interested
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50"
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground hover:bg-secondary/80"
             onClick={() => run(onReportIssue)}
           >
-            <Flag className="size-4 text-zinc-500" />
+            <Flag className="size-4 text-muted-foreground" />
             Report issue
           </button>
         </div>

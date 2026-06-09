@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { RoleCascader } from "@/components/profile/role-cascader"
 import { TagInput } from "@/components/profile/review/tag-input"
+import { FlowStepBar } from "@/components/ui/flow-page"
 import { ArrowRight } from "lucide-react"
 
 interface JobIntentScreenProps {
@@ -37,8 +38,8 @@ export function JobIntentScreen({ state, onChange, onSubmit, saving }: JobIntent
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
+    <div className="dashboard-page-bg min-h-screen pb-24">
+      <header className="sticky top-0 z-30 border-b border-border/80 bg-card/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3 sm:px-6">
           <Brand />
         </div>
@@ -46,18 +47,18 @@ export function JobIntentScreen({ state, onChange, onSubmit, saving }: JobIntent
 
       <main className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
         <div className="mb-8">
-          <p className="text-sm font-medium text-zinc-500">Step 2 of 2</p>
-          <h1 className="mt-1 text-balance text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            Define your job search
+          <FlowStepBar current={4} total={4} label="Job preferences" />
+          <h1 className="text-balance text-2xl font-bold tracking-tight sm:text-3xl">
+            <span className="gradient-text">Define your job search</span>
           </h1>
           <p className="mt-2 text-pretty leading-relaxed text-muted-foreground">
-            Tell us what roles you want to pursue. Job recommendations will be based on your choices,
-            not what we found in your resume.
+            Tell us what roles you want to pursue. Recommendations follow your choices — not random
+            resume keywords.
           </p>
         </div>
 
         <div className="space-y-6">
-          <Card className="overflow-visible p-5">
+          <Card className="card-elevated overflow-visible border-0 p-5">
             <h2 className="text-base font-semibold text-foreground">Target roles</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               What positions are you actively looking to apply for?
@@ -78,7 +79,7 @@ export function JobIntentScreen({ state, onChange, onSubmit, saving }: JobIntent
             {error ? <p className="mt-3 text-sm text-remove">{error}</p> : null}
           </Card>
 
-          <Card className="p-5">
+          <Card className="card-elevated border-0 p-5">
             <h2 className="text-base font-semibold text-foreground">Work constraints</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Optional filters that help narrow compatible opportunities.
@@ -130,7 +131,7 @@ export function JobIntentScreen({ state, onChange, onSubmit, saving }: JobIntent
             </div>
           </Card>
 
-          <Card className="p-5">
+          <Card className="card-elevated border-0 p-5">
             <h2 className="text-base font-semibold text-foreground">Location preferences</h2>
             <p className="mt-1 text-sm text-muted-foreground">Where and how you prefer to work.</p>
             <div className="mt-4 space-y-4">
@@ -153,7 +154,7 @@ export function JobIntentScreen({ state, onChange, onSubmit, saving }: JobIntent
             </div>
           </Card>
 
-          <Card className="p-5">
+          <Card className="card-elevated border-0 p-5">
             <h2 className="text-base font-semibold text-foreground">Equal employment authorization</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Standard US application questions. We&apos;ll use these to auto-fill job forms later.
@@ -169,9 +170,9 @@ export function JobIntentScreen({ state, onChange, onSubmit, saving }: JobIntent
         </div>
       </main>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t-2 border-border/80 bg-card/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-2xl justify-end px-4 py-3 sm:px-6">
-          <Button disabled={!canContinue || saving} onClick={() => void handleSubmit()}>
+          <Button className="btn-brand" disabled={!canContinue || saving} onClick={() => void handleSubmit()}>
             {saving ? "Saving..." : "Save and continue"}
             <ArrowRight className="size-4" aria-hidden="true" />
           </Button>

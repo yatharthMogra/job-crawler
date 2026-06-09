@@ -12,16 +12,13 @@ interface EmptyStateProps {
 export function EmptyState({ icon: Icon, title, description, ctaLabel, ctaHref }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-24 text-center">
-      <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-zinc-100">
-        <Icon className="size-6 text-zinc-400" />
+      <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-brand-muted text-primary shadow-sm">
+        <Icon className="size-6" />
       </div>
-      <h3 className="text-sm font-semibold text-zinc-900">{title}</h3>
-      <p className="mt-1 max-w-xs text-pretty text-sm text-zinc-500">{description}</p>
+      <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+      <p className="mt-1 max-w-xs text-pretty text-sm text-muted-foreground">{description}</p>
       {ctaLabel && ctaHref && (
-        <Link
-          href={ctaHref}
-          className="mt-4 inline-flex h-8 items-center rounded-md bg-zinc-900 px-3 text-xs font-medium text-white transition-colors hover:bg-zinc-800"
-        >
+        <Link href={ctaHref} className="btn-brand mt-4 inline-flex h-9 items-center rounded-lg px-4 text-xs font-medium">
           {ctaLabel}
         </Link>
       )}

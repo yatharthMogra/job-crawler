@@ -30,7 +30,7 @@ export function ContactPills({ email, contact }: ContactPillsProps) {
       {items.map((item) => {
         const Icon = item.icon
         const inner = (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-3 py-1 text-sm text-zinc-700">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-sm text-accent-foreground">
             <Icon className="size-3.5 shrink-0" />
             {item.label}
           </span>

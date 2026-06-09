@@ -19,6 +19,7 @@ import { CertificationsSection } from "@/components/profile/review/certification
 import { ContactSection } from "@/components/profile/review/contact-section"
 import { EducationSection } from "@/components/profile/review/education-section"
 import { cn } from "@/lib/utils"
+import { FlowStepBar } from "@/components/ui/flow-page"
 import { ArrowRight, Check, CircleDashed } from "lucide-react"
 
 interface ReviewScreenProps {
@@ -153,8 +154,8 @@ export function ReviewScreen({ state, setState, onSave, onSkip, saving }: Review
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
+    <div className="dashboard-page-bg min-h-screen pb-24">
+      <header className="sticky top-0 z-30 border-b border-border/80 bg-card/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
           <Brand />
           <button
@@ -168,19 +169,19 @@ export function ReviewScreen({ state, setState, onSave, onSkip, saving }: Review
       </header>
 
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
-        <div className="mb-6">
-          <p className="text-sm font-medium text-primary">Step 1 of 2</p>
-          <h1 className="mt-1 text-balance text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            Review what we found in your resume
+        <div className="mb-6 max-w-3xl">
+          <FlowStepBar current={3} total={4} label="Review profile" />
+          <h1 className="text-balance text-2xl font-bold tracking-tight sm:text-3xl">
+            <span className="gradient-text">Review what we found</span>
           </h1>
           <p className="mt-2 text-pretty leading-relaxed text-muted-foreground">
-            We parsed your dedicated technical skills section plus experience and projects. Approve
-            what belongs on your profile — you&apos;ll choose target roles next.
+            We parsed your skills, experience, and projects. Approve what belongs on your profile —
+            you&apos;ll choose target roles next.
           </p>
         </div>
 
         {/* summary bar */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-3 sm:px-4">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-border bg-card p-3 shadow-md shadow-primary/5 sm:px-4">
           <p className="text-sm text-foreground">
             <span className="font-semibold text-add-foreground">{counts.additions} additions</span>
             <span className="text-muted-foreground"> · </span>
@@ -207,10 +208,10 @@ export function ReviewScreen({ state, setState, onSave, onSkip, saving }: Review
                   type="button"
                   onClick={() => scrollTo(id)}
                   className={cn(
-                    "flex shrink-0 items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors lg:w-full",
+                    "flex shrink-0 items-center justify-between gap-2 rounded-xl border-2 px-3 py-2.5 text-left text-sm transition-colors lg:w-full",
                     active === id
-                      ? "border-primary/40 bg-accent text-accent-foreground"
-                      : "border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground",
+                      ? "border-primary/40 bg-accent text-accent-foreground shadow-sm"
+                      : "border-border/60 bg-card text-muted-foreground hover:border-primary/20 hover:bg-secondary/80 hover:text-foreground",
                   )}
                 >
                   <span className="flex items-center gap-2 whitespace-nowrap font-medium">

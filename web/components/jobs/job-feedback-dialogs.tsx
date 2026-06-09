@@ -45,8 +45,8 @@ function FeedbackOption<T extends string>({
   return (
     <label
       className={cn(
-        "flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm text-zinc-700 transition-colors",
-        selected === id ? "border-zinc-900 bg-zinc-50" : "border-zinc-200 bg-zinc-50/50 hover:border-zinc-300",
+        "flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm text-foreground transition-colors",
+        selected === id ? "border-primary bg-accent shadow-sm" : "border-border bg-surface/80 hover:border-primary/30",
       )}
     >
       <input
@@ -54,7 +54,7 @@ function FeedbackOption<T extends string>({
         name={id}
         checked={selected === id}
         onChange={() => onSelect(id)}
-        className="size-4 accent-zinc-900"
+        className="size-4 accent-primary"
       />
       <span>{label}</span>
     </label>
@@ -101,7 +101,7 @@ export function NotInterestedDialog({ open, onOpenChange, onSubmit }: NotInteres
             Cancel
           </Button>
           <Button
-            className="bg-zinc-900 text-white hover:bg-zinc-800"
+            className="btn-brand"
             disabled={!reason}
             onClick={handleSubmit}
           >
@@ -151,7 +151,7 @@ export function ReportIssueDialog({ open, onOpenChange, onSubmit }: ReportIssueD
             Cancel
           </Button>
           <Button
-            className="bg-zinc-900 text-white hover:bg-zinc-800"
+            className="btn-brand"
             disabled={!reason}
             onClick={handleSubmit}
           >

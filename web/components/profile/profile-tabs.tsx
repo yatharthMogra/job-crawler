@@ -61,16 +61,16 @@ export function ProfileTabs({ data, onEditSection, onSetTargetRoles }: ProfileTa
   }
 
   return (
-    <div className="bg-zinc-50">
-      <div className="border-b border-zinc-200 bg-white px-6 py-4">
-        <h1 className="text-lg font-bold tracking-tight text-zinc-900">Profile</h1>
-        <div className="mt-3 flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
-          <Shield className="size-4 shrink-0 text-zinc-500" />
+    <div className="dashboard-page-bg min-h-screen">
+      <div className="border-b border-border/80 bg-card/90 px-6 py-4 backdrop-blur-sm">
+        <h1 className="text-lg font-bold tracking-tight text-foreground">Profile</h1>
+        <div className="mt-3 flex items-center gap-2 rounded-xl border border-primary/15 bg-accent/50 px-3 py-2 text-sm text-accent-foreground">
+          <Shield className="size-4 shrink-0 text-primary" />
           Your profile data is kept private and secure.
         </div>
       </div>
 
-      <div className="sticky top-0 z-10 border-b border-zinc-200 bg-white/95 backdrop-blur-sm">
+      <div className="sticky top-0 z-10 border-b border-border/80 bg-card/90 backdrop-blur-md">
         <nav className="flex gap-1 overflow-x-auto px-6">
           {SECTIONS.map((s) => (
             <button
@@ -78,12 +78,15 @@ export function ProfileTabs({ data, onEditSection, onSetTargetRoles }: ProfileTa
               type="button"
               onClick={() => scrollTo(s.id)}
               className={cn(
-                "shrink-0 border-b-2 px-3 py-3 text-sm font-medium transition-colors",
+                "relative shrink-0 px-4 py-3 text-sm font-medium transition-colors",
                 active === s.id
-                  ? "border-zinc-900 text-zinc-900"
-                  : "border-transparent text-zinc-500 hover:text-zinc-800",
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
+              {active === s.id ? (
+                <span className="absolute inset-x-1 bottom-0 h-0.5 rounded-full bg-gradient-to-r from-primary to-brand" />
+              ) : null}
               {s.label}
             </button>
           ))}
@@ -93,14 +96,14 @@ export function ProfileTabs({ data, onEditSection, onSetTargetRoles }: ProfileTa
       <div className="mx-auto max-w-3xl space-y-16 px-6 py-8">
         <section id="profile-personal" className="scroll-mt-28">
           <div className="flex items-start justify-between">
-            <h2 className="text-2xl font-semibold text-zinc-900">{data.candidateName}</h2>
+            <h2 className="text-2xl font-semibold text-foreground">{data.candidateName}</h2>
             <Button size="sm" variant="ghost" onClick={() => onEditSection("contact")}>
               <Pencil className="size-4" />
             </Button>
           </div>
           <ContactPills email={data.email} contact={data.contact} />
           <div className="mt-8">
-            <p className="text-sm font-medium text-zinc-700">Target roles</p>
+            <p className="text-sm font-medium text-foreground">Target roles</p>
             {data.hasTargetRoles ? (
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {data.primaryRoles.map((r) => (
@@ -108,14 +111,14 @@ export function ProfileTabs({ data, onEditSection, onSetTargetRoles }: ProfileTa
                 ))}
               </div>
             ) : (
-              <p className="mt-1 text-sm text-zinc-500">No roles selected yet.</p>
+              <p className="mt-1 text-sm text-muted-foreground">No roles selected yet.</p>
             )}
             <div className="mt-3 flex gap-2">
-              <Button size="sm" variant="outline" className="border-zinc-300" onClick={onSetTargetRoles}>
+              <Button size="sm" variant="outline" onClick={onSetTargetRoles}>
                 Edit roles
               </Button>
               <Link href="/filters">
-                <Button size="sm" variant="outline" className="border-zinc-300">
+                <Button size="sm" className="btn-brand">
                   All filters
                 </Button>
               </Link>
@@ -125,13 +128,13 @@ export function ProfileTabs({ data, onEditSection, onSetTargetRoles }: ProfileTa
 
         <section id="profile-education" className="scroll-mt-28">
           <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-zinc-900">Education</h2>
+            <h2 className="text-lg font-semibold text-foreground">Education</h2>
             <Button size="sm" variant="ghost" onClick={() => onEditSection("education")}>
               <Pencil className="size-4" />
             </Button>
           </div>
           {data.educationEntries.length === 0 ? (
-            <p className="text-sm text-zinc-500">No education on your profile yet.</p>
+            <p className="text-sm text-muted-foreground">No education on your profile yet.</p>
           ) : (
             data.educationEntries.map((entry, i) => (
               <TimelineEntry
@@ -148,10 +151,10 @@ export function ProfileTabs({ data, onEditSection, onSetTargetRoles }: ProfileTa
 
         <section id="profile-experience" className="scroll-mt-28">
           <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-zinc-900">Work Experience</h2>
+            <h2 className="text-lg font-semibold text-foreground">Work Experience</h2>
           </div>
           {profile.experiences.length === 0 ? (
-            <p className="text-sm text-zinc-500">No experience on your profile yet.</p>
+            <p className="text-sm text-muted-foreground">No experience on your profile yet.</p>
           ) : (
             profile.experiences.map((exp, i) => (
               <TimelineEntry
@@ -168,14 +171,14 @@ export function ProfileTabs({ data, onEditSection, onSetTargetRoles }: ProfileTa
 
         <section id="profile-skills" className="scroll-mt-28">
           <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-zinc-900">Skills</h2>
+            <h2 className="text-lg font-semibold text-foreground">Skills</h2>
           </div>
           <SkillsEditor skills={profile.skills} />
         </section>
 
         <section id="profile-eeo" className="scroll-mt-28 pb-12">
           <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-zinc-900">Equal Employment</h2>
+            <h2 className="text-lg font-semibold text-foreground">Equal Employment</h2>
             <Button size="sm" variant="ghost" onClick={() => onEditSection("eeo")}>
               <Pencil className="size-4" />
             </Button>

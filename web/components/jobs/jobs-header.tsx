@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Search, SlidersHorizontal } from "lucide-react"
+import { Search, SlidersHorizontal, Sparkles } from "lucide-react"
 import { useJobs } from "@/components/jobs-provider"
 import { FilterChip } from "@/components/ui/filter-chip"
 import { Input } from "@/components/ui/input"
@@ -35,24 +35,29 @@ export function JobsHeader({ search, onSearchChange }: JobsHeaderProps) {
     activeChips.push({ label: filters.datePosted, onRemove: () => clearFilter("datePosted") })
 
   return (
-    <div className="sticky top-0 z-20 border-b border-zinc-200/80 bg-white/95 backdrop-blur-sm">
+    <div className="sticky top-0 z-20 border-b border-border/80 bg-card/90 backdrop-blur-md">
       <div className="flex items-center justify-between px-6 py-4">
-        <div>
-          <h1 className="text-lg font-bold tracking-tight text-zinc-900">Jobs</h1>
-          <p className="text-xs text-zinc-500">Discover roles tailored to your profile</p>
+        <div className="flex items-center gap-3">
+          <span className="flex size-9 items-center justify-center rounded-xl bg-accent text-primary">
+            <Sparkles className="size-4" />
+          </span>
+          <div>
+            <h1 className="text-lg font-bold tracking-tight text-foreground">Jobs</h1>
+            <p className="text-xs text-muted-foreground">Roles matched to your profile</p>
+          </div>
         </div>
         <div className="relative w-72">
-          <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-zinc-400" />
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search by title or company"
-            className="h-8 pl-8 text-sm"
+            className="h-9 border-border/80 bg-surface/50 pl-9 text-sm focus-visible:ring-primary/30"
           />
         </div>
       </div>
 
-      <div className="flex items-center gap-6 border-t border-zinc-100 px-6">
+      <div className="flex items-center gap-1 border-t border-border/60 px-4">
         {TABS.map((tab) => {
           const active = pathname === tab.href || pathname.startsWith(tab.href + "/")
           const count =
@@ -66,25 +71,28 @@ export function JobsHeader({ search, onSearchChange }: JobsHeaderProps) {
               key={tab.href}
               href={tab.href}
               className={cn(
-                "border-b-2 py-3 text-sm font-medium transition-colors",
-                active
-                  ? "border-zinc-900 text-zinc-900"
-                  : "border-transparent text-zinc-500 hover:text-zinc-800",
+                "relative px-4 py-3 text-sm font-medium transition-colors",
+                active ? "text-primary" : "text-muted-foreground hover:text-foreground",
               )}
             >
               {tab.label}
-              {count != null && count > 0 ? ` (${count})` : ""}
+              {count != null && count > 0 ? (
+                <span className="ml-1 text-xs text-muted-foreground">({count})</span>
+              ) : null}
+              {active ? (
+                <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-gradient-to-r from-primary to-brand" />
+              ) : null}
             </Link>
           )
         })}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 border-t border-zinc-100 px-6 py-2.5">
+      <div className="flex flex-wrap items-center gap-2 border-t border-border/60 px-6 py-2.5">
         {activeChips.map((chip) => (
           <FilterChip key={chip.label} label={chip.label} active onRemove={chip.onRemove} />
         ))}
         <Link href="/filters">
-          <Button size="sm" variant="outline" className="h-7 gap-1.5 border-zinc-300">
+          <Button size="sm" className="btn-brand h-8 gap-1.5">
             <SlidersHorizontal className="size-3.5" />
             All Filters
           </Button>

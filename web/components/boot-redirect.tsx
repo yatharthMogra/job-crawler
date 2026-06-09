@@ -21,18 +21,18 @@ export function BootRedirect() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-50">
-        <p className="text-sm text-red-600">{error}</p>
+      <div className="flow-page-bg flex min-h-screen items-center justify-center">
+        <p className="text-sm text-destructive">{error}</p>
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50">
+    <div className="flow-page-bg flex min-h-screen items-center justify-center">
       <div className="flex gap-1.5" aria-label="Loading">
-        <span className="size-1.5 animate-bounce rounded-full bg-zinc-300 [animation-delay:-0.3s]" />
-        <span className="size-1.5 animate-bounce rounded-full bg-zinc-300 [animation-delay:-0.15s]" />
-        <span className="size-1.5 animate-bounce rounded-full bg-zinc-300" />
+        <span className="size-1.5 animate-bounce rounded-full bg-primary/40 [animation-delay:-0.3s]" />
+        <span className="size-1.5 animate-bounce rounded-full bg-brand/50 [animation-delay:-0.15s]" />
+        <span className="size-1.5 animate-bounce rounded-full bg-primary/40" />
       </div>
     </div>
   )
