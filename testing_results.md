@@ -1558,3 +1558,54 @@ Full machine-readable export: [`exports/user_recommendations.json`](exports/user
 | 644 | Senior React Native Engineer — Driver App  | Nash | Remote HQ / San Francisco | 0.52 | 0.0586 | SWE_FULLTIME, MOBILE_ENGINEER_FULLTIME | TypeScript |
 | 645 | Advanced Cyber Sec Archt/Engr | Honeywell | Bengaluru, Karnataka, India | 0.538 | 0.045 | SWE_FULLTIME, SECURITY_ENGINEER_FULLTIME | — |
 | 646 | Senior iOS Engineer | GeoComply | Ho Chi Minh, Vietnam | 0.32 | 0.045 | MOBILE_ENGINEER_FULLTIME, SWE_FULLTIME | — |
+
+---
+
+## iCIMS connector validation (2026-06-12)
+
+**Company:** SRI International (`platform=icims`, `board_token=sri`, `https://careers-sri.icims.com`)
+
+### Unit tests
+
+```
+cd job_ingestion && pytest tests/test_icims_connector.py tests/test_extractors.py -q
+# 32 passed
+```
+
+### Live fetch (curl_cffi Chrome impersonation)
+
+Plain `httpx`/curl requests returned HTTP 405 from iCIMS bot protection. Connector updated to use `curl_cffi` with `impersonate=chrome120`.
+
+| Check | Result |
+|-------|--------|
+| Jobs fetched | 36 |
+| Missing title | 0 |
+| Missing raw_html | 0 |
+| Fetch runtime | ~82s (2s delay per detail) |
+| Sample `id=6414` | Finance Project Analyst, US-CA-Menlo Park, Accounting/Finance, Full-time, 6221-char description |
+
+### Pipeline ingestion
+
+Ran `run_pipeline` with only SRI active:
+
+| Metric | Value |
+|--------|-------|
+| jobs_fetched | 36 |
+| jobs_new | 36 |
+| jobs_updated | 0 |
+| pipeline status | completed |
+
+### Enrichment (4 parallel Gemini workers)
+
+`python scripts/parallel_gemini_drain_today.py --launch-all --reset-stuck --worker-count 4`
+
+| Metric | Value |
+|--------|-------|
+| queued | 36 |
+| completed | 36 |
+| processing_state=success | 36 |
+| opportunity_score set | 36 |
+| failed | 0 |
+| worker runtime | ~71s |
+
+Sample enriched jobs: Analog IC Design Engineer (Hardware_Electrical, MID), Data Solutions and Data Integration Lead (Business, SENIOR), Bioscience Research Associate I (Research_Science, ENTRY).
