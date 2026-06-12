@@ -195,6 +195,54 @@ def _extract_oracle_hcm(job: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _parse_icims_date(date_str: Optional[str]) -> Optional[datetime]:
+    if not date_str:
+        return None
+    normalized = date_str.replace("Z", "+00:00")
+    try:
+        dt = datetime.fromisoformat(normalized)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+    except ValueError:
+        return None
+
+
+def _extract_icims_employment_type(raw: Optional[str]) -> Optional[str]:
+    if not raw:
+        return None
+    raw_lower = raw.lower()
+    if "full" in raw_lower:
+        return "Full-time"
+    if "part" in raw_lower:
+        return "Part-time"
+    if "intern" in raw_lower:
+        return "Internship"
+    if "contract" in raw_lower:
+        return "Contract"
+    if "temporary" in raw_lower or "temp" in raw_lower:
+        return "Temporary"
+    return raw
+
+
+def _extract_icims(job: dict[str, Any]) -> dict[str, Any]:
+    posting_url = job.get("sitemap_url")
+    if not posting_url:
+        detail_url = job.get("detail_url", "")
+        posting_url = detail_url.replace("?in_iframe=1", "").replace("&in_iframe=1", "")
+
+    return {
+        "external_job_id": str(job["id"]),
+        "title": job.get("title"),
+        "location": job.get("location"),
+        "department": job.get("department"),
+        "posting_url": posting_url,
+        "posted_at": _parse_icims_date(job.get("lastmod")),
+        "employment_type": _extract_icims_employment_type(job.get("employment_type_raw")),
+        "raw_html": job.get("raw_html", ""),
+    }
+
+
 def _extract_ashby(job: dict[str, Any]) -> dict[str, Any]:
     secondary_names = job.get("secondaryLocationNames")
     if isinstance(secondary_names, list):
@@ -222,6 +270,7 @@ FIELD_EXTRACTORS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "ashby": _extract_ashby,
     "workday": _extract_workday,
     "oracle_hcm": _extract_oracle_hcm,
+    "icims": _extract_icims,
 }
 
 

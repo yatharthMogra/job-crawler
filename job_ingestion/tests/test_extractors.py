@@ -1,6 +1,7 @@
 from datetime import timezone
 
 from app.ingestion.extractor.deterministic import (
+    _parse_icims_date,
     _parse_workday_date,
     extract_deterministic_fields,
 )
@@ -188,3 +189,76 @@ def test_oracle_employment_type_workplace_fallback() -> None:
         platform="oracle_hcm",
     )
     assert fields["employment_type"] == "Remote"
+
+
+def test_parse_icims_date() -> None:
+    parsed_date = _parse_icims_date("2026-06-05")
+    assert parsed_date is not None
+    assert parsed_date.year == 2026
+    assert parsed_date.month == 6
+    assert parsed_date.day == 5
+    assert parsed_date.tzinfo == timezone.utc
+
+    parsed_iso = _parse_icims_date("2026-06-05T14:23:00+00:00")
+    assert parsed_iso is not None
+    assert parsed_iso.hour == 14
+    assert parsed_iso.minute == 23
+
+    assert _parse_icims_date(None) is None
+    assert _parse_icims_date("not-a-date") is None
+
+
+def test_extract_icims_fields() -> None:
+    raw_job = {
+        "id": "6414",
+        "title": "Finance Project Analyst",
+        "location": "US-CA-Menlo Park",
+        "department": "Accounting/Finance",
+        "employment_type_raw": "Full-Time",
+        "raw_html": "<p>Overview content.</p>",
+        "sitemap_url": "https://careers-sri.icims.com/jobs/6414/finance-project-analyst/job",
+        "detail_url": (
+            "https://careers-sri.icims.com/jobs/6414/finance-project-analyst/job?in_iframe=1"
+        ),
+        "lastmod": "2026-06-05T16:53:18-04:00",
+    }
+
+    fields = extract_deterministic_fields(raw_job, platform="icims")
+
+    assert fields["external_job_id"] == "6414"
+    assert fields["title"] == "Finance Project Analyst"
+    assert fields["location"] == "US-CA-Menlo Park"
+    assert fields["department"] == "Accounting/Finance"
+    assert fields["employment_type"] == "Full-time"
+    assert fields["posting_url"] == raw_job["sitemap_url"]
+    assert "?in_iframe=1" not in fields["posting_url"]
+    assert fields["posted_at"] is not None
+    assert fields["raw_html"] == "<p>Overview content.</p>"
+
+
+def test_icims_employment_type_mapping() -> None:
+    assert (
+        extract_deterministic_fields(
+            {"id": "1", "employment_type_raw": "Intern"},
+            platform="icims",
+        )["employment_type"]
+        == "Internship"
+    )
+    assert (
+        extract_deterministic_fields(
+            {"id": "1", "employment_type_raw": "Temporary Part-Time"},
+            platform="icims",
+        )["employment_type"]
+        == "Part-time"
+    )
+
+
+def test_icims_posting_url_no_iframe_param() -> None:
+    fields = extract_deterministic_fields(
+        {
+            "id": "1",
+            "detail_url": "https://careers-sri.icims.com/jobs/1/example/job?in_iframe=1",
+        },
+        platform="icims",
+    )
+    assert fields["posting_url"] == "https://careers-sri.icims.com/jobs/1/example/job"

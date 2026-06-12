@@ -563,5 +563,159 @@
       "max_posted_age_days": 30
     },
     "is_active": true
+  },
+  {
+    "company": "Ultra (UIC Careers)",
+    "platform": "workday",
+    "board_token": "ultra-uiccareers",
+    "platform_config": {
+      "tenant": "ultra",
+      "instance": "wd3",
+      "career_site": "uiccareers",
+      "public_path_prefix": "en-US/uiccareers",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Ultra",
+    "platform": "workday",
+    "board_token": "ultra-careers",
+    "platform_config": {
+      "tenant": "ultra",
+      "instance": "wd3",
+      "career_site": "ultra-careers",
+      "public_path_prefix": "en-US/ultra-careers",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Motorola Solutions",
+    "platform": "workday",
+    "board_token": "motorolasolutions",
+    "platform_config": {
+      "tenant": "motorolasolutions",
+      "instance": "wd5",
+      "career_site": "Careers",
+      "public_path_prefix": "en-US/Careers",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Intel",
+    "platform": "workday",
+    "board_token": "intel",
+    "platform_config": {
+      "tenant": "intel",
+      "instance": "wd1",
+      "career_site": "external",
+      "public_path_prefix": "en-US/external",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Valeo",
+    "platform": "workday",
+    "board_token": "valeo",
+    "platform_config": {
+      "tenant": "valeo",
+      "instance": "wd3",
+      "career_site": "valeo_jobs",
+      "public_path_prefix": "en-US/valeo_jobs",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Delta Dental of Michigan",
+    "platform": "workday",
+    "board_token": "rhsc-delta-dental",
+    "platform_config": {
+      "tenant": "rhsc",
+      "instance": "wd5",
+      "career_site": "delta_dental_of_michigan",
+      "public_path_prefix": "en-US/delta_dental_of_michigan",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Pebl",
+    "platform": "ashby",
+    "board_token": "pebl",
+    "is_active": true
+  },
+  {
+    "company": "Harris Computer",
+    "platform": "workday",
+    "board_token": "harriscomputer",
+    "platform_config": {
+      "tenant": "harriscomputer",
+      "instance": "wd3",
+      "career_site": "1",
+      "public_path_prefix": "en-US/1",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "FieldAI",
+    "platform": "lever",
+    "board_token": "field-ai",
+    "is_active": true
+  },
+  {
+    "company": "Meshy",
+    "platform": "ashby",
+    "board_token": "meshy",
+    "is_active": true
+  },
+  {
+    "company": "Chanel",
+    "platform": "workday",
+    "board_token": "chanel",
+    "platform_config": {
+      "tenant": "cc",
+      "instance": "wd3",
+      "career_site": "ChanelCareers",
+      "public_path_prefix": "en-US/ChanelCareers",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "TribalScale",
+    "platform": "greenhouse",
+    "board_token": "tribalscale",
+    "is_active": true
+  },
+  {
+    "company": "Centerfield",
+    "platform": "ashby",
+    "board_token": "centerfield",
+    "is_active": true
+  },
+  {
+    "company": "Nidec",
+    "platform": "workday",
+    "board_token": "nidec",
+    "platform_config": {
+      "tenant": "nidec",
+      "instance": "wd1",
+      "career_site": "nidec",
+      "public_path_prefix": "en-US/nidec",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "SRI International",
+    "platform": "icims",
+    "board_token": "sri",
+    "platform_config": {},
+    "is_active": true
   }
 ]
