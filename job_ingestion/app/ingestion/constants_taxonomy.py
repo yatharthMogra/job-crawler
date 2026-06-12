@@ -16,6 +16,9 @@ NORMALIZED_ROLES = [
     "SUPPORT_ENGINEER",
     "SYSTEMS_ENGINEER",
     "HARDWARE_ENGINEER",
+    "AEROSPACE_ENGINEER",
+    "RESEARCH_SCIENTIST",
+    "LIFE_SCIENTIST",
     "TECHNICAL_PROGRAM_MANAGER",
     # Product & design
     "PRODUCT_MANAGER",
@@ -73,9 +76,17 @@ ROLE_CLASSIFICATION_RULES = (
     "- TECHNICAL_PROGRAM_MANAGER: technical program manager, TPM\n"
     "- DATA_ANALYST: data analyst, business analyst, analytics analyst (not data scientist)\n"
     "- SUPPORT_ENGINEER: support engineer, incident management engineer, technical support\n"
-    "- SYSTEMS_ENGINEER: systems engineer, spacecraft/aircraft/vehicle systems engineer, "
-    "radar systems engineer, MBSE/model-based systems engineer, avionics systems engineer "
-    "(integration/V&V focus, not software application development)\n"
+    "- SYSTEMS_ENGINEER: systems engineer integrating complex hardware/software systems in "
+    "aerospace, defense, or industrial contexts (integration/V&V focus). NOT platform "
+    "engineer or distributed systems engineer at tech companies — use DEVOPS_ENGINEER or "
+    "BACKEND_ENGINEER for those\n"
+    "- AEROSPACE_ENGINEER: aerospace vehicle/system design — structural, propulsion, "
+    "aerodynamics, flight dynamics, propulsion. NOT software engineers at aerospace companies\n"
+    "- RESEARCH_SCIENTIST: research scientist, principal/staff scientist, scientist I/II/III, "
+    "research engineer in a lab context, postdoctoral researcher, research fellow\n"
+    "- LIFE_SCIENTIST: bioscientist, biochemist, biologist, chemist, biomedical scientist, "
+    "lab scientist, research associate in biosciences. Use RESEARCH_SCIENTIST for broader "
+    "research roles\n"
     "- HARDWARE_ENGINEER: hardware engineer, mechanical engineer, electrical engineer, "
     "electronics engineer, manufacturing engineer, PCB/FPGA/embedded hardware roles "
     "(physical product, not software-only)\n"

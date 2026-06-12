@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.admin import router as admin_router
 from app.api.companies import router as companies_router
 from app.api.enrichment import compat_router as enrichments_router
 from app.api.enrichment import router as enrichment_router
@@ -48,6 +49,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.include_router(admin_router)
 app.include_router(companies_router)
 app.include_router(pipeline_router)
 app.include_router(reprocessing_router)

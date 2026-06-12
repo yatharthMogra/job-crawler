@@ -149,6 +149,7 @@ async def _upsert_normalized_job(
         title=deterministic_fields["title"] or "Untitled",
         company_name=company.name,
         location=deterministic_fields["location"],
+        job_country=deterministic_fields.get("job_country"),
         department=deterministic_fields["department"],
         employment_type=deterministic_fields["employment_type"],
         posting_url=deterministic_fields["posting_url"],

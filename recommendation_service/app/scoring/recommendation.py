@@ -20,6 +20,8 @@ def score_job(job: NormalizedJob, user_profile: UserProfile, settings: Settings)
         job.location,
         job.remote_type,
         user_profile.preferences,
+        user_profile.constraints,
+        job_country=job.job_country,
         job_title=job.title,
     )
     comp_score = _compensation_alignment(job.salary_min, job.salary_max, user_profile.constraints)
@@ -65,15 +67,25 @@ def _location_alignment(
     job_location: str | None,
     remote_type: str,
     preferences: dict[str, Any],
+    constraints: dict[str, Any],
     *,
+    job_country: str | None = None,
     job_title: str | None = None,
 ) -> float:
-    score, matched = location_alignment_score(job_location, remote_type, preferences)
+    score, matched = location_alignment_score(
+        job_location,
+        remote_type,
+        preferences,
+        job_country=job_country,
+        constraints=constraints,
+    )
     log.debug(
         "location_score",
         job_title=job_title,
         job_location=job_location,
+        job_country=job_country,
         remote_type=remote_type,
+        preferred_countries=preferences.get("preferred_countries"),
         preferred_locations=preferences.get("preferred_locations"),
         loc_score=score,
         matched_segment=matched,
