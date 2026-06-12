@@ -5,6 +5,108 @@ from typing import Any, Callable, Optional
 
 from app.exceptions import ParseError
 
+COUNTRY_SIGNALS: list[tuple[list[str], str | None]] = [
+    (
+        ["canada", ", on", ", bc", ", qc", "ontario", "british columbia", "toronto", "montreal", "vancouver"],
+        "CA",
+    ),
+    (
+        [
+            "united states",
+            "usa",
+            "u.s.a",
+            " us ",
+            "remote - us",
+            "remote - united",
+        ],
+        "US",
+    ),
+    (
+        ["united kingdom", " uk", "england", "london", "manchester", "edinburgh", "bristol"],
+        "GB",
+    ),
+    (
+        ["germany", "deutschland", "berlin", "munich", "hamburg", "frankfurt"],
+        "DE",
+    ),
+    (
+        [
+            "india",
+            "bengaluru",
+            "hyderabad",
+            "bangalore",
+            "pune",
+            "chennai",
+            "mumbai",
+            "new delhi",
+            "gurgaon",
+            "noida",
+        ],
+        "IN",
+    ),
+    (
+        ["australia", "sydney", "melbourne", "brisbane", "perth"],
+        "AU",
+    ),
+    (
+        [
+            "new york",
+            "san francisco",
+            "seattle",
+            "boston",
+            "chicago",
+            "los angeles",
+            "austin",
+            "denver",
+            "atlanta",
+            "washington, d.c",
+            ", ny",
+            ", ca",
+            ", wa",
+            ", tx",
+            ", ma",
+            ", co",
+            ", ga",
+            ", fl",
+            ", va",
+            ", dc",
+            ", nc",
+            ", il",
+            ", oh",
+            ", pa",
+            ", az",
+            ", mn",
+        ],
+        "US",
+    ),
+    (
+        ["remote", "anywhere", "worldwide", "global"],
+        None,
+    ),
+]
+
+
+def extract_job_country(location: str | None) -> str | None:
+    """Return ISO 3166-1 alpha-2 country code, or None for remote/global/unknown."""
+    if not location:
+        return None
+    stripped = location.lower().strip()
+    if stripped.startswith("us-") or stripped.startswith("us,"):
+        return "US"
+    loc_lower = f" {stripped} "
+
+    if any(sig in loc_lower for sig in ["remote", "anywhere", "worldwide", "global"]):
+        return None
+
+    for signals, code in COUNTRY_SIGNALS:
+        if code is None:
+            continue
+        if any(sig in loc_lower for sig in signals):
+            return code
+
+    return None
+
+
 def _extract_greenhouse_employment_type(metadata: Optional[list[dict[str, Any]]]) -> Optional[str]:
     if not metadata:
         return None
@@ -278,4 +380,6 @@ def extract_deterministic_fields(job: dict[str, Any], platform: str = "greenhous
     extractor = FIELD_EXTRACTORS.get(platform.lower())
     if extractor is None:
         raise ParseError(f"Unsupported extraction platform: {platform}")
-    return extractor(job)
+    fields = extractor(job)
+    fields["job_country"] = extract_job_country(fields.get("location"))
+    return fields

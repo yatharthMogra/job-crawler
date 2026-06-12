@@ -147,6 +147,21 @@ export type JobUpdateInput = {
 export type UsagePeriod = 'run' | 'day' | 'month'
 export type UsageSplitBy = 'platform' | 'company'
 
+export type TaxonomyHealthResponse = {
+  generated_at: string
+  total_active_enriched: number
+  global_no_pool_count: number
+  global_no_pool_pct: number
+  domains: Array<{
+    domain: string
+    total: number
+    no_pool: number
+    no_pool_pct: number
+    flagged: boolean
+    top_no_pool_titles: Array<{ title: string; count: number }>
+  }>
+}
+
 function parseDate(value: string | null | undefined): Date | null {
   if (!value) return null
   const parsed = new Date(value)
@@ -286,6 +301,10 @@ export async function getEvents(filters?: {
     platform: row.platform || undefined,
     message: getEventMessage(row),
   }))
+}
+
+export async function getTaxonomyHealth(): Promise<TaxonomyHealthResponse> {
+  return apiRequest<TaxonomyHealthResponse>('/admin/taxonomy-health')
 }
 
 export async function getCostUsage(params: {

@@ -3,9 +3,31 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from app.scoring.country import extract_job_country, get_effective_countries
+
 _SEGMENT_SPLIT = re.compile(r"[;•|/]+")
 _PAREN_RE = re.compile(r"\([^)]*\)")
 _NON_ALNUM = re.compile(r"[^a-z0-9\s,]+")
+
+_STATE_ABBR_RE = re.compile(r",\s*([A-Z]{2})(?:\s*,|\s*$|\s+)")
+
+_STATE_MAP = {
+    "new york": "NY",
+    "california": "CA",
+    "washington": "WA",
+    "texas": "TX",
+    "massachusetts": "MA",
+    "colorado": "CO",
+    "virginia": "VA",
+    "illinois": "IL",
+    "georgia": "GA",
+    "florida": "FL",
+    "pennsylvania": "PA",
+    "north carolina": "NC",
+    "arizona": "AZ",
+    "minnesota": "MN",
+    "ohio": "OH",
+}
 
 _LOCATION_ALIASES: dict[str, set[str]] = {
     "new_york": {"new york", "nyc", "ny", "new york city", "manhattan", "brooklyn"},
@@ -89,9 +111,7 @@ def locations_match(preferred: str, job_location: str | None) -> bool:
     if not preferred_tokens or not job_tokens:
         return False
 
-    preferred_canonical = {
-        _CANONICAL_BY_TOKEN.get(token, token) for token in preferred_tokens
-    }
+    preferred_canonical = {_CANONICAL_BY_TOKEN.get(token, token) for token in preferred_tokens}
     job_canonical = {_CANONICAL_BY_TOKEN.get(token, token) for token in job_tokens}
 
     if preferred_canonical & job_canonical:
@@ -107,11 +127,97 @@ def locations_match(preferred: str, job_location: str | None) -> bool:
     return False
 
 
+def _extract_state(location: str | None) -> str | None:
+    if not location:
+        return None
+    match = _STATE_ABBR_RE.search(location)
+    if match:
+        return match.group(1)
+    loc_lower = location.lower()
+    for name, abbr in _STATE_MAP.items():
+        if name in loc_lower:
+            return abbr
+    return None
+
+
+def _extract_city(location: str | None) -> str | None:
+    if not location:
+        return None
+    return location.split(",")[0].strip()
+
+
+def _remote_accepts_candidate(remote_preference: str | None) -> bool:
+    if not remote_preference:
+        return True
+    normalized = remote_preference.lower().strip()
+    return normalized in {"remote", "hybrid", "hybrid_or_remote", "no_preference", "any"}
+
+
+def _structured_location_score(
+    job_location: str | None,
+    job_country: str | None,
+    remote_type: str,
+    preferences: dict[str, Any],
+    constraints: dict[str, Any],
+) -> float | None:
+    """Return score when structured country prefs or US-auth default applies; None to fall back."""
+    preferred_countries = preferences.get("preferred_countries") or []
+    preferred_states = preferences.get("preferred_states") or []
+    preferred_cities = preferences.get("preferred_cities") or []
+    has_structured = bool(preferred_countries or preferred_states or preferred_cities)
+
+    effective_countries = get_effective_countries(preferences, constraints)
+    if not has_structured and not effective_countries:
+        return None
+
+    if remote_type == "remote":
+        if _remote_accepts_candidate(preferences.get("remote_preference")):
+            return 1.0
+        return 0.7
+
+    if not effective_countries:
+        return 0.5
+
+    resolved_country = job_country or extract_job_country(job_location)
+    if resolved_country is None:
+        return 0.4
+
+    if resolved_country not in effective_countries:
+        return 0.15
+
+    if preferred_states:
+        job_state = _extract_state(job_location)
+        if job_state and job_state.upper() in [str(s).upper() for s in preferred_states]:
+            if preferred_cities:
+                job_city = _extract_city(job_location)
+                if job_city and job_city.lower() in [str(c).lower() for c in preferred_cities]:
+                    return 1.0
+                return 0.8
+            return 0.9
+        return 0.55
+
+    return 0.75
+
+
 def location_alignment_score(
     job_location: str | None,
     remote_type: str,
     preferences: dict[str, Any],
+    *,
+    job_country: str | None = None,
+    constraints: dict[str, Any] | None = None,
 ) -> tuple[float, str | None]:
+    constraints = constraints or {}
+    structured = _structured_location_score(
+        job_location,
+        job_country,
+        remote_type,
+        preferences,
+        constraints,
+    )
+    if structured is not None:
+        return structured, None
+
     preferred_locations = preferences.get("preferred_locations") or []
     acceptable_locations = preferences.get("acceptable_locations") or []
 

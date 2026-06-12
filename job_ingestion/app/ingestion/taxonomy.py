@@ -68,8 +68,12 @@ _ROLE_DOMAIN_MAP: dict[str, DomainName] = {
     "PRODUCT_DESIGNER": "Design",
     # Aerospace_Defense
     "SYSTEMS_ENGINEER": "Aerospace_Defense",
+    "AEROSPACE_ENGINEER": "Aerospace_Defense",
     # Hardware_Electrical
     "HARDWARE_ENGINEER": "Hardware_Electrical",
+    # Research_Science
+    "RESEARCH_SCIENTIST": "Research_Science",
+    "LIFE_SCIENTIST": "Research_Science",
     # Fallback
     "OTHER": "Other",
 }
@@ -141,27 +145,42 @@ CAPABILITY_DOMAIN_MAP: dict[str, list[DomainName]] = {
 MIN_CAPABILITIES_FOR_DOMAIN = 3
 
 DOMAIN_PROMPT_RULES = (
-    "job_domain: The professional discipline this role belongs to. Choose exactly one value "
-    f"from: {', '.join(DOMAIN_NAMES)}. Assign based on what the role's PRIMARY OUTPUT is, "
-    "not the tools used or the company's industry.\n"
+    "job_domain: The professional discipline this role belongs to.\n\n"
+    "CRITICAL RULE: Assign based on what THIS JOB requires the person to DO each day — "
+    "not what the company's industry is. The company's industry never determines the domain.\n\n"
+    "Correct examples:\n"
+    "  - Hardware Engineer at American Express → Hardware_Electrical\n"
+    "  - Data Analyst at RTX/Boeing → Data_Analytics\n"
+    "  - Operations Manager, Supply Chain at any company → Management\n"
+    "  - Software Engineer, Enterprise Applications at Boeing → Software\n"
+    "  - Software Engineer, Avionics Systems at Boeing → Aerospace_Defense\n"
+    "  - Finance Analyst at a SaaS company → Business\n\n"
+    "Wrong examples:\n"
+    "  - Hardware Engineer at Amex → Business (wrong: based on company industry)\n"
+    "  - Data Analyst at RTX → Aerospace_Defense (wrong: based on company industry)\n"
+    "  - Software Engineer at Boeing always → Aerospace_Defense (wrong: depends on job content)\n\n"
+    f"Choose exactly one value from: {', '.join(DOMAIN_NAMES)}.\n"
     "- Software: Primary output is running software code, systems, APIs, platforms.\n"
     "- Data_Analytics: Business-facing data work — insights, reports, models for decisions.\n"
     "- Management: Decisions and coordination — PM, program/project management.\n"
     "- Business: Non-technical business — sales, marketing, finance, HR, legal, ops.\n"
     "- Hardware_Electrical: Hardware or electrical systems — circuits, PCB, FPGA, RF.\n"
     "- Mechanical: Mechanical systems — structural analysis, CAD, manufacturing design.\n"
-    "- Aerospace_Defense: Serves aerospace/defense systems. Assign even for software roles "
-    "when aerospace/defense context is required (avionics, flight software, radar, space).\n"
+    "- Aerospace_Defense: Serves aerospace/defense systems when domain expertise is required.\n"
     "- Industrial_Automation: PLC, SCADA, manufacturing automation, process control.\n"
     "- Design: UX, product, visual design, user research.\n"
     "- Research_Science: Scientific research, laboratory, computational science.\n"
     "- Other: Does not fit any category above.\n\n"
-    "Software vs Aerospace_Defense (mutually exclusive — never assign both):\n"
-    "- Requires aerospace/defense domain knowledge (DO-178C, flight software safety, avionics, "
-    "missile/radar/space, classified context) → Aerospace_Defense primary, no secondary.\n"
-    "- At an aerospace company but no aerospace expertise required (internal tools, enterprise "
-    "SWE, data pipelines) → Software primary, no secondary.\n"
-    "- Software + Aerospace_Defense is not a valid pair.\n\n"
+    "AEROSPACE_DEFENSE vs SOFTWARE — how to distinguish at defense/aerospace companies:\n"
+    "  → Software if ALL are true: general software development (web apps, APIs, internal tools, "
+    "data platforms); no aerospace/defense knowledge requirements (avionics, flight software, "
+    "missile systems, radar, DO-178C, MIL-STD); a generalist SWE could apply without aerospace "
+    "background. Examples: Software Engineer, IT Systems @ Boeing; Data Platform @ RTX.\n"
+    "  → Aerospace_Defense if ANY are true: explicit aerospace/defense domain work; domain "
+    "standards (DO-178C, DO-254, MIL-STD-461, ITAR); title signals defense context (Mission "
+    "Systems, Avionics, Flight Software, Space Systems); clearance required. Examples: Mission "
+    "Systems SWE @ RTX; Avionics Software Engineer @ Boeing.\n"
+    "Software + Aerospace_Defense is not a valid secondary pair.\n\n"
     "job_secondary_domain: Second domain ONLY when the role requires substantial expertise in "
     "two disciplines as core responsibilities. If in doubt, leave null. Must differ from "
     "job_domain. Invalid pairs are stripped automatically."

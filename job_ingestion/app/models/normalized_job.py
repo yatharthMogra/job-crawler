@@ -31,6 +31,7 @@ class NormalizedJob(Base):
     title: Mapped[str] = mapped_column(String(512), nullable=False)
     company_name: Mapped[str] = mapped_column(String(255), nullable=False)
     location: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    job_country: Mapped[Optional[str]] = mapped_column(String(2), nullable=True, index=True)
     department: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     employment_type: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     posting_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

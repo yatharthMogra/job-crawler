@@ -253,6 +253,20 @@ def test_icims_employment_type_mapping() -> None:
     )
 
 
+def test_extract_job_country() -> None:
+    from app.ingestion.extractor.deterministic import extract_job_country
+
+    assert extract_job_country("New York, NY, USA") == "US"
+    assert extract_job_country("Gurugram, HR, India") == "IN"
+    assert extract_job_country("Pune City, Maharashtra, India") == "IN"
+    assert extract_job_country("Toronto, ON, Canada") == "CA"
+    assert extract_job_country("Remote - US") is None
+    assert extract_job_country("Berlin, Germany") == "DE"
+    assert extract_job_country("US-CA-Menlo Park") == "US"
+    assert extract_job_country(None) is None
+    assert extract_job_country("Unknown City") is None
+
+
 def test_icims_posting_url_no_iframe_param() -> None:
     fields = extract_deterministic_fields(
         {

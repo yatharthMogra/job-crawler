@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from app.ingestion.constants_taxonomy import ENGINEERING_ROLES, NORMALIZED_ROLES
 from app.ingestion.extractor.llm import ENRICHMENT_SYSTEM_PROMPT, JobEnrichment, _coerce_normalized_roles
+from app.ingestion.recommendation_fields import assign_validated_retrieval_pools
 
 
 def test_normalized_roles_includes_tier1_and_tier2() -> None:
@@ -57,10 +58,31 @@ def test_enrichment_prompt_includes_role_classification_rules() -> None:
     assert "SYSTEMS_ENGINEER:" in ENRICHMENT_SYSTEM_PROMPT
     assert "HARDWARE_ENGINEER:" in ENRICHMENT_SYSTEM_PROMPT
     assert "job_domain:" in ENRICHMENT_SYSTEM_PROMPT
-    assert "Software + Aerospace_Defense is not a valid pair" in ENRICHMENT_SYSTEM_PROMPT
+    assert "Software + Aerospace_Defense is not a valid secondary pair" in ENRICHMENT_SYSTEM_PROMPT
 
 
 def test_engineering_roles_include_solutions_and_support() -> None:
     assert "SOLUTIONS_ENGINEER" in ENGINEERING_ROLES
     assert "SUPPORT_ENGINEER" in ENGINEERING_ROLES
     assert "SALES" not in ENGINEERING_ROLES
+
+
+def test_new_research_and_aerospace_roles_in_taxonomy() -> None:
+    for role in ("RESEARCH_SCIENTIST", "LIFE_SCIENTIST", "AEROSPACE_ENGINEER"):
+        assert role in NORMALIZED_ROLES
+
+
+def test_research_scientist_pool_maps_to_research_science_domain() -> None:
+    pools = assign_validated_retrieval_pools(
+        ["RESEARCH_SCIENTIST"],
+        is_internship=False,
+        is_new_grad=False,
+        job_domain="Research_Science",
+    )
+    assert pools == ["RESEARCH_SCIENTIST_FULLTIME"]
+
+
+def test_enrichment_prompt_includes_critical_domain_rule() -> None:
+    assert "CRITICAL RULE" in ENRICHMENT_SYSTEM_PROMPT
+    assert "company's industry never determines the domain" in ENRICHMENT_SYSTEM_PROMPT
+    assert "RESEARCH_SCIENTIST:" in ENRICHMENT_SYSTEM_PROMPT

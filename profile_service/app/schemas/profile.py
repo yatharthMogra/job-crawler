@@ -51,6 +51,9 @@ class PreferencesUpdate(BaseModel):
     secondary_roles: list[str] | None = None
     role_pool_ids: list[str] | None = None
     preferred_locations: list[str] | None = None
+    preferred_countries: list[str] | None = None
+    preferred_states: list[str] | None = None
+    preferred_cities: list[str] | None = None
     acceptable_locations: list[str] | None = None
     remote_preference: str | None = None
     relocation_allowed: bool | None = None
