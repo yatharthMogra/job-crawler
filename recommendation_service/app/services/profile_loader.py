@@ -23,6 +23,8 @@ class UserProfile:
     constraints: dict[str, Any]
     preferences: dict[str, Any]
     skills: dict[str, Any]
+    primary_domain: str | None = None
+    secondary_domain: str | None = None
     capabilities: list[CandidateCapability] = field(default_factory=list)
     evidence: list[CandidateEvidence] = field(default_factory=list)
 
@@ -73,6 +75,8 @@ async def load_user_profile(db: AsyncSession, candidate_id: uuid.UUID) -> UserPr
         constraints=profile.constraints or {},
         preferences=profile.preferences or {},
         skills=profile.skills or {},
+        primary_domain=profile.primary_domain,
+        secondary_domain=profile.secondary_domain,
         capabilities=list(capabilities),
         evidence=list(evidence),
     )

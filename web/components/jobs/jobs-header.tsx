@@ -23,7 +23,7 @@ interface JobsHeaderProps {
 
 export function JobsHeader({ search, onSearchChange }: JobsHeaderProps) {
   const pathname = usePathname()
-  const { savedIds, appliedIds, filters, clearFilter } = useJobs()
+  const { savedIds, appliedIds, appliedJobs, filters, clearFilter } = useJobs()
 
   const activeChips: { label: string; onRemove: () => void }[] = []
   if (filters.role) activeChips.push({ label: filters.role, onRemove: () => clearFilter("role") })
@@ -64,7 +64,7 @@ export function JobsHeader({ search, onSearchChange }: JobsHeaderProps) {
             tab.label === "Liked"
               ? savedIds.size
               : tab.label === "Applied"
-                ? appliedIds.size
+                ? appliedJobs.length || appliedIds.size
                 : null
           return (
             <Link

@@ -13,12 +13,18 @@ from app.models.shared import NormalizedJob
 from app.notification.ranker import deduplicate_ranked_jobs, rank_jobs
 from app.notification.retrieval import build_constraint_filters, query_jobs_in_pools
 from app.scoring.explainability import generate_explanations
+from app.schemas.applications import (
+    UserApplicationOut,
+    UserApplicationPatchIn,
+    UserApplicationsResponse,
+)
 from app.schemas.dashboard import (
     DashboardJobOut,
     DashboardJobsResponse,
     DashboardRecommendedJobOut,
     DashboardRecommendedJobsResponse,
 )
+from app.services.applications import apply_to_job, get_user_applications, patch_application
 from app.services.profile_loader import load_user_profile
 from app.services.subscriptions import get_active_pools
 
@@ -62,8 +68,9 @@ async def get_dashboard_jobs(
     if not pools:
         return DashboardJobsResponse(jobs=[], total=0)
 
+    settings = get_settings()
     user_profile = await load_user_profile(db, candidate_id)
-    filters = build_constraint_filters(user_profile) if user_profile else []
+    filters = build_constraint_filters(user_profile, settings) if user_profile else []
 
     if location:
         filters.append(NormalizedJob.location.ilike(f"%{location}%"))
@@ -136,7 +143,7 @@ async def get_recommended_jobs(
     if user_profile is None:
         return DashboardRecommendedJobsResponse(jobs=[], total=0)
 
-    filters = build_constraint_filters(user_profile)
+    filters = build_constraint_filters(user_profile, settings)
     cap = settings.notification_retrieval_limit
     all_jobs = await _fetch_all_pool_jobs(db, pools=pools, filters=filters, cap=cap)
     ranked = deduplicate_ranked_jobs(rank_jobs(all_jobs, user_profile, settings))
@@ -177,3 +184,36 @@ async def get_dashboard_job(
     if job is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
     return _job_to_out(job)
+
+
+@router.post("/jobs/{job_id}/apply", response_model=UserApplicationOut)
+async def mark_job_applied(
+    job_id: uuid.UUID,
+    candidate_id: uuid.UUID = Query(...),
+    db: AsyncSession = Depends(get_db),
+) -> UserApplicationOut:
+    return await apply_to_job(db, candidate_id=candidate_id, job_id=job_id)
+
+
+@router.get("/applications", response_model=UserApplicationsResponse)
+async def list_applications(
+    candidate_id: uuid.UUID = Query(...),
+    db: AsyncSession = Depends(get_db),
+) -> UserApplicationsResponse:
+    applications = await get_user_applications(db, candidate_id)
+    return UserApplicationsResponse(applications=applications, total=len(applications))
+
+
+@router.patch("/applications/{application_id}", response_model=UserApplicationOut)
+async def update_application(
+    application_id: uuid.UUID,
+    payload: UserApplicationPatchIn,
+    candidate_id: uuid.UUID = Query(...),
+    db: AsyncSession = Depends(get_db),
+) -> UserApplicationOut:
+    return await patch_application(
+        db,
+        candidate_id=candidate_id,
+        application_id=application_id,
+        payload=payload,
+    )

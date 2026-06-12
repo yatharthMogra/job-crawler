@@ -4,6 +4,8 @@ from typing import Optional
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
+from app.archival.active_cleanup import run_active_cleanup
+from app.archival.archive_cleanup import run_archive_cleanup
 from app.config import Settings, get_settings
 from app.database import AsyncSessionLocal
 from app.ingestion.constants import EventCategory, EventSeverity, EventType
@@ -19,6 +21,14 @@ def build_scheduler(settings: Optional[Settings] = None) -> AsyncIOScheduler:
         async with AsyncSessionLocal() as db:
             await run_pipeline(db=db, run_type="scheduled", settings=settings)
 
+    async def run_active_cleanup_job() -> None:
+        async with AsyncSessionLocal() as db:
+            await run_active_cleanup(db)
+
+    async def run_archive_cleanup_job() -> None:
+        async with AsyncSessionLocal() as db:
+            await run_archive_cleanup(db)
+
     scheduler.add_job(
         scheduled_pipeline,
         trigger="interval",
@@ -26,6 +36,22 @@ def build_scheduler(settings: Optional[Settings] = None) -> AsyncIOScheduler:
         id="pipeline-runner",
         max_instances=1,
         coalesce=True,
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        run_active_cleanup_job,
+        trigger="cron",
+        hour=2,
+        minute=0,
+        id="active_cleanup",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        run_archive_cleanup_job,
+        trigger="cron",
+        hour=2,
+        minute=30,
+        id="archive_cleanup",
         replace_existing=True,
     )
     return scheduler

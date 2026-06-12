@@ -1,9 +1,30 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Mapping
 from datetime import datetime, timezone
+from typing import Any
 
 from app.config import Settings, get_settings
+from app.ingestion.taxonomy import validate_pools_against_domain
+
+_JOB_ENRICHMENT_RECORD_FIELDS = frozenset(
+    {
+        "normalized_roles",
+        "job_capabilities",
+        "application_effort",
+        "retrieval_pools",
+        "salary_min",
+        "salary_max",
+        "opportunity_score",
+        "opportunity_score_computed_at",
+    }
+)
+
+
+def fields_for_job_enrichment_record(recommendation_fields: Mapping[str, Any]) -> dict[str, Any]:
+    """Return only keys that map to columns on the job_enrichments audit table."""
+    return {key: recommendation_fields[key] for key in _JOB_ENRICHMENT_RECORD_FIELDS if key in recommendation_fields}
 
 
 def assign_retrieval_pools(
@@ -13,6 +34,17 @@ def assign_retrieval_pools(
 ) -> list[str]:
     role_type = _resolve_role_type(is_internship, is_new_grad)
     return [f"{role}_{role_type}" for role in normalized_roles]
+
+
+def assign_validated_retrieval_pools(
+    normalized_roles: list[str],
+    is_internship: bool,
+    is_new_grad: bool,
+    job_domain: str,
+    job_secondary_domain: str | None = None,
+) -> list[str]:
+    pools = assign_retrieval_pools(normalized_roles, is_internship, is_new_grad)
+    return validate_pools_against_domain(job_domain, pools, job_secondary_domain)
 
 
 def _resolve_role_type(is_internship: bool, is_new_grad: bool) -> str:

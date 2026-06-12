@@ -3,7 +3,11 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from app.config import Settings
-from app.ingestion.recommendation_fields import assign_retrieval_pools, compute_opportunity_score
+from app.ingestion.recommendation_fields import (
+    assign_retrieval_pools,
+    compute_opportunity_score,
+    fields_for_job_enrichment_record,
+)
 
 
 def test_assign_retrieval_pools_internship() -> None:
@@ -44,3 +48,23 @@ def test_compute_opportunity_score_unknown_salary_neutral() -> None:
     posted_at = datetime.now(timezone.utc)
     score = compute_opportunity_score(posted_at, None, None, "LOW", settings=settings)
     assert score > 0.5
+
+
+def test_fields_for_job_enrichment_record_strips_domain_keys() -> None:
+    fields = {
+        "normalized_roles": ["SWE"],
+        "job_capabilities": ["Backend Engineering"],
+        "application_effort": "MEDIUM",
+        "retrieval_pools": ["SWE_FULLTIME"],
+        "job_domain": "Software",
+        "job_secondary_domain": None,
+        "salary_min": 100_000,
+        "salary_max": 150_000,
+        "opportunity_score": 0.7,
+        "opportunity_score_computed_at": datetime.now(timezone.utc),
+    }
+    audit = fields_for_job_enrichment_record(fields)
+    assert "job_domain" not in audit
+    assert "job_secondary_domain" not in audit
+    assert audit["normalized_roles"] == ["SWE"]
+    assert audit["salary_min"] == 100_000

@@ -13,6 +13,8 @@ NORMALIZED_ROLES = [
     "MOBILE_ENGINEER",
     "SOLUTIONS_ENGINEER",
     "SUPPORT_ENGINEER",
+    "SYSTEMS_ENGINEER",
+    "HARDWARE_ENGINEER",
     "TECHNICAL_PROGRAM_MANAGER",
     "PRODUCT_MANAGER",
     "PRODUCT_DESIGNER",
@@ -49,6 +51,17 @@ CAPABILITY_TAXONOMY = [
 ]
 
 ROLE_TYPES = ["INTERNSHIP", "NEW_GRAD", "FULLTIME"]
+
+
+def normalize_pool_name(pool_name: str) -> str:
+    """Map legacy *_INTERN suffix to canonical *_INTERNSHIP."""
+    if pool_name.endswith("_INTERN"):
+        return f"{pool_name}SHIP"
+    return pool_name
+
+
+def normalize_pool_names(pool_names: list[str]) -> list[str]:
+    return list(dict.fromkeys(normalize_pool_name(name) for name in pool_names))
 
 EFFORT_LABELS = {
     "LOW": "Quick Apply",

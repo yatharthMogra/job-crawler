@@ -19,8 +19,13 @@ from sqlalchemy import and_, func, select, text
 from app.config import get_settings
 from app.database import AsyncSessionLocal
 from app.models.shared import NormalizedJob
-from app.notification.ranker import deduplicate_ranked_jobs, rank_jobs
-from app.notification.retrieval import build_constraint_filters, query_jobs_in_pools
+from app.notification.pipeline import get_last_notification_time
+from app.notification.ranker import deduplicate_ranked_jobs, rank_jobs, select_top_jobs
+from app.notification.retrieval import (
+    build_constraint_filters,
+    fetch_new_jobs_in_pools,
+    query_jobs_in_pools,
+)
 from app.scoring.explainability import generate_explanations
 from app.services.profile_loader import UserProfile, load_user_profile
 from app.services.subscriptions import get_active_pools
@@ -49,6 +54,11 @@ ROLE_LABEL_TO_POOL: dict[str, str] = {
     "mobile engineer": "MOBILE_ENGINEER",
     "solutions engineer": "SOLUTIONS_ENGINEER",
     "support engineer": "SUPPORT_ENGINEER",
+    "systems engineer": "SYSTEMS_ENGINEER",
+    "hardware engineer": "HARDWARE_ENGINEER",
+    "mechanical engineer": "HARDWARE_ENGINEER",
+    "electrical engineer": "HARDWARE_ENGINEER",
+    "manufacturing engineer": "HARDWARE_ENGINEER",
     "technical program manager": "TECHNICAL_PROGRAM_MANAGER",
     "product manager": "PRODUCT_MANAGER",
     "product designer": "PRODUCT_DESIGNER",
@@ -79,6 +89,8 @@ ENGINEERING_POOL_BASES = frozenset(
         "MOBILE_ENGINEER",
         "SOLUTIONS_ENGINEER",
         "SUPPORT_ENGINEER",
+        "SYSTEMS_ENGINEER",
+        "HARDWARE_ENGINEER",
     }
 )
 
@@ -225,6 +237,26 @@ async def recommend_for_user(user: dict, *, pools: list[str]) -> dict:
 
         ranked = rank_jobs(all_jobs, profile, settings)
         deduped_ranked = deduplicate_ranked_jobs(ranked)
+
+        last_notified_at = await get_last_notification_time(db, candidate_id)
+        notification_jobs = await fetch_new_jobs_in_pools(
+            db,
+            candidate_id=candidate_id,
+            pools=pools,
+            since=last_notified_at,
+            limit=settings.notification_retrieval_limit,
+            extra_filters=filters,
+            settings=settings,
+        )
+        notification_ranked = deduplicate_ranked_jobs(
+            rank_jobs(notification_jobs, profile, settings)
+        )
+        notification_top = select_top_jobs(
+            notification_ranked,
+            settings.notification_jobs_per_email,
+            max_per_company=settings.notification_max_jobs_per_company,
+        )
+
         dashboard_sorted = sorted(all_jobs, key=lambda j: j.opportunity_score or 0, reverse=True)
 
         personalized = []
@@ -254,9 +286,10 @@ async def recommend_for_user(user: dict, *, pools: list[str]) -> dict:
             "personal_score_min": round(min(scores), 4) if scores else None,
             "personal_score_max": round(max(scores), 4) if scores else None,
             "personal_score_unique": len({round(s, 4) for s in scores}),
+            "notification_eligible_jobs": len(notification_jobs),
             "notification_top_4": [
                 {**_job_row(job, score, generate_explanations(job, profile)), "rank": idx}
-                for idx, (job, score) in enumerate(deduped_ranked[:4], start=1)
+                for idx, (job, score) in enumerate(notification_top, start=1)
             ],
             "personalized_ranked_all": personalized,
             "dashboard_by_opportunity_score": dashboard,

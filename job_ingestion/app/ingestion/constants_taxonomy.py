@@ -14,6 +14,8 @@ NORMALIZED_ROLES = [
     "MOBILE_ENGINEER",
     "SOLUTIONS_ENGINEER",
     "SUPPORT_ENGINEER",
+    "SYSTEMS_ENGINEER",
+    "HARDWARE_ENGINEER",
     "TECHNICAL_PROGRAM_MANAGER",
     # Product & design
     "PRODUCT_MANAGER",
@@ -49,6 +51,8 @@ ENGINEERING_ROLES = frozenset(
         "MOBILE_ENGINEER",
         "SOLUTIONS_ENGINEER",
         "SUPPORT_ENGINEER",
+        "SYSTEMS_ENGINEER",
+        "HARDWARE_ENGINEER",
     }
 )
 
@@ -69,6 +73,15 @@ ROLE_CLASSIFICATION_RULES = (
     "- TECHNICAL_PROGRAM_MANAGER: technical program manager, TPM\n"
     "- DATA_ANALYST: data analyst, business analyst, analytics analyst (not data scientist)\n"
     "- SUPPORT_ENGINEER: support engineer, incident management engineer, technical support\n"
+    "- SYSTEMS_ENGINEER: systems engineer, spacecraft/aircraft/vehicle systems engineer, "
+    "radar systems engineer, MBSE/model-based systems engineer, avionics systems engineer "
+    "(integration/V&V focus, not software application development)\n"
+    "- HARDWARE_ENGINEER: hardware engineer, mechanical engineer, electrical engineer, "
+    "electronics engineer, manufacturing engineer, PCB/FPGA/embedded hardware roles "
+    "(physical product, not software-only)\n"
+    "- Prefer SYSTEMS_ENGINEER over SWE for aerospace/defense systems engineering titles; "
+    "prefer HARDWARE_ENGINEER over OPERATIONS for engineering (not management) manufacturing "
+    "roles\n"
     "- Use OTHER only when no taxonomy role fits; prefer specific roles over OTHER"
 )
 

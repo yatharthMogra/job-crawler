@@ -32,6 +32,8 @@ class CandidateProfile(Base):
     preferences: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
     skills: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
     education: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    primary_domain: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    secondary_domain: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     patch_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("candidate_patches.id", ondelete="SET NULL"), nullable=True
     )

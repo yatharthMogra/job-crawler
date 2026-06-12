@@ -14,7 +14,7 @@ sys.path.insert(0, str(ROOT / "recommendation_service"))
 
 from app.config import get_settings
 from app.database import AsyncSessionLocal
-from app.notification.ranker import deduplicate_ranked_jobs, rank_jobs
+from app.notification.ranker import deduplicate_ranked_jobs, rank_jobs, select_top_jobs
 from app.notification.renderer import render_daily_briefing
 from app.notification.retrieval import build_constraint_filters, query_jobs_in_pools
 from app.scoring.explainability import generate_explanations
@@ -49,7 +49,11 @@ async def render_preview(candidate_id: uuid.UUID, *, app_base_url: str | None) -
                 break
 
         ranked = deduplicate_ranked_jobs(rank_jobs(all_jobs, profile, settings))
-        top = ranked[: settings.notification_jobs_per_email]
+        top = select_top_jobs(
+            ranked,
+            settings.notification_jobs_per_email,
+            max_per_company=settings.notification_max_jobs_per_company,
+        )
         jobs_with_explanations = [
             (job, generate_explanations(job, profile), score) for job, score in top
         ]

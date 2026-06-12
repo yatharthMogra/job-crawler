@@ -5,6 +5,8 @@ from app.ingestion.connectors.ashby import AshbyConnector
 from app.ingestion.connectors.base import BaseConnector
 from app.ingestion.connectors.greenhouse import GreenhouseConnector
 from app.ingestion.connectors.lever import LeverConnector
+from app.ingestion.connectors.oracle_hcm import OracleHCMConnector
+from app.ingestion.connectors.workday import WorkdayConnector
 from app.models.company import Company
 
 
@@ -12,6 +14,8 @@ CONNECTORS: dict[str, type[BaseConnector]] = {
     "greenhouse": GreenhouseConnector,
     "lever": LeverConnector,
     "ashby": AshbyConnector,
+    "workday": WorkdayConnector,
+    "oracle_hcm": OracleHCMConnector,
 }
 
 

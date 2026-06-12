@@ -15,9 +15,7 @@ class GeminiProvider(LLMProvider):
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
 
-    async def complete(
-        self, system_prompt: str, user_prompt: str, response_model: type[T]
-    ) -> LLMResult[T]:
+    async def generate_text(self, system_prompt: str, user_prompt: str) -> LLMResult[str]:
         if not self._settings.gemini_api_key:
             raise LLMProviderError("GEMINI_API_KEY is not configured.")
 
@@ -35,18 +33,32 @@ class GeminiProvider(LLMProvider):
                 contents=prompt,
             )
             text = self._response_text(response) or "{}"
-            parsed = self._parse_response_json(response_model=response_model, text=text)
             usage = getattr(response, "usage_metadata", None)
             input_tokens = int(getattr(usage, "prompt_token_count", 0) or 0)
             output_tokens = int(getattr(usage, "candidates_token_count", 0) or 0)
             return LLMResult(
-                output=parsed,
+                output=text,
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
                 latency_ms=int((time.monotonic() - started) * 1000),
             )
         except Exception as exc:  # pragma: no cover - external API behavior
             raise LLMProviderError(f"Gemini completion failed: {exc}") from exc
+
+    async def complete(
+        self, system_prompt: str, user_prompt: str, response_model: type[T]
+    ) -> LLMResult[T]:
+        text_result = await self.generate_text(system_prompt, user_prompt)
+        try:
+            parsed = self._parse_response_json(response_model=response_model, text=text_result.output)
+        except Exception as exc:  # pragma: no cover - external API behavior
+            raise LLMProviderError(f"Gemini completion failed: {exc}") from exc
+        return LLMResult(
+            output=parsed,
+            input_tokens=text_result.input_tokens,
+            output_tokens=text_result.output_tokens,
+            latency_ms=text_result.latency_ms,
+        )
 
     async def count_tokens(self, contents: str) -> int:
         if not self._settings.gemini_api_key:

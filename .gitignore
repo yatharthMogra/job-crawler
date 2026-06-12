@@ -13,6 +13,7 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+scripts/parallel_gemini_drain.env
 
 # Python
 __pycache__/
@@ -49,6 +50,7 @@ pnpm-debug.log*
 
 # Local runtime data
 **/data/resumes/
+**/data/archives/
 **/alerts.json
 job-crawler/
 exports/

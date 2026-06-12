@@ -20,8 +20,15 @@ def test_normalized_roles_includes_tier1_and_tier2() -> None:
         "SUPPORT_ENGINEER",
         "TECHNICAL_PROGRAM_MANAGER",
         "DATA_ANALYST",
+        "SYSTEMS_ENGINEER",
+        "HARDWARE_ENGINEER",
     ):
         assert role in NORMALIZED_ROLES
+
+
+def test_engineering_roles_include_systems_and_hardware() -> None:
+    assert "SYSTEMS_ENGINEER" in ENGINEERING_ROLES
+    assert "HARDWARE_ENGINEER" in ENGINEERING_ROLES
 
 
 def test_coerce_normalized_roles_filters_invalid() -> None:
@@ -47,6 +54,10 @@ def test_job_enrichment_accepts_new_roles() -> None:
 def test_enrichment_prompt_includes_role_classification_rules() -> None:
     assert "SALES:" in ENRICHMENT_SYSTEM_PROMPT
     assert "SOLUTIONS_CONSULTANT:" in ENRICHMENT_SYSTEM_PROMPT
+    assert "SYSTEMS_ENGINEER:" in ENRICHMENT_SYSTEM_PROMPT
+    assert "HARDWARE_ENGINEER:" in ENRICHMENT_SYSTEM_PROMPT
+    assert "job_domain:" in ENRICHMENT_SYSTEM_PROMPT
+    assert "Software + Aerospace_Defense is not a valid pair" in ENRICHMENT_SYSTEM_PROMPT
 
 
 def test_engineering_roles_include_solutions_and_support() -> None:

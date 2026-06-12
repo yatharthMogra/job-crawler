@@ -1,5 +1,83 @@
 [
   {
+    "company": "Medtronic",
+    "platform": "workday",
+    "board_token": "medtronic",
+    "platform_config": {
+      "tenant": "medtronic",
+      "instance": "wd1",
+      "career_site": "MedtronicCareers",
+      "public_path_prefix": "MedtronicCareers",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Greenheck Group",
+    "platform": "workday",
+    "board_token": "greenheckgroup",
+    "platform_config": {
+      "tenant": "greenheckgroup",
+      "instance": "wd5",
+      "career_site": "external",
+      "public_path_prefix": "en-US/external",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Boeing",
+    "platform": "workday",
+    "board_token": "boeing",
+    "platform_config": {
+      "tenant": "boeing",
+      "instance": "wd1",
+      "career_site": "external_subsidiary",
+      "public_path_prefix": "en-US/external_subsidiary",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Salesforce",
+    "platform": "workday",
+    "board_token": "salesforce",
+    "platform_config": {
+      "tenant": "salesforce",
+      "instance": "wd12",
+      "career_site": "External_Career_Site",
+      "public_path_prefix": "en-US/External_Career_Site",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Slack (Salesforce)",
+    "platform": "workday",
+    "board_token": "salesforce-slack",
+    "platform_config": {
+      "tenant": "salesforce",
+      "instance": "wd12",
+      "career_site": "Slack",
+      "public_path_prefix": "en-US/Slack",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "RTX",
+    "platform": "workday",
+    "board_token": "globalhr",
+    "platform_config": {
+      "tenant": "globalhr",
+      "instance": "wd5",
+      "career_site": "rec_rtx_ext_gateway",
+      "public_path_prefix": "en-US/rec_rtx_ext_gateway",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
     "company": "Greenhouse",
     "platform": "greenhouse",
     "board_token": "greenhouse",
@@ -357,6 +435,133 @@
     "company": "Wealth.com",
     "platform": "ashby",
     "board_token": "wealth-com",
+    "is_active": true
+  },
+  {
+    "company": "Icon",
+    "platform": "ashby",
+    "board_token": "icon",
+    "is_active": true
+  },
+  {
+    "company": "Northwood Space",
+    "platform": "ashby",
+    "board_token": "NorthwoodSpace",
+    "is_active": true
+  },
+  {
+    "company": "Foxglove",
+    "platform": "ashby",
+    "board_token": "foxglove",
+    "is_active": true
+  },
+  {
+    "company": "Torc Robotics",
+    "platform": "greenhouse",
+    "board_token": "torcrobotics",
+    "is_active": true
+  },
+  {
+    "company": "True Anomaly",
+    "platform": "greenhouse",
+    "board_token": "trueanomalyinc",
+    "is_active": true
+  },
+  {
+    "company": "CesiumAstro",
+    "platform": "lever",
+    "board_token": "CesiumAstro",
+    "is_active": true
+  },
+  {
+    "company": "Monster Energy",
+    "platform": "greenhouse",
+    "board_token": "monsterenergy",
+    "is_active": true
+  },
+  {
+    "company": "Cerebras (Early Talent)",
+    "platform": "greenhouse",
+    "board_token": "earlytalentcerebras",
+    "is_active": true
+  },
+  {
+    "company": "Further (Early Career)",
+    "platform": "greenhouse",
+    "board_token": "furtherearlycareer",
+    "is_active": true
+  },
+  {
+    "company": "Clara",
+    "platform": "greenhouse",
+    "board_token": "clara",
+    "is_active": true
+  },
+  {
+    "company": "Apartment Life",
+    "platform": "greenhouse",
+    "board_token": "apartmentlife",
+    "is_active": true
+  },
+  {
+    "company": "Appian",
+    "platform": "greenhouse",
+    "board_token": "appian",
+    "is_active": true
+  },
+  {
+    "company": "American Express",
+    "platform": "oracle_hcm",
+    "board_token": "egug",
+    "platform_config": {
+      "datacenter": "us2",
+      "site_number": "CX_1",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "GM Financial",
+    "platform": "oracle_hcm",
+    "board_token": "fa-exvu-saasfaprod1",
+    "platform_config": {
+      "datacenter": "ocs",
+      "site_number": "CX_1",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Honeywell",
+    "platform": "oracle_hcm",
+    "board_token": "ibqbjb",
+    "platform_config": {
+      "datacenter": "ocs",
+      "site_number": "Honeywell",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "GCI",
+    "platform": "oracle_hcm",
+    "board_token": "edqv",
+    "platform_config": {
+      "datacenter": "us2",
+      "site_number": "CX",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "VITAS Healthcare",
+    "platform": "oracle_hcm",
+    "board_token": "ejrz",
+    "platform_config": {
+      "datacenter": "us2",
+      "site_number": "CX_5001",
+      "max_posted_age_days": 30
+    },
     "is_active": true
   }
 ]

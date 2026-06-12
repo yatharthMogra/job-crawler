@@ -5,9 +5,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/jobingestion"
-    notification_cadence_hours: int = 3
+    notification_cadence_hours: int = 24
     notification_retrieval_limit: int = 500
     notification_jobs_per_email: int = 4
+    notification_max_jobs_per_company: int = 1
+    notification_max_job_age_days: int = 60
+    notification_min_jobs_to_send: int = 3
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 587
     smtp_use_tls: bool = True
@@ -21,6 +24,7 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     cors_origins: str = ""
     app_base_url: str = "http://localhost:3000"
+    domain_filter_enabled: bool = False
 
     model_config = SettingsConfigDict(
         env_file=".env",
