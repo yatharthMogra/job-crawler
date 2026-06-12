@@ -15,15 +15,12 @@ function matchesSearch(job: JobWithRole, q: string) {
 }
 
 export default function AppliedPage() {
-  const { allKnownJobs, appliedIds } = useJobs()
+  const { appliedJobs } = useJobs()
   const { search } = useJobsSearch()
 
   const applied = useMemo(
-    () =>
-      allKnownJobs
-        .filter((j) => appliedIds.has(j.id))
-        .filter((j) => matchesSearch(j, search)),
-    [allKnownJobs, appliedIds, search],
+    () => appliedJobs.filter((j) => matchesSearch(j, search)),
+    [appliedJobs, search],
   )
 
   if (applied.length === 0) {

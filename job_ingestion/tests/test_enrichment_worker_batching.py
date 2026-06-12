@@ -3,17 +3,37 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 from app.config import Settings
-from app.ingestion.enrichment_worker import _allocate_tokens, _is_retryable_error, _pack_batches
+from app.ingestion.enrichment_worker import (
+    _allocate_tokens,
+    _is_daily_quota_exhausted,
+    _is_retryable_error,
+    _is_transient_rate_limit,
+    _pack_batches,
+)
 
 
 def _item(tokens: int):
     return SimpleNamespace(estimated_tokens=tokens)
 
 
-def test_is_retryable_error_matches_rate_and_quota_failures() -> None:
-    assert _is_retryable_error("429 RESOURCE_EXHAUSTED")
+def test_is_daily_quota_exhausted() -> None:
+    assert _is_daily_quota_exhausted(
+        "429 Quota exceeded for metric generativelanguage.googleapis.com/generate_requests_per_day"
+    )
+    assert _is_daily_quota_exhausted("You exceeded your current quota")
+    assert not _is_daily_quota_exhausted("429 Too Many Requests")
+
+
+def test_is_transient_rate_limit() -> None:
+    assert _is_transient_rate_limit("429 Too Many Requests")
+    assert _is_transient_rate_limit("503 UNAVAILABLE")
+    assert not _is_transient_rate_limit("429 Quota exceeded for metric generate_requests_per_day")
+
+
+def test_is_retryable_error_matches_transient_failures_only() -> None:
+    assert _is_retryable_error("429 Too Many Requests")
     assert _is_retryable_error("503 UNAVAILABLE")
-    assert _is_retryable_error("quota exceeded")
+    assert not _is_retryable_error("429 Quota exceeded for metric generate_requests_per_day")
     assert not _is_retryable_error("schema mismatch")
 
 

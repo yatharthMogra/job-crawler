@@ -15,6 +15,7 @@ from app.exceptions import ConflictError, NotFoundError
 from app.models.candidate import Candidate
 from app.models.resume import CandidateResume
 from app.pipeline.patch_engine import process_resume_upload
+from app.services.domain_sync import sync_candidate_domains
 from app.schemas.candidate import (
     CandidateCreate,
     CandidateResponse,
@@ -136,3 +137,16 @@ async def update_resume_label(
     await db.commit()
     await db.refresh(resume)
     return ResumeResponse.model_validate(resume)
+
+
+@router.post("/{candidate_id}/recalculate-domains")
+async def recalculate_domains(
+    candidate_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, str | None]:
+    await _get_candidate_or_404(db, candidate_id)
+    result = await sync_candidate_domains(db, candidate_id)
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+    primary_domain, secondary_domain = result
+    return {"primary_domain": primary_domain, "secondary_domain": secondary_domain}

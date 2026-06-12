@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import Settings, get_settings
@@ -20,7 +20,12 @@ from app.ingestion.extractor.llm import (
 )
 from app.ingestion.extractor.seniority import build_batch_job_payload
 from app.ingestion.extractor.text_cleaner import clean_job_description
-from app.ingestion.recommendation_fields import assign_retrieval_pools, compute_opportunity_score
+from app.ingestion.job_archive_sync import update_job_archive_after_enrichment
+from app.ingestion.recommendation_fields import (
+    assign_validated_retrieval_pools,
+    compute_opportunity_score,
+    fields_for_job_enrichment_record,
+)
 from app.llm.factory import get_llm_provider
 from app.models.company import Company
 from app.models.enrichment_batch import EnrichmentBatch
@@ -35,20 +40,84 @@ def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _is_retryable_error(message: str) -> bool:
+def _is_daily_quota_exhausted(message: str) -> bool:
+    lowered = message.lower()
+    daily_markers = (
+        "per day",
+        "perday",
+        "/day",
+        "daily",
+        "generate_requests_per_day",
+        "generaterequestsperday",
+        "quota exceeded for metric",
+    )
+    if any(marker in lowered for marker in daily_markers):
+        return True
+    if "resource_exhausted" in lowered and "quota" in lowered:
+        return True
+    if "quota exceeded" in lowered or "exceeded your current quota" in lowered:
+        return True
+    return False
+
+
+def _is_transient_rate_limit(message: str) -> bool:
+    if _is_daily_quota_exhausted(message):
+        return False
     lowered = message.lower()
     return any(
         term in lowered
         for term in [
             "429",
-            "resource_exhausted",
-            "quota",
-            "rate",
             "503",
             "unavailable",
             "timeout",
+            "rate limit",
+            "rate_limit",
+            "too many requests",
         ]
     )
+
+
+def _is_retryable_error(message: str) -> bool:
+    return _is_transient_rate_limit(message)
+
+
+def _is_schema_validation_error(message: str) -> bool:
+    lowered = message.lower()
+    return any(
+        term in lowered
+        for term in [
+            "validation error",
+            "input should be",
+            "failed to parse batch enrichment",
+            "jsondecodeerror",
+            "invalid json",
+            "model_validate",
+        ]
+    )
+
+
+def _mark_quota_blocked(queue_row: EnrichmentQueue, error_message: str) -> None:
+    queue_row.status = "quota_blocked"
+    queue_row.last_failure_reason = FailureReason.TOKEN_LIMIT_EXCEEDED
+    queue_row.last_error = error_message
+
+
+_quota_paused = False
+
+
+def is_quota_paused() -> bool:
+    return _quota_paused
+
+
+def clear_quota_pause() -> None:
+    global _quota_paused
+    _quota_paused = False
+
+
+def _pause_for_daily_quota(message: str) -> None:
+    global _quota_paused
+    _quota_paused = True
 
 
 def _estimate_tokens_fallback(clean_text: str) -> int:
@@ -81,6 +150,9 @@ class EnrichmentWorker:
 
     async def run_forever(self) -> None:
         while not self._stop.is_set():
+            if is_quota_paused():
+                await asyncio.sleep(30.0)
+                continue
             batches_processed = 0
             try:
                 async with AsyncSessionLocal() as db:
@@ -173,6 +245,11 @@ async def _build_work_items(
             queue_row.status = "failed"
             queue_row.last_failure_reason = FailureReason.MISSING_REQUIRED_FIELDS
             queue_row.last_error = "Raw job not found."
+            normalized.is_active = False
+            normalized.processing_state = ProcessingState.PARTIAL_SUCCESS
+            normalized.failure_reason = FailureReason.MISSING_REQUIRED_FIELDS
+            normalized.last_failure_at = _utcnow()
+            db.add(normalized)
             continue
         company = await db.get(Company, normalized.company_id)
         if company is None:
@@ -259,10 +336,14 @@ def _apply_enrichment_to_job(
     normalized.application_effort = enrichment.application_effort
     normalized.salary_min = enrichment.salary_min
     normalized.salary_max = enrichment.salary_max
-    normalized.retrieval_pools = assign_retrieval_pools(
+    normalized.job_domain = enrichment.job_domain
+    normalized.job_secondary_domain = enrichment.job_secondary_domain
+    normalized.retrieval_pools = assign_validated_retrieval_pools(
         normalized.normalized_roles,
         normalized.is_internship,
         normalized.is_new_grad,
+        enrichment.job_domain,
+        enrichment.job_secondary_domain,
     )
     now = _utcnow()
     normalized.opportunity_score = compute_opportunity_score(
@@ -285,10 +366,12 @@ def _recommendation_fields_from_enrichment(
     settings: Settings,
 ) -> dict:
     normalized_roles = list(enrichment.normalized_roles)
-    retrieval_pools = assign_retrieval_pools(
+    retrieval_pools = assign_validated_retrieval_pools(
         normalized_roles,
         enrichment.is_internship,
         enrichment.is_new_grad,
+        enrichment.job_domain,
+        enrichment.job_secondary_domain,
     )
     computed_at = _utcnow()
     opportunity_score = compute_opportunity_score(
@@ -303,6 +386,8 @@ def _recommendation_fields_from_enrichment(
         "job_capabilities": list(enrichment.job_capabilities),
         "application_effort": enrichment.application_effort,
         "retrieval_pools": retrieval_pools,
+        "job_domain": enrichment.job_domain,
+        "job_secondary_domain": enrichment.job_secondary_domain,
         "salary_min": enrichment.salary_min,
         "salary_max": enrichment.salary_max,
         "opportunity_score": opportunity_score,
@@ -479,6 +564,21 @@ async def _process_batch(
                 continue
 
             _apply_enrichment_to_job(row.normalized, enrichment, settings)
+            if row.normalized.job_archive_id is not None:
+                await update_job_archive_after_enrichment(
+                    db,
+                    row.normalized.job_archive_id,
+                    seniority=enrichment.seniority,
+                    normalized_roles=list(enrichment.normalized_roles),
+                    job_capabilities=list(enrichment.job_capabilities),
+                    skills=list(enrichment.skills),
+                    tech_stack=list(enrichment.tech_stack),
+                    remote_type=enrichment.remote_type,
+                    salary_min=enrichment.salary_min,
+                    salary_max=enrichment.salary_max,
+                    job_domain=enrichment.job_domain,
+                    job_secondary_domain=enrichment.job_secondary_domain,
+                )
             recommendation_fields = _recommendation_fields_from_enrichment(row.normalized, enrichment, settings)
             row.queue_row.status = "completed"
             row.queue_row.next_retry_at = None
@@ -504,7 +604,7 @@ async def _process_batch(
                     remote_type=enrichment.remote_type,
                     tech_stack=enrichment.tech_stack,
                     skills=enrichment.skills,
-                    **recommendation_fields,
+                    **fields_for_job_enrichment_record(recommendation_fields),
                     input_tokens=input_tokens,
                     output_tokens=output_tokens,
                     latency_ms=result.latency_ms,
@@ -516,17 +616,47 @@ async def _process_batch(
         batch.status = "completed"
     except Exception as exc:
         message = str(exc)
-        retryable = _is_retryable_error(message)
+        daily_quota = _is_daily_quota_exhausted(message)
+        retryable = _is_transient_rate_limit(message)
+        schema_error = _is_schema_validation_error(message)
+        if daily_quota and settings.enrichment_stop_on_daily_quota:
+            _pause_for_daily_quota(message)
+        if (
+            len(batch_items) > 1
+            and not daily_quota
+            and not retryable
+            and schema_error
+        ):
+            batch.status = "failed"
+            batch.failure_reason = FailureReason.LLM_SCHEMA_MISMATCH
+            batch.last_error = f"Batch split to singles after: {message}"
+            batch.completed_at = _utcnow()
+            batch.latency_ms = int((batch.completed_at - started).total_seconds() * 1000)
+            for row in batch_items:
+                row.queue_row.status = "queued"
+            await db.flush()
+            for row in batch_items:
+                await _process_batch(db=db, settings=settings, batch_items=[row], source="worker_single_fallback")
+            return
         items = (
             await db.scalars(select(EnrichmentBatchItem).where(EnrichmentBatchItem.batch_id == batch.id))
         ).all()
         items_by_job = {item.queue_id: item for item in items}
         for row in batch_items:
-            if retryable:
+            if daily_quota and settings.enrichment_stop_on_daily_quota:
+                _mark_quota_blocked(queue_row=row.queue_row, error_message=message)
+            elif retryable:
                 _mark_for_retry(
                     queue_row=row.queue_row,
                     settings=settings,
                     failure_reason=FailureReason.TOKEN_LIMIT_EXCEEDED,
+                    error_message=message,
+                )
+            elif schema_error:
+                _mark_for_retry(
+                    queue_row=row.queue_row,
+                    settings=settings,
+                    failure_reason=FailureReason.LLM_SCHEMA_MISMATCH,
                     error_message=message,
                 )
             else:
@@ -565,17 +695,64 @@ async def _process_batch(
                 item.failure_reason = row.queue_row.last_failure_reason
                 item.last_error = message
         batch.status = "failed"
-        batch.failure_reason = FailureReason.TOKEN_LIMIT_EXCEEDED if retryable else FailureReason.LLM_SCHEMA_MISMATCH
+        if daily_quota and settings.enrichment_stop_on_daily_quota:
+            batch.failure_reason = FailureReason.TOKEN_LIMIT_EXCEEDED
+        else:
+            batch.failure_reason = FailureReason.TOKEN_LIMIT_EXCEEDED if retryable else FailureReason.LLM_SCHEMA_MISMATCH
         batch.last_error = message
 
     batch.completed_at = _utcnow()
     batch.latency_ms = int((batch.completed_at - started).total_seconds() * 1000)
 
 
+async def cleanup_orphan_enrichment_queue(db: AsyncSession) -> dict[str, int]:
+    """Remove queue rows for missing jobs and deactivate normalized jobs without raw payloads."""
+    deactivated = (
+        await db.execute(
+            text(
+                """
+                UPDATE normalized_jobs nj
+                SET is_active = false,
+                    processing_state = 'partial_success',
+                    failure_reason = 'missing_required_fields',
+                    last_failure_at = NOW()
+                WHERE nj.is_active
+                  AND NOT EXISTS (
+                    SELECT 1 FROM raw_jobs rj WHERE rj.id = nj.raw_job_id
+                  )
+                """
+            )
+        )
+    ).rowcount
+    deleted_queue = (
+        await db.execute(
+            text(
+                """
+                DELETE FROM enrichment_queue eq
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM normalized_jobs nj WHERE nj.id = eq.normalized_job_id
+                  )
+                  OR NOT EXISTS (
+                    SELECT 1
+                    FROM normalized_jobs nj
+                    JOIN raw_jobs rj ON rj.id = nj.raw_job_id
+                    WHERE nj.id = eq.normalized_job_id
+                  )
+                """
+            )
+        )
+    ).rowcount
+    await db.commit()
+    return {"deactivated_jobs": deactivated, "deleted_queue_rows": deleted_queue}
+
+
 async def process_enrichment_window(
     db: AsyncSession, settings: Optional[Settings] = None
 ) -> tuple[int, int]:
     settings = settings or get_settings()
+    if is_quota_paused():
+        await db.commit()
+        return 0, 0
     now = _utcnow()
     eligible = and_(
         EnrichmentQueue.status.in_(["queued", "cooldown"]),

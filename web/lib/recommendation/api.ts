@@ -117,3 +117,43 @@ export function createSubscriptions(candidateId: string, poolNames: string[]) {
     body: JSON.stringify({ candidate_id: candidateId, pool_names: poolNames }),
   })
 }
+
+export interface UserApplicationApi {
+  id: string
+  candidate_id: string
+  job_archive_id: string | null
+  normalized_job_id: string | null
+  company_name: string
+  job_title: string
+  location: string | null
+  platform: string | null
+  external_job_id: string | null
+  posting_url: string | null
+  salary_min: number | null
+  salary_max: number | null
+  seniority: string | null
+  skills: string[]
+  tech_stack: string[]
+  description_text: string | null
+  applied_at: string
+  status: string
+  notes: string | null
+}
+
+export interface UserApplicationsResponse {
+  applications: UserApplicationApi[]
+  total: number
+}
+
+export function fetchApplications(candidateId: string) {
+  return request<UserApplicationsResponse>(
+    `/dashboard/applications?candidate_id=${encodeURIComponent(candidateId)}`,
+  )
+}
+
+export function applyToJob(candidateId: string, jobId: string) {
+  return request<UserApplicationApi>(
+    `/dashboard/jobs/${encodeURIComponent(jobId)}/apply?candidate_id=${encodeURIComponent(candidateId)}`,
+    { method: "POST" },
+  )
+}

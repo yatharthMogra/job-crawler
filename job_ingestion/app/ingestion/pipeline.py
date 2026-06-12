@@ -33,6 +33,10 @@ from app.ingestion.extractor.deterministic import extract_deterministic_fields
 from app.ingestion.extractor.llm import DEFAULT_ENRICHMENT
 from app.ingestion.extractor.text_cleaner import build_description_preview, clean_job_description
 from app.ingestion.fetcher import fetch_company_jobs
+from app.ingestion.job_archive_sync import (
+    upsert_job_archive_from_deterministic,
+    upsert_job_archive_from_normalized,
+)
 from app.models.company import Company
 from app.models.normalized_job import NormalizedJob
 from app.models.pipeline_run import CompanyRunResult, PipelineRun
@@ -134,11 +138,13 @@ async def _upsert_normalized_job(
     enrichment: Any,
     settings: Settings,
     existing_row: Optional[NormalizedJob],
+    job_archive_id: Optional[UUID] = None,
 ) -> None:
     now = _utcnow()
     payload = dict(
         raw_job_id=raw_row.id,
         company_id=company.id,
+        job_archive_id=job_archive_id,
         external_job_id=deterministic_fields["external_job_id"],
         title=deterministic_fields["title"] or "Untitled",
         company_name=company.name,
@@ -196,6 +202,7 @@ async def _upsert_normalized_core(
     deterministic_fields: dict[str, Any],
     settings: Settings,
     existing_row: Optional[NormalizedJob],
+    job_archive_id: UUID,
 ) -> NormalizedJob:
     await _upsert_normalized_job(
         db=db,
@@ -205,6 +212,7 @@ async def _upsert_normalized_core(
         enrichment=DEFAULT_ENRICHMENT,
         settings=settings,
         existing_row=existing_row,
+        job_archive_id=job_archive_id,
     )
     normalized = existing_row
     if normalized is None:
@@ -279,6 +287,13 @@ async def _process_single_company(
                 db.add(raw_row)
                 await db.flush()
 
+                job_archive_id = await upsert_job_archive_from_deterministic(
+                    db,
+                    deterministic_fields,
+                    company,
+                    description_text=deterministic_fields.get("description_text"),
+                )
+
                 normalized = await _upsert_normalized_core(
                     db=db,
                     company=company,
@@ -286,6 +301,7 @@ async def _process_single_company(
                     deterministic_fields=deterministic_fields,
                     settings=settings,
                     existing_row=normalized_by_external_id.get(external_id),
+                    job_archive_id=job_archive_id,
                 )
                 normalized_by_external_id[external_id] = normalized
 
@@ -305,6 +321,10 @@ async def _process_single_company(
                     existing.last_seen_at = now
                     existing.consecutive_misses = 0
                     existing.is_active = True
+                    if existing.job_archive_id is None:
+                        existing.job_archive_id = await upsert_job_archive_from_normalized(
+                            db, existing, company
+                        )
 
             outcome.jobs_removed = await _apply_removals(
                 normalized_by_external_id,

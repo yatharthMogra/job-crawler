@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.constants import normalize_pool_names
 from app.database import get_db
 from app.models.subscription import UserPoolSubscription
 from app.schemas.subscription import (
@@ -24,7 +25,7 @@ async def create_subscriptions(
     db: AsyncSession = Depends(get_db),
 ) -> list[SubscriptionOut]:
     created: list[UserPoolSubscription] = []
-    for pool_name in payload.pool_names:
+    for pool_name in normalize_pool_names(payload.pool_names):
         existing = await db.scalar(
             select(UserPoolSubscription).where(
                 UserPoolSubscription.candidate_id == payload.candidate_id,
@@ -75,7 +76,7 @@ async def update_subscriptions(
     existing_rows = (
         await db.scalars(select(UserPoolSubscription).where(UserPoolSubscription.candidate_id == candidate_id))
     ).all()
-    desired = set(payload.pool_names)
+    desired = set(normalize_pool_names(payload.pool_names))
     updated: list[UserPoolSubscription] = []
 
     for row in existing_rows:

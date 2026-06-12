@@ -3,13 +3,44 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
+import os
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 JSON_PATH = ROOT / "exports" / "user_recommendations.json"
 OUT_PATH = ROOT / "testing_results.md"
+
+RECO_ROOT = ROOT / "recommendation_service"
+sys.path.insert(0, str(RECO_ROOT))
+os.chdir(RECO_ROOT)
+
+from sqlalchemy import text
+
+from app.database import AsyncSessionLocal, engine
+
+
+async def fetch_index_stats() -> dict:
+    async with AsyncSessionLocal() as db:
+        row = (
+            await db.execute(
+                text(
+                    """
+                    SELECT
+                      (SELECT COUNT(*) FROM normalized_jobs
+                        WHERE is_active AND processing_state = 'success'
+                          AND opportunity_score IS NOT NULL) AS reco_eligible,
+                      (SELECT COUNT(*) FROM normalized_jobs WHERE is_active) AS active_normalized,
+                      (SELECT COUNT(*) FROM job_archive) AS archive_total,
+                      (SELECT COUNT(*) FROM companies WHERE is_active) AS active_companies
+                    """
+                )
+            )
+        ).one()
+        return dict(row._mapping)
 
 
 def fmt_user(u: dict) -> list[str]:
@@ -43,6 +74,10 @@ def fmt_user(u: dict) -> list[str]:
     out.append("### Match summary")
     out.append("")
     out.append(f"- **Total jobs matching subscribed pools (after filters):** {u['total_matching_jobs']}")
+    if u.get("notification_eligible_jobs") is not None:
+        out.append(
+            f"- **Notification-eligible jobs (≤60d, not yet emailed):** {u['notification_eligible_jobs']}"
+        )
     out.append(
         f"- **Personal score range:** {u.get('personal_score_min')} – {u.get('personal_score_max')} "
         f"({u.get('personal_score_unique')} unique tiers)"
@@ -94,22 +129,32 @@ def fmt_user(u: dict) -> list[str]:
     return out
 
 
-def main() -> None:
+async def generate() -> None:
     data = json.loads(JSON_PATH.read_text(encoding="utf-8"))
+    stats = await fetch_index_stats()
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     lines = [
         "# User Recommendation Results",
         "",
-        f"Generated {generated} after v4 taxonomy enrichment (899/899 jobs, "
-        "Tier 1+2 business pools, seniority v3, gemini-3.1-flash-lite).",
+        f"Generated {generated} after v5 domain taxonomy enrichment "
+        f"({stats['reco_eligible']:,} recommendation-eligible active jobs, "
+        f"{stats['active_normalized']:,} active normalized rows, "
+        f"{stats['archive_total']:,} archived identities, "
+        f"{stats['active_companies']} active companies; "
+        "domain filter enabled, Tier 1+2 business pools, gemini-3.1-flash-lite).",
+        "",
+        "Active layer (`normalized_jobs`) retains jobs ≤7 days; long-lived history lives in `job_archive`.",
         "",
         "Pools synced via `PATCH /subscriptions` from profile preferences or existing subscriptions.",
         "",
         "**Ranking modes:**",
         "- **Dashboard** — sorted by global `opportunity_score` (freshness + comp + effort)",
         "- **Personalized / Email** — sorted by profile match score "
-        "(capabilities 40%, skills 25%, location 20%, comp 15%, seniority soft penalty)",
+        "(capabilities 40%, skills 25%, location 20%, comp 15%, seniority soft penalty); "
+        "ties broken by `posted_at` then `opportunity_score`",
+        "- **Email retrieval** — only jobs posted within 60 days, not previously emailed; "
+        "skips send when fewer than 3 eligible jobs (daily cadence default)",
         "",
         "Full machine-readable export: [`exports/user_recommendations.json`](exports/user_recommendations.json)",
         "",
@@ -133,6 +178,16 @@ def main() -> None:
 
     OUT_PATH.write_text("\n".join(lines), encoding="utf-8")
     print(f"wrote {OUT_PATH} ({len(lines)} lines)")
+
+
+def main() -> None:
+    async def _run() -> None:
+        try:
+            await generate()
+        finally:
+            await engine.dispose()
+
+    asyncio.run(_run())
 
 
 if __name__ == "__main__":

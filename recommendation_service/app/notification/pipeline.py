@@ -12,7 +12,7 @@ from app.database import AsyncSessionLocal
 from app.models.notification import NotificationBatch, NotificationJobHistory
 from app.models.shared import Candidate
 from app.models.subscription import UserPoolSubscription
-from app.notification.ranker import deduplicate_ranked_jobs, rank_jobs
+from app.notification.ranker import deduplicate_ranked_jobs, rank_jobs, select_top_jobs
 from app.notification.renderer import render_daily_briefing
 from app.notification.retrieval import build_constraint_filters, fetch_new_jobs_in_pools
 from app.notification.sender import send_email
@@ -25,6 +25,13 @@ log = structlog.get_logger(__name__)
 
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def should_send_notification(ranked_job_count: int, settings: Settings) -> bool:
+    minimum = settings.notification_min_jobs_to_send
+    if minimum <= 0:
+        return ranked_job_count > 0
+    return ranked_job_count >= minimum
 
 
 async def get_last_notification_time(db: AsyncSession, candidate_id: uuid.UUID) -> datetime | None:
@@ -61,7 +68,7 @@ async def run_notification_for_user(
         return
 
     last_notified_at = await get_last_notification_time(db, candidate_id)
-    constraint_filters = build_constraint_filters(user_profile)
+    constraint_filters = build_constraint_filters(user_profile, settings)
     candidate_jobs = await fetch_new_jobs_in_pools(
         db,
         candidate_id=candidate_id,
@@ -88,7 +95,15 @@ async def run_notification_for_user(
 
     ranked_jobs = deduplicate_ranked_jobs(rank_jobs(filtered_jobs, user_profile, settings))
     batch.jobs_ranked = len(ranked_jobs)
-    top_jobs = ranked_jobs[: settings.notification_jobs_per_email]
+    if not should_send_notification(len(ranked_jobs), settings):
+        await _skip_batch(batch, "insufficient_eligible_jobs", db)
+        return
+
+    top_jobs = select_top_jobs(
+        ranked_jobs,
+        settings.notification_jobs_per_email,
+        max_per_company=settings.notification_max_jobs_per_company,
+    )
 
     jobs_with_explanations: list[tuple] = []
     for job, score in top_jobs:

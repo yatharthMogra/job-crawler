@@ -3,10 +3,11 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import Settings
+from app.domain import derive_user_domains
 from app.llm.factory import get_llm_provider
 from app.models.capability import CandidateCapability
 from app.models.evidence import CandidateEvidence
@@ -75,5 +76,14 @@ async def recompute_capabilities(
         db.add(row)
         capabilities.append(row)
 
+    primary_domain, secondary_domain = derive_user_domains([cap.capability_name for cap in capabilities])
+    await db.execute(
+        update(CandidateProfile)
+        .where(
+            CandidateProfile.candidate_id == candidate_id,
+            CandidateProfile.version == profile_version,
+        )
+        .values(primary_domain=primary_domain, secondary_domain=secondary_domain)
+    )
     await db.commit()
     return capabilities

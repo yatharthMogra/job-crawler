@@ -23,7 +23,8 @@ import {
   setPendingApply,
   type PendingApply,
 } from "@/lib/job-storage"
-import { fetchDashboardJobs, fetchRecommendedJobs } from "@/lib/recommendation/api"
+import { fetchApplications, fetchDashboardJobs, fetchRecommendedJobs, applyToJob } from "@/lib/recommendation/api"
+import { mapApplicationToUi } from "@/lib/recommendation/map-application"
 import { mapApiJobToUi, mapRecommendedApiJob } from "@/lib/recommendation/map-job"
 import { syncSubscriptionsForCandidate } from "@/lib/recommendation/sync-subscriptions"
 import {
@@ -56,6 +57,7 @@ interface JobsContextValue {
   allKnownJobs: JobWithRole[]
   savedIds: Set<string>
   appliedIds: Set<string>
+  appliedJobs: JobWithRole[]
   hiddenIds: Set<string>
   filters: Filters
   selectedJobId: string | null
@@ -87,6 +89,7 @@ export function JobsProvider({ children }: { children: ReactNode }) {
   const [recommendedJobs, setRecommendedJobs] = useState<JobWithRole[]>([])
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set())
+  const [appliedJobs, setAppliedJobs] = useState<JobWithRole[]>([])
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set())
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS)
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null)
@@ -106,14 +109,18 @@ export function JobsProvider({ children }: { children: ReactNode }) {
     }
 
     setSavedIds(loadSavedIds(candidateId))
-    setAppliedIds(loadAppliedIds(candidateId))
     setHiddenIds(loadHiddenIds(candidateId))
     setPendingApplyState(getPendingApply(candidateId))
 
     if (mockMode) {
+      const mockApplied = loadAppliedIds(candidateId)
+      setAppliedIds(mockApplied)
       setAllJobs(ALL_JOBS as JobWithRole[])
       setRecommendedJobs(
         [...(ALL_JOBS as JobWithRole[])].sort((a, b) => b.personal_score - a.personal_score),
+      )
+      setAppliedJobs(
+        (ALL_JOBS as JobWithRole[]).filter((job) => mockApplied.has(job.id)),
       )
       setLoading(false)
       setRecommendedLoading(false)
@@ -134,13 +141,40 @@ export function JobsProvider({ children }: { children: ReactNode }) {
       if (filters.salaryMin) query.salary_min = filters.salaryMin
       if (filters.role) query.role_type = "FULLTIME"
 
-      const [dashboard, recommended] = await Promise.all([
+      const [dashboard, recommended, applications] = await Promise.all([
         fetchDashboardJobs(candidateId, query),
         fetchRecommendedJobs(candidateId, { limit: 200 }),
+        fetchApplications(candidateId).catch(() => ({ applications: [], total: 0 })),
       ])
 
       setAllJobs(dashboard.jobs.map((j) => mapApiJobToUi(j)))
       setRecommendedJobs(recommended.jobs.map((j) => mapRecommendedApiJob(j)))
+      const serverApplied = applications.applications.map((app) => mapApplicationToUi(app))
+      setAppliedJobs(serverApplied)
+
+      const appliedIdSet = new Set<string>()
+      for (const app of applications.applications) {
+        if (app.normalized_job_id) appliedIdSet.add(app.normalized_job_id)
+      }
+      const legacyApplied = loadAppliedIds(candidateId)
+      if (appliedIdSet.size === 0 && legacyApplied.size > 0) {
+        for (const jobId of legacyApplied) {
+          try {
+            const created = await applyToJob(candidateId, jobId)
+            if (created.normalized_job_id) appliedIdSet.add(created.normalized_job_id)
+            else appliedIdSet.add(jobId)
+          } catch {
+            appliedIdSet.add(jobId)
+          }
+        }
+        persistAppliedIds(candidateId, new Set())
+        const refreshed = await fetchApplications(candidateId).catch(() => ({
+          applications: [],
+          total: 0,
+        }))
+        setAppliedJobs(refreshed.applications.map((app) => mapApplicationToUi(app)))
+      }
+      setAppliedIds(appliedIdSet)
       setHasProfile(recommended.total > 0 || dashboard.total > 0)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load jobs")
@@ -172,17 +206,49 @@ export function JobsProvider({ children }: { children: ReactNode }) {
 
   const markApplied = useCallback(
     (id: string) => {
-      if (!candidateId) return
-      setAppliedIds((prev) => {
-        const next = new Set(prev)
-        next.add(id)
-        persistAppliedIds(candidateId, next)
-        return next
-      })
-      clearPendingApply(candidateId)
-      setPendingApplyState(null)
+      if (!candidateId || mockMode) {
+        if (!candidateId) return
+        setAppliedIds((prev) => {
+          const next = new Set(prev)
+          next.add(id)
+          persistAppliedIds(candidateId, next)
+          return next
+        })
+        clearPendingApply(candidateId)
+        setPendingApplyState(null)
+        return
+      }
+      void (async () => {
+        try {
+          const application = await applyToJob(candidateId, id)
+          const appliedJob = mapApplicationToUi(application)
+          setAppliedJobs((prev) => {
+            const withoutDup = prev.filter(
+              (job) =>
+                job.id !== id &&
+                job.id !== application.id &&
+                job.id !== (application.normalized_job_id ?? ""),
+            )
+            return [appliedJob, ...withoutDup]
+          })
+          setAppliedIds((prev) => {
+            const next = new Set(prev)
+            next.add(application.normalized_job_id ?? id)
+            return next
+          })
+        } catch {
+          setAppliedIds((prev) => {
+            const next = new Set(prev)
+            next.add(id)
+            return next
+          })
+        } finally {
+          clearPendingApply(candidateId)
+          setPendingApplyState(null)
+        }
+      })()
     },
-    [candidateId],
+    [candidateId, mockMode],
   )
 
   const startApply = useCallback(
@@ -204,17 +270,13 @@ export function JobsProvider({ children }: { children: ReactNode }) {
     (applied: boolean) => {
       if (!candidateId || !pendingApply) return
       if (applied) {
-        setAppliedIds((prev) => {
-          const next = new Set(prev)
-          next.add(pendingApply.jobId)
-          persistAppliedIds(candidateId, next)
-          return next
-        })
+        markApplied(pendingApply.jobId)
+        return
       }
       clearPendingApply(candidateId)
       setPendingApplyState(null)
     },
-    [candidateId, pendingApply],
+    [candidateId, pendingApply, markApplied],
   )
 
   const hideJob = useCallback(
@@ -289,6 +351,7 @@ export function JobsProvider({ children }: { children: ReactNode }) {
       allKnownJobs,
       savedIds,
       appliedIds,
+      appliedJobs,
       hiddenIds,
       filters,
       selectedJobId,
@@ -315,6 +378,7 @@ export function JobsProvider({ children }: { children: ReactNode }) {
       allKnownJobs,
       savedIds,
       appliedIds,
+      appliedJobs,
       hiddenIds,
       filters,
       selectedJobId,

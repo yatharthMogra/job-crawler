@@ -13,6 +13,7 @@ from app.database import get_db
 from app.ingestion.constants import EventCategory, EventSeverity, EventType, ProcessingState
 from app.ingestion.enrichment_worker import process_job_immediately
 from app.ingestion.events import write_event
+from app.ingestion.job_archive_sync import update_job_archive_from_normalized_fields
 from app.models.company import Company
 from app.models.job_enrichment import JobEnrichment
 from app.models.normalized_job import NormalizedJob
@@ -142,6 +143,9 @@ async def patch_job_for_review(
     row.processing_state = ProcessingState.MANUALLY_CORRECTED
     row.last_manual_review_at = datetime.now(timezone.utc)
     row.last_review_comment = payload.comment
+
+    if row.job_archive_id is not None:
+        await update_job_archive_from_normalized_fields(db, row.job_archive_id, row)
 
     await write_event(
         db=db,

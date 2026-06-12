@@ -22,5 +22,8 @@ class LLMProvider(ABC):
     ) -> LLMResult[T]:
         raise NotImplementedError
 
+    async def generate_text(self, system_prompt: str, user_prompt: str) -> LLMResult[str]:
+        raise NotImplementedError
+
     async def count_tokens(self, contents: str) -> int:
         return 0

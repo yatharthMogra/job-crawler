@@ -14,6 +14,7 @@ async def test_ashby_connector_fetches_jobs_with_description_html(monkeypatch) -
     class _FakeResponse:
         def __init__(self, payload: dict[str, object]) -> None:
             self._payload = payload
+            self.status_code = 200
 
         def raise_for_status(self) -> None:
             return None
@@ -87,6 +88,8 @@ async def test_ashby_connector_fetches_jobs_with_description_html(monkeypatch) -
 @pytest.mark.asyncio
 async def test_ashby_connector_raises_parse_error_on_graphql_errors(monkeypatch) -> None:
     class _FakeResponse:
+        status_code = 200
+
         def raise_for_status(self) -> None:
             return None
 

@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime, timezone
 
 from app.models.shared import NormalizedJob
-from app.notification.ranker import deduplicate_ranked_jobs, normalize_title
+from app.notification.ranker import deduplicate_ranked_jobs, normalize_title, select_top_jobs
 
 
 def _job(title: str, company: str, location: str, score: float) -> tuple[NormalizedJob, float]:
@@ -61,3 +61,18 @@ def test_deduplicate_ranked_jobs_allows_same_title_different_company() -> None:
     ]
     deduped = deduplicate_ranked_jobs(ranked)
     assert len(deduped) == 2
+
+
+def test_select_top_jobs_caps_one_job_per_company() -> None:
+    ranked = [
+        _job("Data Scientist", "iSpot", "Remote", 0.9),
+        _job("Research Data Scientist 1", "iSpot", "Bellevue, WA", 0.88),
+        _job("Software Engineer II, Battery", "EnergyHub", "Remote", 0.85),
+        _job("Software Engineer II, EV", "EnergyHub", "Remote", 0.84),
+        _job("Backend Engineer", "Ramp", "New York, NY", 0.8),
+    ]
+    top = select_top_jobs(ranked, 4, max_per_company=1)
+    assert len(top) == 3
+    assert top[0][0].company_name == "iSpot"
+    assert top[1][0].company_name == "EnergyHub"
+    assert top[2][0].company_name == "Ramp"

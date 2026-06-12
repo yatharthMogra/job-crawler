@@ -35,6 +35,8 @@ class CandidateProfile(Base):
     preferences: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     skills: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     education: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    primary_domain: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    secondary_domain: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
@@ -65,6 +67,9 @@ class NormalizedJob(Base):
     __tablename__ = "normalized_jobs"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    job_archive_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    external_job_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    company_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     title: Mapped[str] = mapped_column(String(512), nullable=False)
     company_name: Mapped[str] = mapped_column(String(255), nullable=False)
     location: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
@@ -84,7 +89,56 @@ class NormalizedJob(Base):
     job_capabilities: Mapped[list[str]] = mapped_column(ARRAY(String(128)), nullable=False)
     application_effort: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
     retrieval_pools: Mapped[list[str]] = mapped_column(ARRAY(String(128)), nullable=False)
+    job_domain: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    job_secondary_domain: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     salary_min: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     salary_max: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     opportunity_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class Company(Base):
+    __tablename__ = "companies"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    platform: Mapped[str] = mapped_column(String(64), nullable=False)
+
+
+class JobArchive(Base):
+    __tablename__ = "job_archive"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    external_job_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    company_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    company_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    platform: Mapped[str] = mapped_column(String(64), nullable=False)
+    title: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+    location: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    posting_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    salary_min: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    salary_max: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    seniority: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    skills: Mapped[Optional[list[str]]] = mapped_column(ARRAY(String(128)), nullable=True)
+    tech_stack: Mapped[Optional[list[str]]] = mapped_column(ARRAY(String(128)), nullable=True)
+    description_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+
+class UserApplication(Base):
+    __tablename__ = "user_applications"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    candidate_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("candidates.id"), nullable=False)
+    job_archive_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("job_archive.id", ondelete="SET NULL"), nullable=True
+    )
+    company_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    job_title: Mapped[str] = mapped_column(String(512), nullable=False)
+    location: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    platform: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    external_job_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    applied_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

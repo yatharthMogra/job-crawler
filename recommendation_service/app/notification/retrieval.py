@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from sqlalchemy import and_, not_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import Settings, get_settings
+from app.domain import build_domain_filters, candidate_domains_from_profile
 from app.models.notification import NotificationJobHistory
 from app.models.shared import NormalizedJob
 from app.scoring.seniority import (
@@ -17,6 +19,23 @@ from app.scoring.seniority import (
 from app.services.profile_loader import UserProfile
 
 
+def build_notification_age_filter(settings: Settings) -> list[Any]:
+    """Exclude stale postings from notification retrieval."""
+    days = settings.notification_max_job_age_days
+    if days <= 0:
+        return []
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    return [
+        or_(
+            NormalizedJob.posted_at >= cutoff,
+            and_(
+                NormalizedJob.posted_at.is_(None),
+                NormalizedJob.created_at >= cutoff,
+            ),
+        )
+    ]
+
+
 async def fetch_new_jobs_in_pools(
     db: AsyncSession,
     *,
@@ -25,7 +44,9 @@ async def fetch_new_jobs_in_pools(
     since: datetime | None,
     limit: int,
     extra_filters: list[Any] | None = None,
+    settings: Settings | None = None,
 ) -> list[NormalizedJob]:
+    settings = settings or get_settings()
     sent_job_ids = select(NotificationJobHistory.job_id).where(
         NotificationJobHistory.candidate_id == candidate_id
     )
@@ -35,6 +56,7 @@ async def fetch_new_jobs_in_pools(
         NormalizedJob.processing_state == "success",
         NormalizedJob.opportunity_score.is_not(None),
         not_(NormalizedJob.id.in_(sent_job_ids)),
+        *build_notification_age_filter(settings),
         *(extra_filters or []),
     ]
     if since is not None:
@@ -46,10 +68,21 @@ async def fetch_new_jobs_in_pools(
     return list((await db.scalars(stmt)).all())
 
 
-def build_constraint_filters(user_profile: UserProfile) -> list[Any]:
+def build_constraint_filters(
+    user_profile: UserProfile,
+    settings: Settings | None = None,
+) -> list[Any]:
     """Return SQLAlchemy filter clauses for hard constraints."""
+    settings = settings or get_settings()
     filters: list[Any] = []
     constraints = user_profile.constraints or {}
+
+    if settings.domain_filter_enabled:
+        candidate_domains = candidate_domains_from_profile(
+            user_profile.primary_domain,
+            user_profile.secondary_domain,
+        )
+        filters.extend(build_domain_filters(candidate_domains))
 
     if constraints.get("sponsorship_required"):
         filters.append(NormalizedJob.sponsorship_status != "no")

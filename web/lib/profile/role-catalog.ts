@@ -21,6 +21,8 @@ const ENGINEERING_POOL_BASES = new Set([
   "MOBILE_ENGINEER",
   "SOLUTIONS_ENGINEER",
   "SUPPORT_ENGINEER",
+  "SYSTEMS_ENGINEER",
+  "HARDWARE_ENGINEER",
 ])
 
 export const ROLE_CATALOG: RoleCatalogEntry[] = [
@@ -33,6 +35,8 @@ export const ROLE_CATALOG: RoleCatalogEntry[] = [
   { id: "devops-engineer", label: "DevOps Engineer", category: "Software/Internet/AI", subcategory: "Backend Engineering", poolBase: "DEVOPS_ENGINEER" },
   { id: "solutions-engineer", label: "Solutions Engineer", category: "Software/Internet/AI", subcategory: "Backend Engineering", poolBase: "SOLUTIONS_ENGINEER" },
   { id: "support-engineer", label: "Support Engineer", category: "Software/Internet/AI", subcategory: "Backend Engineering", poolBase: "SUPPORT_ENGINEER" },
+  { id: "systems-engineer", label: "Systems Engineer", category: "Aerospace & Defense", subcategory: "Systems Engineering", poolBase: "SYSTEMS_ENGINEER" },
+  { id: "hardware-engineer", label: "Hardware Engineer", category: "Aerospace & Defense", subcategory: "Hardware Engineering", poolBase: "HARDWARE_ENGINEER" },
   { id: "tpm", label: "Technical Program Manager", category: "Software/Internet/AI", subcategory: "Backend Engineering", poolBase: "TECHNICAL_PROGRAM_MANAGER" },
   // Frontend Engineering
   { id: "frontend-engineer", label: "Frontend Engineer", category: "Software/Internet/AI", subcategory: "Frontend Engineering", poolBase: "FRONTEND_ENGINEER" },

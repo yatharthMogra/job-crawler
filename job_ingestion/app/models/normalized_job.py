@@ -24,6 +24,9 @@ class NormalizedJob(Base):
     company_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True
     )
+    job_archive_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("job_archive.id"), nullable=True, index=True
+    )
     external_job_id: Mapped[str] = mapped_column(String(255), nullable=False)
     title: Mapped[str] = mapped_column(String(512), nullable=False)
     company_name: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -49,6 +52,8 @@ class NormalizedJob(Base):
     job_capabilities: Mapped[list[str]] = mapped_column(ARRAY(String(128)), nullable=False, default=list)
     application_effort: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
     retrieval_pools: Mapped[list[str]] = mapped_column(ARRAY(String(128)), nullable=False, default=list)
+    job_domain: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
+    job_secondary_domain: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     salary_min: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     salary_max: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     opportunity_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)

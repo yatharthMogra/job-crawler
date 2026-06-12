@@ -34,6 +34,20 @@ cd profile_service && uvicorn app.main:app --port 8001 --reload
 cd recommendation_service && uvicorn app.main:app --port 8002 --reload
 ```
 
+## Database snapshot (skip ingestion + enrichment)
+
+To bootstrap from a shared dump instead of running the full pipeline:
+
+```bash
+./scripts/import-dev-db.sh exports/jobingestion-lite-YYYY-MM-DD.dump
+```
+
+See [`snapshots/README.md`](snapshots/README.md) for details. To create a new export:
+
+```bash
+./scripts/export-dev-db.sh
+```
+
 ## Migrations
 
 Each service has its own Alembic config and version table:

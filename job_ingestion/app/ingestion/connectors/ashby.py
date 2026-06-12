@@ -13,7 +13,7 @@ from app.models.company import Company
 class AshbyConnector(BaseConnector):
     base_url = "https://jobs.ashbyhq.com/api/non-user-graphql?op=ApiJobBoardWithTeams"
     detail_url = "https://jobs.ashbyhq.com/api/non-user-graphql?op=ApiJobPosting"
-    detail_concurrency = 3
+    detail_concurrency = 1
     detail_retry_attempts = 5
     detail_retry_base_seconds = 2.0
 
@@ -67,7 +67,7 @@ query ApiJobPosting($organizationHostedJobsPageName: String!, $jobPostingId: Str
             details = await asyncio.gather(*tasks)
 
         normalized_postings: list[dict[str, Any]] = []
-        for listing, detail in zip(listings, details, strict=True):
+        for listing, detail in zip(listings, details):
             job_id = listing.get("id")
             if not job_id:
                 continue
@@ -86,13 +86,28 @@ query ApiJobPosting($organizationHostedJobsPageName: String!, $jobPostingId: Str
             "variables": {"organizationHostedJobsPageName": company.board_token},
             "query": self._LIST_QUERY,
         }
-        try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.post(self.base_url, json=request_payload)
-                response.raise_for_status()
-                payload = response.json()
-        except Exception as exc:  # noqa: BLE001
-            raise ConnectorFetchError(f"Ashby fetch failed for {company.board_token}: {exc}") from exc
+        payload: dict[str, Any] | None = None
+        last_error: Exception | None = None
+        for attempt in range(self.detail_retry_attempts):
+            try:
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    response = await client.post(self.base_url, json=request_payload)
+                    if response.status_code == 429:
+                        await asyncio.sleep(self.detail_retry_base_seconds * (2**attempt))
+                        continue
+                    response.raise_for_status()
+                    payload = response.json()
+                    break
+            except Exception as exc:  # noqa: BLE001
+                last_error = exc
+                if attempt + 1 >= self.detail_retry_attempts:
+                    break
+                await asyncio.sleep(self.detail_retry_base_seconds * (2**attempt))
+
+        if payload is None:
+            raise ConnectorFetchError(
+                f"Ashby fetch failed for {company.board_token}: {last_error}"
+            ) from last_error
 
         errors = payload.get("errors")
         if isinstance(errors, list) and errors:
@@ -140,7 +155,7 @@ query ApiJobPosting($organizationHostedJobsPageName: String!, $jobPostingId: Str
                     if attempt + 1 >= self.detail_retry_attempts:
                         break
                     await asyncio.sleep(self.detail_retry_base_seconds * (2**attempt))
-            await asyncio.sleep(0.15)
+            await asyncio.sleep(0.35)
 
         if payload is None:
             raise ConnectorFetchError(

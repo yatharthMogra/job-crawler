@@ -21,6 +21,11 @@ const ROLE_TO_POOL: Record<string, string> = {
   "mobile engineer": "MOBILE_ENGINEER",
   "solutions engineer": "SOLUTIONS_ENGINEER",
   "support engineer": "SUPPORT_ENGINEER",
+  "systems engineer": "SYSTEMS_ENGINEER",
+  "hardware engineer": "HARDWARE_ENGINEER",
+  "mechanical engineer": "HARDWARE_ENGINEER",
+  "electrical engineer": "HARDWARE_ENGINEER",
+  "manufacturing engineer": "HARDWARE_ENGINEER",
   "technical program manager": "TECHNICAL_PROGRAM_MANAGER",
   tpm: "TECHNICAL_PROGRAM_MANAGER",
   "product manager": "PRODUCT_MANAGER",
@@ -51,11 +56,20 @@ function normalizeRoleLabel(label: string): string {
   return label.toLowerCase().trim()
 }
 
+function normalizePoolName(poolName: string): string {
+  if (poolName.endsWith("_INTERN")) return `${poolName}SHIP`
+  return poolName
+}
+
 export function derivePoolNames(profile: ProfileResponse): string[] {
   const prefs = profile.preferences ?? {}
   const explicitPools = prefs.role_pool_ids
   if (Array.isArray(explicitPools) && explicitPools.length > 0) {
-    return explicitPools.filter((p): p is string => typeof p === "string")
+    return [...new Set(
+      explicitPools
+        .filter((p): p is string => typeof p === "string")
+        .map(normalizePoolName),
+    )]
   }
 
   const suffix = roleSuffix(profile)
