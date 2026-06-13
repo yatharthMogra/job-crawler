@@ -98,16 +98,21 @@ Removal detection: jobs that were previously active but missing from the latest 
 
 ### 4.1 Greenhouse
 
-**Simplest connector — single REST call, descriptions included.**
+**List API + optional branded careers supplement — see [`greenhouse_connector_guide.md`](../greenhouse_connector_guide.md) for full details.**
 
 | | |
 |---|---|
 | **Auth** | None (public Job Board API) |
-| **Endpoint** | `GET https://boards-api.greenhouse.io/v1/boards/{board_token}/jobs?content=true` |
+| **List endpoint** | `GET https://boards-api.greenhouse.io/v1/boards/{board_token}/jobs?content=true` |
+| **Detail endpoint** | `GET https://boards-api.greenhouse.io/v1/boards/{board_token}/jobs/{id}?content=true` |
 | **`board_token`** | Greenhouse board slug (e.g. `stripe`, `anthropic`) |
 | **Implementation** | `app/ingestion/connectors/greenhouse.py` |
 
-**Response shape:** `{ "jobs": [ ... ] }` — connector returns the `jobs` array.
+**Default behavior:** single list call returns all publicly listed board jobs with full `content`.
+
+**Branded careers supplement:** when `platform_config.careers_url` is set, the connector also scrapes the company careers page for `gh_jid` / Greenhouse job links, fetches any **additional** job IDs via the per-job API, and merges them with the list (deduped by `id`; list payload wins on conflict). Use `board_token_override` when the API slug differs from the careers hostname (e.g. C3.ai → `c3iot`).
+
+**Response shape:** `{ "jobs": [ ... ] }` from list; single job object from detail — connector returns a unified array.
 
 **Per-job fields we rely on:**
 
@@ -412,6 +417,7 @@ The full platform response should remain in the dict (or as the dict itself) so 
 
 | Document | Coverage |
 |---|---|
+| **`greenhouse_connector_guide.md`** | Greenhouse list API + branded careers supplement (`gh_jid` discovery). |
 | **`job_ingestion_v2.md`** | Full V2 architecture blueprint — schema, events, enrichment worker, connector registry. Sections 3 and 7 overlap with this guide. |
 | **`job_ingestion_blueprint.md`** | V1 Greenhouse-only blueprint (historical). |
 | **`IMPLEMENTATION_STATUS_V2.md`** | What's built vs planned. |
