@@ -123,6 +123,19 @@
     "company": "Figma",
     "platform": "greenhouse",
     "board_token": "figma",
+    "platform_config": {
+      "careers_url": "https://www.figma.com/careers/"
+    },
+    "is_active": true
+  },
+  {
+    "company": "C3.ai",
+    "platform": "greenhouse",
+    "board_token": "c3ai",
+    "platform_config": {
+      "careers_url": "https://c3.ai/careers/",
+      "board_token_override": "c3iot"
+    },
     "is_active": true
   },
   {
