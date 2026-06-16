@@ -64,7 +64,7 @@ export function AppSidebar() {
   const initials = (candidate?.name ?? "U").charAt(0).toUpperCase()
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 flex w-[220px] flex-col border-r border-sidebar-border bg-sidebar">
+    <aside className="dashboard-shell-sidebar sticky top-0 z-30 flex h-screen flex-col">
       <div className="flex h-16 items-center px-5">
         <Link href="/jobs/recommended">
           <BrandWordmark />
