@@ -18,6 +18,7 @@ from app.pipeline.patch_engine import process_resume_upload
 from app.services.domain_sync import sync_candidate_domains
 from app.schemas.candidate import (
     CandidateCreate,
+    CandidateOAuthCreate,
     CandidateResponse,
     ResumeLabelUpdate,
     ResumeResponse,
@@ -31,6 +32,48 @@ async def _get_candidate_or_404(db: AsyncSession, candidate_id: uuid.UUID) -> Ca
     candidate = await db.get(Candidate, candidate_id)
     if candidate is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Candidate not found")
+    return candidate
+
+
+@router.get("/lookup", response_model=CandidateResponse)
+async def lookup_candidate(email: str, db: AsyncSession = Depends(get_db)) -> Candidate:
+    result = await db.execute(select(Candidate).where(Candidate.email == email))
+    candidate = result.scalar_one_or_none()
+    if candidate is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Candidate not found")
+    return candidate
+
+
+@router.post("/oauth", response_model=CandidateResponse)
+async def upsert_oauth_candidate(payload: CandidateOAuthCreate, db: AsyncSession = Depends(get_db)) -> Candidate:
+    result = await db.execute(select(Candidate).where(Candidate.google_sub == payload.google_sub))
+    candidate = result.scalar_one_or_none()
+
+    if candidate is None:
+        result = await db.execute(select(Candidate).where(Candidate.email == payload.email))
+        candidate = result.scalar_one_or_none()
+
+    if candidate is None:
+        candidate = Candidate(
+            email=payload.email,
+            name=payload.name,
+            google_sub=payload.google_sub,
+            avatar_url=payload.avatar_url,
+            email_verified=payload.email_verified,
+        )
+        db.add(candidate)
+    else:
+        candidate.name = payload.name or candidate.name
+        candidate.google_sub = payload.google_sub
+        candidate.avatar_url = payload.avatar_url or candidate.avatar_url
+        candidate.email_verified = payload.email_verified or candidate.email_verified
+
+    try:
+        await db.commit()
+    except IntegrityError as exc:
+        await db.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already exists") from exc
+    await db.refresh(candidate)
     return candidate
 
 

@@ -8,6 +8,7 @@ import type { EditSection } from "@/components/profile/profile-edit-dialog"
 import { EeoDisplay } from "@/components/profile/eeo-form"
 import { ProfileEditDialog } from "@/components/profile/profile-edit-dialog"
 import { ResumeLibrary } from "@/components/profile/resume-library"
+import { BrandLogo } from "@/components/brand-logo"
 import { Brand } from "@/components/profile/brand"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -364,9 +365,7 @@ function EducationBlock({
           {entries.map((entry) => (
             <Card key={`${entry.level}-${entry.degree}-${entry.university}`} className="p-4">
               <div className="flex items-start gap-3">
-                <span className="flex size-9 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
-                  <GraduationCap className="size-4.5" aria-hidden="true" />
-                </span>
+                <BrandLogo name={entry.university} variant="school" size={40} shape="circle" />
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     {educationLevelLabel(entry.level)}

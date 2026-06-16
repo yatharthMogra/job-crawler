@@ -1,8 +1,8 @@
 import { ApiError, getCandidate, getPendingPatch, getProfile } from "@/lib/profile/api"
-import { getStoredCandidateId, useMockData } from "@/lib/session"
+import { getStoredCandidateId, getMockOnboardingComplete, useMockData } from "@/lib/session"
 
 export type BootDestination =
-  | "/onboarding"
+  | "/login"
   | "/profile/upload"
   | "/profile/review"
   | "/jobs/recommended"
@@ -10,17 +10,17 @@ export type BootDestination =
 export async function resolveBootDestination(): Promise<BootDestination> {
   const candidateId = getStoredCandidateId()
   if (!candidateId) {
-    return "/onboarding"
+    return "/login"
   }
 
   if (useMockData()) {
-    return "/profile/upload"
+    return getMockOnboardingComplete() ? "/jobs/recommended" : "/profile/upload"
   }
 
   try {
     await getCandidate(candidateId)
   } catch {
-    return "/onboarding"
+    return "/login"
   }
 
   try {
