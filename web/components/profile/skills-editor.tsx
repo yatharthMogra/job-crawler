@@ -47,10 +47,14 @@ export function SkillsEditor({ skills, onChange, readOnly = true }: SkillsEditor
   return (
     <div>
       <div className="flex flex-wrap gap-2">
-        {allNames.map((name) => (
+        {allNames.map((name, index) => (
           <span
             key={name}
-            className="inline-flex items-center gap-1 rounded-md bg-accent px-2.5 py-1 text-sm text-accent-foreground"
+            className={
+              index < 5
+                ? "inline-flex items-center gap-1 rounded-full bg-add-muted px-3 py-1 text-sm font-medium text-add-foreground"
+                : "inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-sm text-muted-foreground"
+            }
           >
             {name}
             {!readOnly && onChange ? (

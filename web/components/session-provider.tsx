@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react"
+import { useSession as useNextAuthSession } from "next-auth/react"
 import { getCandidate } from "@/lib/profile/api"
 import {
   getMockCandidateInfo,
@@ -35,33 +36,47 @@ interface SessionContextValue {
 const SessionContext = createContext<SessionContextValue | null>(null)
 
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const [candidateId, setCandidateIdState] = useState<string | null>(null)
+  const { data: nextAuthSession, status: nextAuthStatus } = useNextAuthSession()
+  const [candidateId, setCandidateIdState] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null
+    return getStoredCandidateId()
+  })
   const [candidate, setCandidate] = useState<CandidateInfo | null>(null)
   const [loading, setLoading] = useState(true)
 
   const mockMode = useMockData()
+  const hasLocalSession = Boolean(getStoredCandidateId())
 
   const refreshCandidate = useCallback(async () => {
-    const id = getStoredCandidateId()
-    setCandidateIdState(id)
-    if (!id) {
+    const authCandidateId = nextAuthSession?.candidateId
+    const storedId = authCandidateId ?? getStoredCandidateId()
+    setCandidateIdState(storedId)
+
+    if (authCandidateId && authCandidateId !== getStoredCandidateId()) {
+      setStoredCandidateId(authCandidateId)
+    }
+
+    if (!storedId) {
       setCandidate(null)
       return
     }
-    if (mockMode && id === MOCK_CANDIDATE_ID) {
+    if (mockMode && storedId === MOCK_CANDIDATE_ID) {
       const info = getMockCandidateInfo()
       setCandidate({ id: MOCK_CANDIDATE_ID, name: info.name, email: info.email })
       return
     }
     try {
-      const data = await getCandidate(id)
+      const data = await getCandidate(storedId)
       setCandidate({ id: data.id, name: data.name, email: data.email })
     } catch {
       setCandidate(null)
     }
-  }, [mockMode])
+  }, [mockMode, nextAuthSession?.candidateId])
 
   useEffect(() => {
+    // Don't block local/mock sessions while NextAuth is still resolving.
+    if (nextAuthStatus === "loading" && !hasLocalSession) return
+
     void (async () => {
       try {
         await refreshCandidate()
@@ -69,7 +84,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         setLoading(false)
       }
     })()
-  }, [refreshCandidate])
+  }, [refreshCandidate, nextAuthStatus, hasLocalSession])
 
   const setCandidateId = useCallback(
     (id: string) => {

@@ -3,6 +3,7 @@
 import { useEffect } from "react"
 import { ProfileTabs } from "@/components/profile/profile-tabs"
 import { ProfileEditDialog } from "@/components/profile/profile-edit-dialog"
+import { AppHeader } from "@/components/layout/app-header"
 import { useProfileFlow } from "@/components/profile/profile-flow-provider"
 import { useSession } from "@/components/session-provider"
 import { FeedSkeleton } from "@/components/card-skeleton"
@@ -28,9 +29,7 @@ export default function ProfilePage() {
   if (!profileHome) {
     return (
       <div>
-        <div className="border-b border-border/80 bg-card/80 px-6 py-4 backdrop-blur-sm">
-          <h1 className="text-lg font-bold tracking-tight text-foreground">Profile</h1>
-        </div>
+        <AppHeader title="Profile" showSearch={false} />
         <div className="px-6 py-4">
           <FeedSkeleton count={3} />
         </div>

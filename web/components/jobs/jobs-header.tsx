@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Search, SlidersHorizontal, Sparkles } from "lucide-react"
+import { ChevronRight, Search, SlidersHorizontal } from "lucide-react"
 import { useJobs } from "@/components/jobs-provider"
 import { FilterChip } from "@/components/ui/filter-chip"
 import { Input } from "@/components/ui/input"
@@ -21,6 +21,11 @@ interface JobsHeaderProps {
   onSearchChange: (value: string) => void
 }
 
+function tabLabel(pathname: string) {
+  const tab = TABS.find((t) => pathname === t.href || pathname.startsWith(t.href + "/"))
+  return tab?.label ?? "Jobs"
+}
+
 export function JobsHeader({ search, onSearchChange }: JobsHeaderProps) {
   const pathname = usePathname()
   const { savedIds, appliedIds, appliedJobs, filters, clearFilter } = useJobs()
@@ -34,30 +39,28 @@ export function JobsHeader({ search, onSearchChange }: JobsHeaderProps) {
   if (filters.datePosted)
     activeChips.push({ label: filters.datePosted, onRemove: () => clearFilter("datePosted") })
 
+  const currentTab = tabLabel(pathname)
+
   return (
-    <div className="sticky top-0 z-20 border-b border-border/80 bg-card/90 backdrop-blur-md">
-      <div className="flex items-center justify-between px-6 py-4">
-        <div className="flex items-center gap-3">
-          <span className="flex size-9 items-center justify-center rounded-xl bg-accent text-primary">
-            <Sparkles className="size-4" />
-          </span>
-          <div>
-            <h1 className="text-lg font-bold tracking-tight text-foreground">Jobs</h1>
-            <p className="text-xs text-muted-foreground">Roles matched to your profile</p>
-          </div>
+    <div className="sticky top-0 z-20 border-b border-border/80 bg-card/95 backdrop-blur-md">
+      <div className="flex items-center justify-between gap-4 px-6 py-4">
+        <div className="flex items-center gap-2 text-sm">
+          <span className="font-bold uppercase tracking-widest text-muted-foreground">Jobs</span>
+          <ChevronRight className="size-4 text-muted-foreground" />
+          <span className="font-bold uppercase tracking-widest text-foreground">{currentTab}</span>
         </div>
-        <div className="relative w-72">
+        <div className="relative hidden w-80 md:block">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search by title or company"
-            className="h-9 border-border/80 bg-surface/50 pl-9 text-sm focus-visible:ring-primary/30"
+            className="h-9 border-border/80 bg-surface/50 pl-9 text-sm"
           />
         </div>
       </div>
 
-      <div className="flex items-center gap-1 border-t border-border/60 px-4">
+      <div className="flex items-center gap-1 overflow-x-auto border-t border-border/60 px-4">
         {TABS.map((tab) => {
           const active = pathname === tab.href || pathname.startsWith(tab.href + "/")
           const count =
@@ -71,7 +74,7 @@ export function JobsHeader({ search, onSearchChange }: JobsHeaderProps) {
               key={tab.href}
               href={tab.href}
               className={cn(
-                "relative px-4 py-3 text-sm font-medium transition-colors",
+                "relative shrink-0 px-4 py-3 text-sm font-medium transition-colors",
                 active ? "text-primary" : "text-muted-foreground hover:text-foreground",
               )}
             >
@@ -80,7 +83,7 @@ export function JobsHeader({ search, onSearchChange }: JobsHeaderProps) {
                 <span className="ml-1 text-xs text-muted-foreground">({count})</span>
               ) : null}
               {active ? (
-                <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-gradient-to-r from-primary to-brand" />
+                <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-primary" />
               ) : null}
             </Link>
           )
@@ -97,6 +100,9 @@ export function JobsHeader({ search, onSearchChange }: JobsHeaderProps) {
             All Filters
           </Button>
         </Link>
+        <Button size="sm" variant="outline" className="h-8 border-add/40 text-add-foreground">
+          Hidden Jobs
+        </Button>
       </div>
     </div>
   )

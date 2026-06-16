@@ -1,6 +1,7 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
+import { SessionProvider as NextAuthSessionProvider } from 'next-auth/react'
 import { SessionProvider } from '@/components/session-provider'
 import './globals.css'
 
@@ -11,8 +12,9 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Career Match AI — Find your next role',
-  description: 'A fast job discovery dashboard with personalized recommendations for students and early-career candidates.',
+  title: 'CareerMatch — AI-powered executive job hunting',
+  description:
+    'Get matched jobs, autofill applications, tailored resumes, and insider connections for executive roles.',
   generator: 'v0.app',
   icons: {
     icon: [
@@ -41,7 +43,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="font-sans antialiased">
-        <SessionProvider>{children}</SessionProvider>
+        <NextAuthSessionProvider>
+          <SessionProvider>{children}</SessionProvider>
+        </NextAuthSessionProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
