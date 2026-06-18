@@ -1,5 +1,5 @@
 import { BootRedirect } from "@/components/boot-redirect"
 
-export default function Page() {
+export default function AppEntryPage() {
   return <BootRedirect />
 }

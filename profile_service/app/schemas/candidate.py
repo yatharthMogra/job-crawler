@@ -11,10 +11,21 @@ class CandidateCreate(BaseModel):
     name: str = Field(min_length=1, max_length=255)
 
 
+class CandidateOAuthCreate(BaseModel):
+    email: EmailStr
+    name: str = Field(min_length=1, max_length=255)
+    google_sub: str = Field(min_length=1, max_length=255)
+    avatar_url: str | None = Field(default=None, max_length=512)
+    email_verified: bool = False
+
+
 class CandidateResponse(BaseModel):
     id: uuid.UUID
     email: str
     name: str
+    google_sub: str | None = None
+    avatar_url: str | None = None
+    email_verified: bool = False
     created_at: datetime
     updated_at: datetime
 
