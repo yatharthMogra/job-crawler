@@ -51,7 +51,7 @@ import {
 } from "@/lib/profile/job-intent"
 import { buildMockProfileHome, defaultMockJobIntent } from "@/lib/profile/mock-profile-home"
 import { syncSubscriptionsForCandidate } from "@/lib/recommendation/sync-subscriptions"
-import { useMockData } from "@/lib/session"
+import { useMockData, setMockOnboardingComplete } from "@/lib/session"
 import type { EditSection } from "@/components/profile/profile-edit-dialog"
 
 interface ProfileFlowContextValue {
@@ -248,6 +248,7 @@ export function ProfileFlowProvider({
         setConfirmationProfile(built)
         setProfileHome(buildMockProfileHome(jobIntent))
         setHasExistingProfile(true)
+        setMockOnboardingComplete(true)
         if (redirectTo === "profile") {
           router.push("/profile")
         } else if (redirectTo === "jobs") {

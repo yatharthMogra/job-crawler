@@ -7,23 +7,111 @@ interface MatchGaugeProps {
   reasons?: string[]
   insight?: string
   className?: string
+  variant?: "bar" | "ring" | "sidebar"
+  compact?: boolean
 }
 
 export function matchLabel(score: number): string {
-  if (score >= 0.8) return "Excellent fit"
-  if (score >= 0.65) return "Strong fit"
-  if (score >= 0.5) return "Good fit"
-  return "Fair fit"
+  if (score >= 0.85) return "STRONG"
+  if (score >= 0.75) return "GOOD"
+  if (score >= 0.65) return "FAIR"
+  return "LOW"
+}
+
+function ringColor(score: number) {
+  if (score >= 0.85) return "text-add stroke-add"
+  if (score >= 0.75) return "text-primary stroke-primary"
+  return "text-muted-foreground stroke-muted-foreground"
+}
+
+function MatchRing({
+  score,
+  className,
+  sidebar = false,
+}: {
+  score: number
+  className?: string
+  sidebar?: boolean
+}) {
+  const pct = Math.round(Math.min(1, Math.max(0, score)) * 100)
+  const size = sidebar ? 56 : 72
+  const radius = sidebar ? 22 : 28
+  const strokeWidth = sidebar ? 4 : 5
+  const circumference = 2 * Math.PI * radius
+  const offset = circumference - (pct / 100) * circumference
+  const label = matchLabel(score)
+
+  const ringClass = sidebar
+    ? score >= 0.85
+      ? "stroke-emerald-400"
+      : score >= 0.75
+        ? "stroke-sky-400"
+        : "stroke-white/50"
+    : ringColor(score)
+
+  const textClass = sidebar
+    ? score >= 0.85
+      ? "text-emerald-300"
+      : score >= 0.75
+        ? "text-sky-300"
+        : "text-white/80"
+    : ringColor(score).split(" ")[0]
+
+  return (
+    <div className={cn("flex flex-col items-center gap-0.5", className)}>
+      <div className="relative" style={{ width: size, height: size }}>
+        <svg className="size-full -rotate-90" viewBox={`0 0 ${size} ${size}`}>
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            strokeWidth={strokeWidth}
+            className={sidebar ? "stroke-white/15" : "stroke-muted"}
+          />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            strokeWidth={strokeWidth}
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            className={cn("transition-all", ringClass)}
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className={cn("text-sm font-bold tabular-nums", textClass)}>{pct}%</span>
+        </div>
+      </div>
+      <span className={cn("text-[9px] font-bold tracking-wider", textClass)}>{label}</span>
+    </div>
+  )
 }
 
 function barGradient(score: number) {
-  if (score >= 0.8) return "from-brand to-primary"
-  if (score >= 0.65) return "from-primary to-brand"
-  if (score >= 0.5) return "from-primary/80 to-brand/80"
+  if (score >= 0.8) return "from-primary to-primary/70"
+  if (score >= 0.65) return "from-primary/80 to-primary/60"
   return "from-muted-foreground/40 to-muted-foreground/60"
 }
 
-export function MatchGauge({ score, reasons = [], insight, className }: MatchGaugeProps) {
+export function MatchGauge({
+  score,
+  reasons = [],
+  insight,
+  className,
+  variant = "bar",
+  compact = false,
+}: MatchGaugeProps) {
+  if (variant === "sidebar") {
+    return <MatchRing score={score} className={className} sidebar />
+  }
+
+  if (variant === "ring" || compact) {
+    return <MatchRing score={score} className={className} />
+  }
+
   const pct = Math.round(Math.min(1, Math.max(0, score)) * 100)
   const label = matchLabel(score)
 
@@ -34,7 +122,7 @@ export function MatchGauge({ score, reasons = [], insight, className }: MatchGau
           Profile match
         </p>
         <div className="mt-1.5 flex items-baseline gap-2">
-          <span className="text-3xl font-bold tabular-nums gradient-text">{pct}%</span>
+          <span className="text-3xl font-bold tabular-nums text-primary">{pct}%</span>
           <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-accent-foreground">
             {label}
           </span>
@@ -52,7 +140,7 @@ export function MatchGauge({ score, reasons = [], insight, className }: MatchGau
         <ul className="space-y-1.5">
           {reasons.slice(0, 3).map((reason) => (
             <li key={reason} className="flex items-start gap-1.5 text-[11px] leading-snug text-muted-foreground">
-              <span className="mt-1.5 size-1 shrink-0 rounded-full bg-brand" />
+              <span className="mt-1.5 size-1 shrink-0 rounded-full bg-primary" />
               {reason}
             </li>
           ))}

@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { signOut } from "next-auth/react"
 import { Pencil, Zap } from "lucide-react"
 import { useProfileFlow } from "@/components/profile/profile-flow-provider"
 import { useSession } from "@/components/session-provider"
@@ -95,9 +96,10 @@ export function SettingsPage() {
     persistJobAlertsSettings(candidateId, next)
   }
 
-  function handleLogout() {
+  async function handleLogout() {
     clearStoredCandidateId()
-    router.replace("/onboarding")
+    await signOut({ callbackUrl: "/login" })
+    router.replace("/login")
   }
 
   const filterChips: string[] = []

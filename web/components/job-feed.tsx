@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
+import { BadgeCheck } from "lucide-react"
 import { useJobs } from "@/components/jobs-provider"
 import { JobCard } from "@/components/job-card"
 import { FeedSkeleton } from "@/components/card-skeleton"
@@ -23,6 +24,8 @@ interface JobFeedProps {
   showRecommendation?: boolean
   useFilters?: boolean
   loading?: boolean
+  title?: string
+  subtitle?: string
 }
 
 export function JobFeed({
@@ -31,6 +34,8 @@ export function JobFeed({
   showRecommendation = false,
   useFilters = false,
   loading: externalLoading,
+  title = "Recommended Jobs",
+  subtitle = "Tailored executive opportunities matching your profile.",
 }: JobFeedProps) {
   const { hiddenIds, filters, loading: contextLoading } = useJobs()
   const [initialLoading, setInitialLoading] = useState(true)
@@ -95,9 +100,26 @@ export function JobFeed({
 
   return (
     <div className="px-6 py-5">
-      <div className="flex flex-col gap-5">
-        {visible.map((job) => (
-          <JobCard key={job.id} job={job} showMatch={showMatch} showRecommendation={showRecommendation} />
+      <div className="mb-5 flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-foreground">{title}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
+        </div>
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-add/30 bg-add-muted px-3 py-1 text-xs font-semibold text-add-foreground">
+          <BadgeCheck className="size-3.5" />
+          Verified Listings
+        </span>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        {visible.map((job, index) => (
+          <JobCard
+            key={job.id}
+            job={job}
+            showMatch={showMatch}
+            showRecommendation={showRecommendation}
+            featured={index === 0}
+          />
         ))}
       </div>
 
@@ -105,14 +127,16 @@ export function JobFeed({
         <div ref={sentinelRef} className="flex justify-center py-8">
           <div className="flex gap-1.5" aria-label="Loading more jobs">
             <span className="size-1.5 animate-bounce rounded-full bg-primary/40 [animation-delay:-0.3s]" />
-            <span className="size-1.5 animate-bounce rounded-full bg-brand/50 [animation-delay:-0.15s]" />
+            <span className="size-1.5 animate-bounce rounded-full bg-primary/50 [animation-delay:-0.15s]" />
             <span className="size-1.5 animate-bounce rounded-full bg-primary/40" />
           </div>
         </div>
       )}
 
       {!hasMore && filtered.length > 0 && (
-        <p className="py-8 text-center text-xs text-muted-foreground">You&apos;ve seen all available opportunities.</p>
+        <p className="py-8 text-center text-xs text-muted-foreground">
+          You&apos;ve seen all available opportunities.
+        </p>
       )}
     </div>
   )

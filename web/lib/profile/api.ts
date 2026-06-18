@@ -8,8 +8,10 @@ import type {
   ResumeUploadResponse,
 } from "@/lib/profile/api-types"
 
-const BASE_URL = process.env.NEXT_PUBLIC_PROFILE_API_URL ?? "http://localhost:8001"
-const API_KEY = process.env.NEXT_PUBLIC_PROFILE_API_KEY ?? "dev-key-change-me"
+const BASE_URL =
+  typeof window !== "undefined"
+    ? "/api/profile"
+    : (process.env.PROFILE_API_URL ?? process.env.NEXT_PUBLIC_PROFILE_API_URL ?? "http://localhost:8001")
 
 export class ApiError extends Error {
   status: number
@@ -23,7 +25,11 @@ export class ApiError extends Error {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers)
-  headers.set("X-API-Key", API_KEY)
+  if (typeof window === "undefined") {
+    const API_KEY =
+      process.env.PROFILE_API_KEY ?? process.env.NEXT_PUBLIC_PROFILE_API_KEY ?? "dev-key-change-me"
+    headers.set("X-API-Key", API_KEY)
+  }
   if (init?.body && !(init.body instanceof FormData)) {
     headers.set("Content-Type", "application/json")
   }
@@ -59,6 +65,10 @@ export function createCandidate(name: string, email: string) {
 
 export function getCandidate(candidateId: string) {
   return request<CandidateResponse>(`/candidates/${candidateId}`)
+}
+
+export function lookupCandidateByEmail(email: string) {
+  return request<CandidateResponse>(`/candidates/lookup?email=${encodeURIComponent(email)}`)
 }
 
 export function uploadResume(candidateId: string, file: File) {

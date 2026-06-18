@@ -1,12 +1,14 @@
 "use client"
 
-import { useMemo } from "react"
+import { useEffect, useMemo } from "react"
 import { Star } from "lucide-react"
 import { useJobs } from "@/components/jobs-provider"
+import { useProfileFlow } from "@/components/profile/profile-flow-provider"
 import { InfoBanner } from "@/components/info-banner"
 import { JobFeed } from "@/components/job-feed"
 import { EmptyState } from "@/components/empty-state"
 import { useJobsSearch } from "@/app/(dashboard)/jobs/layout"
+import { useSession } from "@/components/session-provider"
 import type { JobWithRole } from "@/lib/jobs-data"
 
 function matchesSearch(job: JobWithRole, q: string) {
@@ -15,16 +17,52 @@ function matchesSearch(job: JobWithRole, q: string) {
   return job.title.toLowerCase().includes(lower) || job.company.toLowerCase().includes(lower)
 }
 
+function normalizeRole(value: string) {
+  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, " ")
+}
+
+function rolesMatch(target: string, jobRole: string) {
+  const a = normalizeRole(target)
+  const b = normalizeRole(jobRole)
+  if (!a || !b) return false
+  if (a === b) return true
+  return a.includes(b) || b.includes(a)
+}
+
+function matchesTargetRoles(
+  job: JobWithRole,
+  primaryRoles: string[],
+  secondaryRoles: string[],
+) {
+  if (primaryRoles.length === 0 && secondaryRoles.length === 0) return true
+  const targets = [...primaryRoles, ...secondaryRoles]
+  return targets.some(
+    (target) => rolesMatch(target, job.roleCategory) || rolesMatch(target, job.title),
+  )
+}
+
 export default function RecommendedPage() {
+  const { candidateId } = useSession()
   const { recommendedJobs, hiddenIds, recommendedLoading, error } = useJobs()
+  const { profileHome, loadProfileHome } = useProfileFlow()
   const { search } = useJobsSearch()
 
+  useEffect(() => {
+    if (candidateId && !profileHome) {
+      void loadProfileHome(candidateId).catch(() => undefined)
+    }
+  }, [candidateId, profileHome, loadProfileHome])
+
   const ranked = useMemo<JobWithRole[]>(() => {
+    const primaryRoles = profileHome?.primaryRoles ?? []
+    const secondaryRoles = profileHome?.secondaryRoles ?? []
+
     return recommendedJobs
       .filter((j) => !j.is_applied)
       .filter((j) => !hiddenIds.has(j.id))
       .filter((j) => matchesSearch(j, search))
-  }, [recommendedJobs, hiddenIds, search])
+      .filter((j) => matchesTargetRoles(j, primaryRoles, secondaryRoles))
+  }, [recommendedJobs, hiddenIds, search, profileHome])
 
   return (
     <div>

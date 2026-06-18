@@ -4,25 +4,27 @@ import { useEffect, type ReactNode } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { ProfileFlowProvider } from "@/components/profile/profile-flow-provider"
 import { useSession } from "@/components/session-provider"
+import { getStoredCandidateId } from "@/lib/session"
 
 export function ProfileFlowShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const { candidateId, loading } = useSession()
+  const resolvedId = candidateId ?? getStoredCandidateId()
   const isOnboarding = pathname === "/onboarding"
 
   useEffect(() => {
     if (loading || isOnboarding) return
-    if (!candidateId) {
-      router.replace("/onboarding")
+    if (!resolvedId) {
+      router.replace("/login")
     }
-  }, [loading, candidateId, isOnboarding, router])
+  }, [loading, resolvedId, isOnboarding, router])
 
   if (isOnboarding) {
     return <>{children}</>
   }
 
-  if (loading || !candidateId) {
+  if (loading || !resolvedId) {
     return (
       <div className="flow-page-bg flex min-h-screen items-center justify-center">
         <div className="flex gap-1.5" aria-label="Loading">
@@ -34,5 +36,5 @@ export function ProfileFlowShell({ children }: { children: ReactNode }) {
     )
   }
 
-  return <ProfileFlowProvider candidateId={candidateId}>{children}</ProfileFlowProvider>
+  return <ProfileFlowProvider candidateId={resolvedId}>{children}</ProfileFlowProvider>
 }
