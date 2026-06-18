@@ -166,6 +166,8 @@ async def reprocess_jobs(
                 "retrieval_pools": retrieval_pools,
                 "job_domain": enrichment.job_domain,
                 "job_secondary_domain": enrichment.job_secondary_domain,
+                "requires_clearance": enrichment.requires_clearance,
+                "role_intent": enrichment.role_intent,
                 "salary_min": enrichment.salary_min,
                 "salary_max": enrichment.salary_max,
                 "opportunity_score": opportunity_score,
@@ -215,6 +217,8 @@ async def reprocess_jobs(
             normalized.retrieval_pools = recommendation_fields.get("retrieval_pools", [])
             normalized.job_domain = recommendation_fields.get("job_domain")
             normalized.job_secondary_domain = recommendation_fields.get("job_secondary_domain")
+            normalized.requires_clearance = recommendation_fields.get("requires_clearance", False)
+            normalized.role_intent = recommendation_fields.get("role_intent")
             normalized.salary_min = recommendation_fields.get("salary_min")
             normalized.salary_max = recommendation_fields.get("salary_max")
             normalized.opportunity_score = recommendation_fields.get("opportunity_score")

@@ -25,6 +25,14 @@ class Settings(BaseSettings):
     cors_origins: str = ""
     app_base_url: str = "http://localhost:3000"
     domain_filter_enabled: bool = False
+    role_intent_filter_enabled: bool = False
+    clearance_filter_enabled: bool = False
+    sponsorship_score_enabled: bool = False
+    score_sponsorship_weight: float = 0.12
+    score_capability_weight_with_sponsorship: float = 0.35
+    score_skill_weight_with_sponsorship: float = 0.22
+    score_location_weight_with_sponsorship: float = 0.18
+    score_compensation_weight_with_sponsorship: float = 0.13
 
     model_config = SettingsConfigDict(
         env_file=".env",

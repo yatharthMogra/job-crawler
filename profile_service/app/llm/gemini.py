@@ -54,11 +54,38 @@ class GeminiProvider(LLMProvider):
         except Exception as exc:  # pragma: no cover - external API behavior
             raise LLMProviderError(f"Gemini completion failed: {exc}") from exc
 
-    async def extract_text_from_pdf(self, _pdf_bytes: bytes) -> str:
-        raise LLMProviderError(
-            "PDF multimodal fallback is not supported with Gemini. "
-            "PyMuPDF extraction failed; try a text-based PDF."
+    async def extract_text_from_pdf(self, pdf_bytes: bytes) -> str:
+        if not self._settings.gemini_api_key:
+            raise LLMProviderError("GEMINI_API_KEY is not configured.")
+        if not pdf_bytes:
+            raise LLMProviderError("PDF bytes are empty.")
+
+        try:
+            from google import genai
+            from google.genai import types
+        except ImportError as exc:
+            raise LLMProviderError("google-genai is not installed.") from exc
+
+        client = genai.Client(api_key=self._settings.gemini_api_key)
+        prompt = (
+            "Extract all readable text from this resume PDF. "
+            "Return plain text only, preserving section order and line breaks."
         )
+        try:
+            response = await client.aio.models.generate_content(
+                model=self._settings.gemini_model,
+                contents=[
+                    types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"),
+                    prompt,
+                ],
+            )
+        except Exception as exc:  # pragma: no cover - external API behavior
+            raise LLMProviderError(f"Gemini PDF extraction failed: {exc}") from exc
+
+        text = self._response_text(response).strip()
+        if not text:
+            raise LLMProviderError("Gemini PDF extraction returned no text.")
+        return text
 
     async def count_tokens(self, contents: str) -> int:
         if not self._settings.gemini_api_key:

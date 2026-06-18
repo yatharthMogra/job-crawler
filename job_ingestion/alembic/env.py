@@ -7,14 +7,33 @@ from sqlalchemy import engine_from_config, pool
 
 from app.config import get_settings
 from app.database import Base
-from app.models import company, normalized_job, pipeline_run, raw_job  # noqa: F401
+from app.models import (  # noqa: F401
+    Company,
+    EnrichmentBatch,
+    EnrichmentBatchItem,
+    EnrichmentQueue,
+    H1bCompanyPoolSummary,
+    H1bEmployer,
+    H1bEmployerAlias,
+    H1bLcaStats,
+    H1bUscisStats,
+    IngestionEvent,
+    JobArchive,
+    JobEnrichment,
+    LcaRaw,
+    NormalizedJob,
+    PipelineRun,
+    RawJob,
+    SocToPoolMapping,
+    UserApplication,
+    UscisRaw,
+)
 
 config = context.config
 settings = get_settings()
 
 
 def get_migration_database_url() -> str:
-    # Alembic runs synchronously, so convert asyncpg URLs for migration runs.
     return settings.database_url.replace("+asyncpg", "+psycopg")
 
 
@@ -33,6 +52,7 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         compare_type=True,
         dialect_opts={"paramstyle": "named"},
+        version_table="alembic_version_job_ingestion",
     )
 
     with context.begin_transaction():
@@ -47,7 +67,13 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+            compare_type=True,
+            version_table="alembic_version_job_ingestion",
+        )
+
         with context.begin_transaction():
             context.run_migrations()
 

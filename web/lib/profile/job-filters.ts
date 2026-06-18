@@ -21,8 +21,9 @@ export interface JobFiltersState {
   openToAllSalary: boolean
   minimumSalary: string
   sponsorshipRequired: boolean
-  excludeSecurityClearance: boolean
+  hasClearance: boolean
   excludeUsCitizenOnly: boolean
+  roleIntents: string[]
   preferredIndustries: string[]
   excludedIndustries: string[]
   preferredSkills: string[]
@@ -47,8 +48,9 @@ export function emptyJobFilters(): JobFiltersState {
     openToAllSalary: true,
     minimumSalary: "",
     sponsorshipRequired: false,
-    excludeSecurityClearance: false,
+    hasClearance: false,
     excludeUsCitizenOnly: false,
+    roleIntents: ["engineer", "researcher"],
     preferredIndustries: [],
     excludedIndustries: [],
     preferredSkills: [],
@@ -100,13 +102,23 @@ export function profileToJobFilters(profile: ProfileResponse): JobFiltersState {
     minimumSalary:
       constraints.minimum_salary != null ? String(constraints.minimum_salary) : "",
     sponsorshipRequired: Boolean(constraints.sponsorship_required),
-    excludeSecurityClearance: Boolean(constraints.exclude_security_clearance),
+    hasClearance:
+      constraints.has_clearance != null
+        ? Boolean(constraints.has_clearance)
+        : constraints.exclude_security_clearance != null
+          ? !Boolean(constraints.exclude_security_clearance)
+          : false,
     excludeUsCitizenOnly: Boolean(constraints.exclude_us_citizen_only),
     preferredIndustries: (preferences.preferred_industries as string[]) ?? [],
     excludedIndustries: (preferences.excluded_industries as string[]) ?? [],
     preferredSkills: (preferences.preferred_skills as string[]) ?? [],
     excludedSkills: (preferences.excluded_skills as string[]) ?? [],
     roleType: (preferences.role_type as "ic" | "manager" | "") ?? "",
+    roleIntents: Array.isArray(preferences.primary_role_intents)
+      ? (preferences.primary_role_intents as string[])
+      : Array.isArray(preferences.role_intents)
+        ? (preferences.role_intents as string[])
+        : ["engineer", "researcher"],
     preferredLocations: (preferences.preferred_locations as string[]) ?? [],
     remotePreference: String(preferences.remote_preference ?? ""),
     eeo: eeoFromApiPayload(constraints.eeo as Record<string, unknown> | undefined),
@@ -133,7 +145,7 @@ export function jobFiltersToApiPayload(state: JobFiltersState): {
         : state.minimumSalary
           ? Number(state.minimumSalary)
           : null,
-      exclude_security_clearance: state.excludeSecurityClearance,
+      has_clearance: state.hasClearance,
       exclude_us_citizen_only: state.excludeUsCitizenOnly,
       target_seniority: experienceLevelsToTargetSeniority(state.experienceLevels),
       eeo: eeoToApiPayload(state.eeo),
@@ -151,6 +163,8 @@ export function jobFiltersToApiPayload(state: JobFiltersState): {
       preferred_skills: state.preferredSkills,
       excluded_skills: state.excludedSkills,
       role_type: state.roleType || null,
+      primary_role_intents: state.roleIntents,
+      role_intents: state.roleIntents,
       preferred_locations: state.preferredLocations,
       remote_preference: state.remotePreference || null,
     },
@@ -167,6 +181,22 @@ export const DATE_POSTED_OPTIONS = [
 ]
 
 export const WORK_MODEL_OPTIONS = ["Onsite", "Hybrid", "Remote"]
+
+export const ROLE_INTENT_OPTIONS = [
+  { value: "engineer", label: "Engineer" },
+  { value: "researcher", label: "Researcher" },
+  { value: "consultant", label: "Consultant" },
+  { value: "educator", label: "Educator" },
+  { value: "manager", label: "Manager" },
+  { value: "analyst", label: "Analyst" },
+  { value: "accountant", label: "Accountant" },
+  { value: "auditor", label: "Auditor" },
+  { value: "investment_banker", label: "Investment banker" },
+  { value: "sales", label: "Sales" },
+  { value: "operations", label: "Operations" },
+  { value: "legal", label: "Legal" },
+  { value: "other", label: "Other" },
+]
 
 export const JOB_TYPE_OPTIONS = [
   { key: "fulltimeOnly", label: "Full-time" },

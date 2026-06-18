@@ -27,9 +27,18 @@ class DashboardJobOut(BaseModel):
     seniority: str
 
 
+class H1BSponsorshipInfo(BaseModel):
+    pool_family: str
+    total_lca_3yr: int
+    approval_rate_3yr: float | None
+    is_top_sponsor: bool
+    years_covered: list[int]
+
+
 class DashboardRecommendedJobOut(DashboardJobOut):
     personal_score: float
     match_reasons: list[str] = Field(default_factory=list)
+    h1b_sponsorship: H1BSponsorshipInfo | None = None
 
 
 class DashboardJobsResponse(BaseModel):

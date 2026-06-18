@@ -10,9 +10,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import Settings, get_settings
 from app.database import get_db
 from app.models.shared import NormalizedJob
-from app.notification.ranker import deduplicate_ranked_jobs, rank_jobs
+from app.notification.ranker import deduplicate_ranked_jobs, rank_jobs, rank_jobs_with_h1b
 from app.notification.retrieval import build_constraint_filters, query_jobs_in_pools
 from app.scoring.explainability import generate_explanations
+from app.scoring.sponsorship import h1b_info_from_lookup
 from app.schemas.applications import (
     UserApplicationOut,
     UserApplicationPatchIn,
@@ -23,8 +24,11 @@ from app.schemas.dashboard import (
     DashboardJobsResponse,
     DashboardRecommendedJobOut,
     DashboardRecommendedJobsResponse,
+    H1BSponsorshipInfo,
 )
 from app.services.applications import apply_to_job, get_user_applications, patch_application
+from app.services.h1b_lookup import load_h1b_summary_lookup
+from app.services.h1b_pool_family import pool_family_from_roles
 from app.services.profile_loader import load_user_profile
 from app.services.subscriptions import get_active_pools
 
@@ -146,18 +150,43 @@ async def get_recommended_jobs(
     filters = build_constraint_filters(user_profile, settings)
     cap = settings.notification_retrieval_limit
     all_jobs = await _fetch_all_pool_jobs(db, pools=pools, filters=filters, cap=cap)
-    ranked = deduplicate_ranked_jobs(rank_jobs(all_jobs, user_profile, settings))
+
+    needs_sponsorship = bool((user_profile.constraints or {}).get("sponsorship_required"))
+    h1b_lookup = None
+    if needs_sponsorship:
+        h1b_lookup = await load_h1b_summary_lookup(db, {job.company_id for job in all_jobs})
+
+    scoring_lookup = h1b_lookup if settings.sponsorship_score_enabled else None
+    ranked = deduplicate_ranked_jobs(
+        rank_jobs(all_jobs, user_profile, settings, h1b_lookup=scoring_lookup)
+    )
     total = len(ranked)
     page = ranked[offset : offset + limit]
 
     jobs_out: list[DashboardRecommendedJobOut] = []
     for job, score in page:
         base = _job_to_out(job)
+        h1b_info = None
+        if needs_sponsorship and h1b_lookup is not None:
+            row = h1b_info_from_lookup(
+                job.company_id,
+                pool_family_from_roles(job.normalized_roles or []),
+                h1b_lookup,
+            )
+            if row:
+                h1b_info = H1BSponsorshipInfo(
+                    pool_family=row.pool_family,
+                    total_lca_3yr=row.total_lca_3yr,
+                    approval_rate_3yr=row.approval_rate_3yr,
+                    is_top_sponsor=row.is_top_sponsor,
+                    years_covered=row.years_covered,
+                )
         jobs_out.append(
             DashboardRecommendedJobOut(
                 **base.model_dump(),
                 personal_score=score,
                 match_reasons=generate_explanations(job, user_profile),
+                h1b_sponsorship=h1b_info,
             )
         )
     return DashboardRecommendedJobsResponse(jobs=jobs_out, total=total)

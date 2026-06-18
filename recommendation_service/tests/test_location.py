@@ -28,6 +28,29 @@ def test_extract_job_country_maharashtra_not_massachusetts() -> None:
     assert extract_job_country("Pune City, Maharashtra, India") == "IN"
 
 
+def test_extract_job_country_manulife_singapore_not_massachusetts() -> None:
+    from app.scoring.country import extract_job_country
+
+    assert extract_job_country("Manulife Tower, Manulife (Singapore) Pte Ltd") == "SG"
+
+
+def test_extract_job_country_singapore_and_hong_kong() -> None:
+    from app.scoring.country import extract_job_country
+
+    assert extract_job_country("Fab 10A, Singapore") == "SG"
+    assert extract_job_country("Hong Kong") == "HK"
+
+
+def test_location_alignment_us_candidate_penalizes_singapore_manulife() -> None:
+    score, _ = location_alignment_score(
+        "Manulife Tower, Manulife (Singapore) Pte Ltd",
+        "onsite",
+        {"preferred_countries": ["US"]},
+        constraints={},
+    )
+    assert score == 0.15
+
+
 def test_location_alignment_us_default_penalizes_india() -> None:
     score, _ = location_alignment_score(
         "Gurugram, HR, India",

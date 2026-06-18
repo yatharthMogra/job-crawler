@@ -1,12 +1,13 @@
 'use client'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Activity, Database, DollarSign, Briefcase, Layers } from 'lucide-react'
+import { Activity, Database, DollarSign, Briefcase, Layers, Globe } from 'lucide-react'
 import { PipelineTab } from './pipeline-tab'
 import { SourcesTab } from './sources-tab'
 import { CostTab } from './cost-tab'
 import { JobsTab } from './jobs-tab'
 import { TaxonomyTab } from './taxonomy-tab'
+import { H1bTab } from './h1b-tab'
 
 export function Dashboard() {
   return (
@@ -43,6 +44,10 @@ export function Dashboard() {
               <Layers className="size-4" />
               Taxonomy
             </TabsTrigger>
+            <TabsTrigger value="h1b" className="gap-2 data-[state=active]:bg-primary/10">
+              <Globe className="size-4" />
+              H-1B
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="pipeline">
@@ -63,6 +68,10 @@ export function Dashboard() {
 
           <TabsContent value="taxonomy">
             <TaxonomyTab />
+          </TabsContent>
+
+          <TabsContent value="h1b">
+            <H1bTab />
           </TabsContent>
         </Tabs>
       </main>

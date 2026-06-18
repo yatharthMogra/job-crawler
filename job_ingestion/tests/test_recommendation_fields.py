@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from app.config import Settings
 from app.ingestion.recommendation_fields import (
     assign_retrieval_pools,
+    assign_validated_retrieval_pools,
     compute_opportunity_score,
     fields_for_job_enrichment_record,
 )
@@ -23,6 +24,16 @@ def test_assign_retrieval_pools_new_grad() -> None:
 def test_assign_retrieval_pools_fulltime() -> None:
     pools = assign_retrieval_pools(["DATA_SCIENTIST"], is_internship=False, is_new_grad=False)
     assert pools == ["DATA_SCIENTIST_FULLTIME"]
+
+
+def test_assign_validated_retrieval_pools_keeps_pools_on_domain_mismatch() -> None:
+    pools = assign_validated_retrieval_pools(
+        ["TECHNICAL_PROGRAM_MANAGER"],
+        is_internship=False,
+        is_new_grad=False,
+        job_domain="Management",
+    )
+    assert pools == ["TECHNICAL_PROGRAM_MANAGER_FULLTIME"]
 
 
 def test_compute_opportunity_score_high_effort_low_comp() -> None:

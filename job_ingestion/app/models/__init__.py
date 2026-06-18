@@ -1,4 +1,14 @@
 from app.models.company import Company
+from app.models.h1b import (
+    H1bCompanyPoolSummary,
+    H1bEmployer,
+    H1bEmployerAlias,
+    H1bLcaStats,
+    H1bUscisStats,
+    LcaRaw,
+    SocToPoolMapping,
+    UscisRaw,
+)
 from app.models.enrichment_batch import EnrichmentBatch
 from app.models.enrichment_batch_item import EnrichmentBatchItem
 from app.models.enrichment_queue import EnrichmentQueue
@@ -23,4 +33,12 @@ __all__ = [
     "JobArchive",
     "UserApplication",
     "IngestionEvent",
+    "SocToPoolMapping",
+    "LcaRaw",
+    "UscisRaw",
+    "H1bEmployer",
+    "H1bEmployerAlias",
+    "H1bLcaStats",
+    "H1bUscisStats",
+    "H1bCompanyPoolSummary",
 ]

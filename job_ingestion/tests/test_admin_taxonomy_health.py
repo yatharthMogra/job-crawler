@@ -55,10 +55,14 @@ def test_taxonomy_health_flags_domains_and_caps_titles() -> None:
     assert body["total_active_enriched"] == 150
     assert body["global_no_pool_count"] == 17
     assert body["global_no_pool_pct"] == 11.3
+    assert body["domains_flagged"] == 1
+    assert body["domains_needing_review"] == 1
 
     software = next(d for d in body["domains"] if d["domain"] == "Software")
     assert software["no_pool_pct"] == 15.0
     assert software["flagged"] is True
+    assert software["needs_review"] is True
+    assert software["acknowledged"] is False
     assert len(software["top_no_pool_titles"]) == 2
     assert software["top_no_pool_titles"][0]["title"] == "Systems Engineer"
 
@@ -86,5 +90,36 @@ def test_taxonomy_health_top_titles_limited_to_ten() -> None:
     assert response.status_code == 200
     software = response.json()["domains"][0]
     assert len(software["top_no_pool_titles"]) == 10
+
+    app.dependency_overrides.clear()
+
+
+def test_taxonomy_health_excludes_acknowledged_from_needs_review(monkeypatch) -> None:
+    import app.api.admin as admin_api
+
+    monkeypatch.setattr(
+        admin_api,
+        "list_acknowledged_domains",
+        lambda: {"Software": "2026-06-12T12:00:00+00:00"},
+    )
+
+    domain_rows = [SimpleNamespace(domain="Software", total=100, no_pool=15)]
+    title_rows: list[SimpleNamespace] = []
+    session = _DummySession(domain_rows=domain_rows, title_rows=title_rows)
+
+    async def _dummy_db() -> AsyncGenerator[_DummySession, None]:
+        yield session
+
+    app.dependency_overrides[get_db] = _dummy_db
+    client = TestClient(app)
+
+    response = client.get("/admin/taxonomy-health")
+    assert response.status_code == 200
+    body = response.json()
+    software = body["domains"][0]
+    assert software["flagged"] is True
+    assert software["acknowledged"] is True
+    assert software["needs_review"] is False
+    assert body["domains_needing_review"] == 0
 
     app.dependency_overrides.clear()

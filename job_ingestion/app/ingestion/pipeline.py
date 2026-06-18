@@ -20,6 +20,7 @@ from app.database import AsyncSessionLocal
 from app.exceptions import IngestionError
 from app.ingestion.alerts import write_failure_alert
 from app.ingestion.change_detector import classify_jobs
+from app.ingestion.dedup import build_dedup_fingerprint, fingerprint_exists
 from app.ingestion.constants import (
     EventCategory,
     EventSeverity,
@@ -79,6 +80,7 @@ class CompanyRunOutcome:
     jobs_updated: int = 0
     jobs_unchanged: int = 0
     jobs_removed: int = 0
+    jobs_deduped: int = 0
     error_message: Optional[str] = None
 
 
@@ -92,6 +94,37 @@ async def _latest_hashes_for_company(db: AsyncSession, company_id: Any) -> dict[
     latest: dict[str, str] = {}
     for row in rows:
         latest.setdefault(row.external_job_id, row.content_hash)
+    return latest
+
+
+async def _latest_raw_by_external_id(
+    db: AsyncSession, company_id: Any
+) -> dict[str, dict[str, Any]]:
+    stmt: Select[tuple[RawJob]] = (
+        select(RawJob)
+        .where(RawJob.company_id == company_id)
+        .order_by(RawJob.external_job_id.asc(), RawJob.fetch_timestamp.desc())
+    )
+    rows = (await db.scalars(stmt)).all()
+    latest: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        if row.external_job_id not in latest and isinstance(row.raw_api_response, dict):
+            latest[row.external_job_id] = row.raw_api_response
+    return latest
+
+
+async def _latest_raw_fetch_times(
+    db: AsyncSession, company_id: Any
+) -> dict[str, datetime]:
+    stmt: Select[tuple[RawJob]] = (
+        select(RawJob)
+        .where(RawJob.company_id == company_id)
+        .order_by(RawJob.external_job_id.asc(), RawJob.fetch_timestamp.desc())
+    )
+    rows = (await db.scalars(stmt)).all()
+    latest: dict[str, datetime] = {}
+    for row in rows:
+        latest.setdefault(row.external_job_id, row.fetch_timestamp)
     return latest
 
 
@@ -141,13 +174,14 @@ async def _upsert_normalized_job(
     job_archive_id: Optional[UUID] = None,
 ) -> None:
     now = _utcnow()
+    company_name = deterministic_fields.get("company_name") or company.name
     payload = dict(
         raw_job_id=raw_row.id,
         company_id=company.id,
         job_archive_id=job_archive_id,
         external_job_id=deterministic_fields["external_job_id"],
         title=deterministic_fields["title"] or "Untitled",
-        company_name=company.name,
+        company_name=company_name,
         location=deterministic_fields["location"],
         job_country=deterministic_fields.get("job_country"),
         department=deterministic_fields["department"],
@@ -171,6 +205,7 @@ async def _upsert_normalized_job(
         llm_model=settings.gemini_model if settings.llm_provider == "gemini" else None,
         extraction_version=settings.extraction_version,
         extracted_at=now,
+        dedup_fingerprint=deterministic_fields.get("dedup_fingerprint"),
     )
 
     if existing_row is None:
@@ -258,7 +293,11 @@ async def _process_single_company(
                 pipeline_run_id=pipeline_run_id,
             )
 
-            raw_jobs = await fetch_company_jobs(company)
+            raw_jobs = await fetch_company_jobs(
+                company,
+                known_raw_by_id=await _latest_raw_by_external_id(db, company.id),
+                known_raw_fetched_at=await _latest_raw_fetch_times(db, company.id),
+            )
             outcome.jobs_fetched = len(raw_jobs)
             previous_hashes = await _latest_hashes_for_company(db, company.id)
             normalized_by_external_id = await _normalized_map_for_company(db, company.id)
@@ -271,7 +310,33 @@ async def _process_single_company(
             changed_jobs = classified.new + classified.updated
             for job in changed_jobs:
                 deterministic_fields = extract_deterministic_fields(job, platform=company.platform)
+                company_name = deterministic_fields.get("company_name") or company.name
+                deterministic_fields["company_name"] = company_name
+                deterministic_fields["dedup_fingerprint"] = build_dedup_fingerprint(
+                    company_name,
+                    deterministic_fields.get("title") or "",
+                    deterministic_fields.get("location"),
+                )
                 external_id = deterministic_fields["external_job_id"]
+                if await fingerprint_exists(
+                    db,
+                    deterministic_fields["dedup_fingerprint"],
+                    company_id=company.id,
+                    external_job_id=external_id,
+                ):
+                    outcome.jobs_deduped += 1
+                    if external_id not in normalized_by_external_id:
+                        outcome.jobs_new -= 1
+                    else:
+                        outcome.jobs_updated -= 1
+                    if structlog:
+                        logger.info(
+                            "job_dedup_skipped",
+                            company_id=str(company.id),
+                            external_job_id=external_id,
+                            fingerprint=deterministic_fields["dedup_fingerprint"],
+                        )
+                    continue
                 raw_html = deterministic_fields.get("raw_html") or job.get("content") or ""
                 description_text = _resolve_description_text(job, raw_html) or ""
                 deterministic_fields["description_text"] = description_text or None

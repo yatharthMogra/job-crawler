@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from pathlib import Path
 
+import structlog
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -11,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth import require_api_key
 from app.config import Settings, get_settings
 from app.database import get_db
-from app.exceptions import ConflictError, NotFoundError
+from app.exceptions import ConflictError, ExtractionError, LLMProviderError, NotFoundError
 from app.models.candidate import Candidate
 from app.models.resume import CandidateResume
 from app.pipeline.patch_engine import process_resume_upload
@@ -25,6 +26,7 @@ from app.schemas.candidate import (
 )
 
 router = APIRouter(prefix="/candidates", tags=["candidates"], dependencies=[Depends(require_api_key)])
+log = structlog.get_logger(__name__)
 
 
 async def _get_candidate_or_404(db: AsyncSession, candidate_id: uuid.UUID) -> Candidate:
@@ -91,7 +93,31 @@ async def upload_resume(
         patch = await process_resume_upload(db, candidate_id=candidate_id, resume=resume, settings=settings)
     except ConflictError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    except ExtractionError as exc:
+        log.warning(
+            "resume_extraction_failed",
+            candidate_id=str(candidate_id),
+            resume_id=str(resume.id),
+            filename=file.filename,
+            error=str(exc),
+        )
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
+    except LLMProviderError as exc:
+        log.error(
+            "resume_llm_failed",
+            candidate_id=str(candidate_id),
+            resume_id=str(resume.id),
+            filename=file.filename,
+            error=str(exc),
+        )
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
     except Exception as exc:
+        log.exception(
+            "resume_upload_failed",
+            candidate_id=str(candidate_id),
+            resume_id=str(resume.id),
+            filename=file.filename,
+        )
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)) from exc
 
     await db.refresh(resume)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
 from typing import Any, Callable, Optional
 
@@ -7,7 +8,7 @@ from app.exceptions import ParseError
 
 COUNTRY_SIGNALS: list[tuple[list[str], str | None]] = [
     (
-        ["canada", ", on", ", bc", ", qc", "ontario", "british columbia", "toronto", "montreal", "vancouver"],
+        ["canada", "ontario", "british columbia", "toronto", "montreal", "vancouver"],
         "CA",
     ),
     (
@@ -48,6 +49,25 @@ COUNTRY_SIGNALS: list[tuple[list[str], str | None]] = [
         ["australia", "sydney", "melbourne", "brisbane", "perth"],
         "AU",
     ),
+    (["singapore"], "SG"),
+    (["hong kong"], "HK"),
+    (["japan", "tokyo", "osaka"], "JP"),
+    (["china", "beijing", "shanghai"], "CN"),
+    (["taiwan", "taipei"], "TW"),
+    (["south korea", "seoul"], "KR"),
+    (["france", "paris"], "FR"),
+    (["netherlands", "amsterdam"], "NL"),
+    (["switzerland", "zurich"], "CH"),
+    (["ireland", "dublin"], "IE"),
+    (["israel", "tel aviv"], "IL"),
+    (["brazil", "são paulo", "sao paulo"], "BR"),
+    (["mexico"], "MX"),
+    (["poland", "warsaw"], "PL"),
+    (["philippines", "manila"], "PH"),
+    (["malaysia", "kuala lumpur"], "MY"),
+    (["thailand", "bangkok"], "TH"),
+    (["vietnam"], "VN"),
+    (["indonesia", "jakarta"], "ID"),
     (
         [
             "new york",
@@ -60,22 +80,6 @@ COUNTRY_SIGNALS: list[tuple[list[str], str | None]] = [
             "denver",
             "atlanta",
             "washington, d.c",
-            ", ny",
-            ", ca",
-            ", wa",
-            ", tx",
-            ", ma",
-            ", co",
-            ", ga",
-            ", fl",
-            ", va",
-            ", dc",
-            ", nc",
-            ", il",
-            ", oh",
-            ", pa",
-            ", az",
-            ", mn",
         ],
         "US",
     ),
@@ -84,6 +88,14 @@ COUNTRY_SIGNALS: list[tuple[list[str], str | None]] = [
         None,
     ),
 ]
+
+_US_STATE_ABBRS = ("ny", "ca", "wa", "tx", "ma", "co", "ga", "fl", "va", "dc", "nc", "il", "oh", "pa", "az", "mn")
+_CA_PROV_ABBRS = ("on", "bc", "qc")
+
+
+def _matches_abbr_after_comma(loc_lower: str, abbr: str) -> bool:
+    pattern = r",\s*" + re.escape(abbr) + r"(?:\s|,|\)|$)"
+    return bool(re.search(pattern, loc_lower))
 
 
 def extract_job_country(location: str | None) -> str | None:
@@ -103,6 +115,11 @@ def extract_job_country(location: str | None) -> str | None:
             continue
         if any(sig in loc_lower for sig in signals):
             return code
+
+    if any(_matches_abbr_after_comma(loc_lower, abbr) for abbr in _US_STATE_ABBRS):
+        return "US"
+    if any(_matches_abbr_after_comma(loc_lower, abbr) for abbr in _CA_PROV_ABBRS):
+        return "CA"
 
     return None
 
@@ -345,6 +362,72 @@ def _extract_icims(job: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _format_workable_location(job: dict[str, Any]) -> str | None:
+    parts: list[str] = []
+    if job.get("telecommuting"):
+        parts.append("Remote")
+    for loc in job.get("locations") or []:
+        if not isinstance(loc, dict):
+            continue
+        segment = ", ".join(
+            part for part in [loc.get("city"), loc.get("region"), loc.get("country")] if part
+        )
+        if segment:
+            parts.append(segment)
+    return " | ".join(parts) or None
+
+
+def _extract_workatastartup_employment_type(job_type: Optional[str]) -> Optional[str]:
+    if not job_type:
+        return None
+    normalized = job_type.lower().replace("-", "").replace("_", "")
+    if normalized == "fulltime":
+        return "Full-time"
+    if normalized == "parttime":
+        return "Part-time"
+    if normalized == "internship":
+        return "Internship"
+    if normalized == "contract":
+        return "Contract"
+    return job_type
+
+
+def _extract_workatastartup(job: dict[str, Any]) -> dict[str, Any]:
+    company = job.get("company") if isinstance(job.get("company"), dict) else {}
+    location = job.get("location")
+    if not location and job.get("remote"):
+        location = "Remote"
+    apply_url = job.get("apply_url")
+    job_id = job.get("id")
+    if not apply_url and job_id is not None:
+        apply_url = f"https://www.workatastartup.com/jobs/{job_id}"
+    return {
+        "external_job_id": str(job["id"]),
+        "title": job.get("title") or "",
+        "location": location,
+        "department": None,
+        "posting_url": apply_url,
+        "posted_at": _parse_iso_datetime(job.get("created_at")),
+        "employment_type": _extract_workatastartup_employment_type(job.get("job_type")),
+        "raw_html": job.get("description") or "",
+        "company_name": company.get("name") or "",
+    }
+
+
+def _extract_workable(job: dict[str, Any]) -> dict[str, Any]:
+    employment_type = job.get("employment_type")
+    return {
+        "external_job_id": str(job.get("id")),
+        "title": job.get("title") or "",
+        "location": _format_workable_location(job),
+        "department": job.get("department") or None,
+        "posting_url": job.get("url") or job.get("shortlink"),
+        "posted_at": _parse_oracle_date(job.get("published_on")),
+        "employment_type": employment_type if employment_type else None,
+        "raw_html": job.get("description") or "",
+    }
+
+
 def _extract_ashby(job: dict[str, Any]) -> dict[str, Any]:
     secondary_names = job.get("secondaryLocationNames")
     if isinstance(secondary_names, list):
@@ -373,6 +456,8 @@ FIELD_EXTRACTORS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "workday": _extract_workday,
     "oracle_hcm": _extract_oracle_hcm,
     "icims": _extract_icims,
+    "workable": _extract_workable,
+    "workatastartup": _extract_workatastartup,
 }
 
 

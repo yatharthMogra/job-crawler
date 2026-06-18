@@ -52,6 +52,24 @@ CAPABILITY_TAXONOMY = [
 
 ROLE_TYPES = ["INTERNSHIP", "NEW_GRAD", "FULLTIME"]
 
+ROLE_INTENTS = [
+    "engineer",
+    "researcher",
+    "consultant",
+    "educator",
+    "manager",
+    "analyst",
+    "accountant",
+    "auditor",
+    "investment_banker",
+    "sales",
+    "operations",
+    "legal",
+    "other",
+]
+
+DEFAULT_ROLE_INTENTS = ["engineer", "researcher"]
+
 
 def normalize_pool_name(pool_name: str) -> str:
     """Map legacy *_INTERN suffix to canonical *_INTERNSHIP."""

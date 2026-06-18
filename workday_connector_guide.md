@@ -530,6 +530,34 @@ Extends the table in section 5.2 of the connector guide:
 }
 ```
 
+### Incremental fetch (large tenants, frequent polling)
+
+For companies with thousands of jobs polled every 30 minutes, use incremental mode to avoid re-fetching detail for unchanged jobs:
+
+```json
+{
+  "company": "GE Vernova",
+  "platform": "workday",
+  "board_token": "gevernova",
+  "platform_config": {
+    "tenant": "gevernova",
+    "instance": "wd5",
+    "career_site": "Vernova_ExternalSite",
+    "public_path_prefix": "Vernova_ExternalSite",
+    "max_posted_age_days": 30,
+    "workday_fetch_mode": "incremental",
+    "workday_full_refresh_days": 7
+  }
+}
+```
+
+| `platform_config` key | Default | Description |
+|---|---|---|
+| `workday_fetch_mode` | `full` | `full` = detail every job every run; `incremental` = list all, detail only new/changed/missing-description/stale-cache jobs |
+| `workday_full_refresh_days` | `7` (when incremental) | Re-detail in-DB jobs whose cached raw is older than N days |
+
+Incremental mode reuses the latest `raw_api_response` from DB when list metadata (title, location, path) is unchanged. Relative `postedOn` strings are excluded from the fingerprint so `"Posted Today"` vs `"Posted 1 Day Ago"` does not force re-detail.
+
 Common patterns for locating `instance` and `career_site`:
 - Visit the company careers page, look for `myworkdayjobs.com` in URLs or network requests
 - The instance (`wd1`, `wd3`, `wd5`) is in the subdomain

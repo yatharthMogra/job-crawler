@@ -107,6 +107,7 @@ def default_constraints() -> dict:
         "fulltime_only": False,
         "minimum_salary": None,
         "minimum_hourly_rate": None,
+        "has_clearance": False,
         "target_seniority": ["INTERN", "NEW_GRAD", "ENTRY", "MID", "JUNIOR"],
         "eeo": {},
     }
@@ -125,6 +126,8 @@ def default_preferences() -> dict:
         "relocation_allowed": False,
         "preferred_company_stages": [],
         "preferred_industries": [],
+        "primary_role_intents": ["engineer", "researcher"],
+        "role_intents": ["engineer", "researcher"],
     }
 
 

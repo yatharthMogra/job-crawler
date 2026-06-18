@@ -17,6 +17,7 @@ import {
   EXPERIENCE_LEVELS,
   DATE_POSTED_OPTIONS,
   WORK_MODEL_OPTIONS,
+  ROLE_INTENT_OPTIONS,
 } from "@/lib/profile/job-filters"
 import { patchConstraints, patchPreferences } from "@/lib/profile/api"
 import { useJobs } from "@/components/jobs-provider"
@@ -79,6 +80,13 @@ export default function FiltersPage() {
       ? state.workModels.filter((m) => m !== model)
       : [...state.workModels, model]
     update("workModels", models)
+  }
+
+  function toggleRoleIntent(intent: string) {
+    const intents = state.roleIntents.includes(intent)
+      ? state.roleIntents.filter((i) => i !== intent)
+      : [...state.roleIntents, intent]
+    update("roleIntents", intents)
   }
 
   async function handleConfirm() {
@@ -158,6 +166,30 @@ export default function FiltersPage() {
                       update("rolePoolIds", poolIdsForSelectedRoles(roles, suffix))
                     }}
                   />
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium">Career tracks</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Coarse role types you are open to (e.g. engineer vs educator vs analyst).
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {ROLE_INTENT_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => toggleRoleIntent(option.value)}
+                      className={cn(
+                        "rounded-lg border px-3 py-2 text-sm",
+                        state.roleIntents.includes(option.value)
+                          ? "border-primary bg-accent text-accent-foreground shadow-sm"
+                          : "border-border bg-card",
+                      )}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -286,10 +318,10 @@ export default function FiltersPage() {
                 <label className="flex items-center gap-2 rounded-lg border border-border/80 bg-card p-3">
                   <input
                     type="checkbox"
-                    checked={state.excludeSecurityClearance}
-                    onChange={(e) => update("excludeSecurityClearance", e.target.checked)}
+                    checked={state.hasClearance}
+                    onChange={(e) => update("hasClearance", e.target.checked)}
                   />
-                  <span className="text-sm">Exclude jobs requiring security clearance</span>
+                  <span className="text-sm">I have an active security clearance</span>
                 </label>
                 <label className="flex items-center gap-2 rounded-lg border border-border/80 bg-card p-3">
                   <input

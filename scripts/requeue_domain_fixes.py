@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Re-queue jobs for targeted domain/pool enrichment fixes (presets 2a, 2b, 2c)."""
+"""Re-queue jobs for targeted domain/pool enrichment fixes (presets 2a–2c, 3a–3h)."""
 
 from __future__ import annotations
 
@@ -50,11 +50,82 @@ PRESET_QUERIES = {
         WHERE nj.is_active = TRUE
           AND nj.job_domain = 'Aerospace_Defense'
           AND 'SWE' = ANY(nj.normalized_roles)
-          AND (nj.retrieval_pools IS NULL OR cardinality(nj.retrieval_pools) = 0)
+          AND cardinality(nj.retrieval_pools) = 0
           AND nj.processing_state = 'success'
           AND c.platform IN ('workday', 'oracle_hcm')
     """,
+    # Tier 1: secondary-domain + role fixes (prompt v6)
+    "3a": """
+        SELECT nj.id FROM normalized_jobs nj
+        WHERE nj.is_active = TRUE
+          AND nj.job_domain = 'Management'
+          AND 'OPERATIONS' = ANY(nj.normalized_roles)
+          AND cardinality(nj.retrieval_pools) = 0
+          AND nj.processing_state IN ('success', 'partial_success')
+    """,
+    "3b": """
+        SELECT nj.id FROM normalized_jobs nj
+        WHERE nj.is_active = TRUE
+          AND nj.job_domain = 'Management'
+          AND 'TECHNICAL_PROGRAM_MANAGER' = ANY(nj.normalized_roles)
+          AND cardinality(nj.retrieval_pools) = 0
+          AND nj.processing_state IN ('success', 'partial_success')
+    """,
+    "3c": """
+        SELECT nj.id FROM normalized_jobs nj
+        WHERE nj.is_active = TRUE
+          AND nj.job_domain = 'Mechanical'
+          AND 'HARDWARE_ENGINEER' = ANY(nj.normalized_roles)
+          AND cardinality(nj.retrieval_pools) = 0
+          AND nj.processing_state IN ('success', 'partial_success')
+    """,
+    "3d": """
+        SELECT nj.id FROM normalized_jobs nj
+        WHERE nj.is_active = TRUE
+          AND nj.job_domain = 'Hardware_Electrical'
+          AND 'SYSTEMS_ENGINEER' = ANY(nj.normalized_roles)
+          AND cardinality(nj.retrieval_pools) = 0
+          AND nj.processing_state IN ('success', 'partial_success')
+    """,
+    "3e": """
+        SELECT nj.id FROM normalized_jobs nj
+        WHERE nj.is_active = TRUE
+          AND nj.job_domain = 'Aerospace_Defense'
+          AND 'SWE' = ANY(nj.normalized_roles)
+          AND cardinality(nj.retrieval_pools) = 0
+          AND nj.processing_state IN ('success', 'partial_success')
+    """,
+    "3f": """
+        SELECT nj.id FROM normalized_jobs nj
+        WHERE nj.is_active = TRUE
+          AND nj.job_domain = 'Software'
+          AND 'SYSTEMS_ENGINEER' = ANY(nj.normalized_roles)
+          AND cardinality(nj.retrieval_pools) = 0
+          AND nj.processing_state IN ('success', 'partial_success')
+    """,
+    "3g": """
+        SELECT nj.id FROM normalized_jobs nj
+        WHERE nj.is_active = TRUE
+          AND nj.job_domain = 'Industrial_Automation'
+          AND cardinality(nj.retrieval_pools) = 0
+          AND nj.processing_state IN ('success', 'partial_success')
+    """,
+    "3h": """
+        SELECT nj.id FROM normalized_jobs nj
+        WHERE nj.is_active = TRUE
+          AND nj.job_domain = 'Hardware_Electrical'
+          AND cardinality(nj.retrieval_pools) = 0
+          AND (
+            nj.title ILIKE '%field service%'
+            OR nj.title ILIKE '%field technician%'
+          )
+          AND nj.processing_state IN ('success', 'partial_success')
+    """,
 }
+
+TIER1_PRESETS = ["3a", "3b", "3c", "3d", "3e", "3f", "3g", "3h"]
+LEGACY_PRESETS = ["2a", "2b", "2c"]
+ALL_PRESETS = LEGACY_PRESETS + TIER1_PRESETS
 
 
 async def collect_job_ids(presets: list[str]) -> list[UUID]:
@@ -106,8 +177,9 @@ async def drain(max_windows: int) -> int:
 
 async def main() -> None:
     parser = argparse.ArgumentParser(description="Re-queue jobs for domain fix presets")
-    parser.add_argument("--preset", choices=["2a", "2b", "2c"], action="append")
-    parser.add_argument("--all", action="store_true", help="Run all presets 2a, 2b, 2c")
+    parser.add_argument("--preset", choices=ALL_PRESETS, action="append")
+    parser.add_argument("--all", action="store_true", help="Run all presets 2a–2c and 3a–3h")
+    parser.add_argument("--tier1", action="store_true", help="Run tier-1 pool fix presets 3a–3h")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument(
         "--drain",
@@ -117,7 +189,14 @@ async def main() -> None:
     parser.add_argument("--max-windows", type=int, default=500)
     args = parser.parse_args()
 
-    presets = args.preset or (["2a", "2b", "2c"] if args.all else [])
+    if args.preset:
+        presets = args.preset
+    elif args.tier1:
+        presets = TIER1_PRESETS
+    elif args.all:
+        presets = ALL_PRESETS
+    else:
+        presets = []
     if not presets:
         parser.error("Specify --preset or --all")
 
@@ -126,7 +205,14 @@ async def main() -> None:
     if args.dry_run:
         return
 
-    source = "domain_fix_" + "_".join(presets)
+    if presets == TIER1_PRESETS:
+        source = "taxonomy_tier1"
+    elif presets == ALL_PRESETS:
+        source = "domain_fix_all"
+    elif len(presets) == 1:
+        source = f"domain_fix_{presets[0]}"
+    else:
+        source = "domain_fix_batch"
     requeued = await requeue(job_ids, source=source)
     print(f"requeued {requeued} jobs")
 
