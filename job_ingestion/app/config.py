@@ -12,8 +12,8 @@ class Settings(BaseSettings):
     llm_provider: str = "gemini"
     gemini_api_key: str = ""
     gemini_model: str = "gemini-3.1-flash-lite"
-    extraction_version: str = "v5"
-    default_extraction_version: str = "v5"
+    extraction_version: str = "v6"
+    default_extraction_version: str = "v6"
     opportunity_score_freshness_decay: float = 0.01
     comp_floor: int = 40_000
     comp_ceiling: int = 250_000
@@ -42,6 +42,11 @@ class Settings(BaseSettings):
     cleanup_batch_size: int = 500
     archive_dir: str = "data/archives"
 
+    yc_crawler_email: str = ""
+    yc_crawler_password: str = ""
+    yc_directory_probe_concurrency: int = 5
+    yc_waas_roles: str = "eng,ds"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -61,6 +66,10 @@ class Settings(BaseSettings):
         rpm_cap = max(self.enrichment_llm_max_rpm, 1)
         window_batches = min(self.enrichment_max_batches_per_window, rpm_cap)
         return self.enrichment_window_seconds / window_batches
+
+    @property
+    def yc_waas_roles_list(self) -> list[str]:
+        return [role.strip() for role in self.yc_waas_roles.split(",") if role.strip()]
 
 
 @lru_cache(maxsize=1)

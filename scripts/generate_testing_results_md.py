@@ -24,6 +24,9 @@ from app.database import AsyncSessionLocal, engine
 
 
 async def fetch_index_stats() -> dict:
+    from app.config import get_settings
+
+    settings = get_settings()
     async with AsyncSessionLocal() as db:
         row = (
             await db.execute(
@@ -40,7 +43,12 @@ async def fetch_index_stats() -> dict:
                 )
             )
         ).one()
-        return dict(row._mapping)
+        stats = dict(row._mapping)
+        stats["domain_filter_enabled"] = settings.domain_filter_enabled
+        stats["role_intent_filter_enabled"] = settings.role_intent_filter_enabled
+        stats["clearance_filter_enabled"] = settings.clearance_filter_enabled
+        stats["sponsorship_score_enabled"] = settings.sponsorship_score_enabled
+        return stats
 
 
 def fmt_user(u: dict) -> list[str]:
@@ -137,12 +145,15 @@ async def generate() -> None:
     lines = [
         "# User Recommendation Results",
         "",
-        f"Generated {generated} after v5 domain taxonomy enrichment "
+        f"Generated {generated} "
         f"({stats['reco_eligible']:,} recommendation-eligible active jobs, "
         f"{stats['active_normalized']:,} active normalized rows, "
         f"{stats['archive_total']:,} archived identities, "
         f"{stats['active_companies']} active companies; "
-        "domain filter enabled, Tier 1+2 business pools, gemini-3.1-flash-lite).",
+        f"domain_filter={stats['domain_filter_enabled']}, "
+        f"role_intent_filter={stats['role_intent_filter_enabled']}, "
+        f"clearance_filter={stats['clearance_filter_enabled']}, "
+        f"sponsorship_score={stats['sponsorship_score_enabled']}).",
         "",
         "Active layer (`normalized_jobs`) retains jobs ≤7 days; long-lived history lives in `job_archive`.",
         "",

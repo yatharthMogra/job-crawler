@@ -100,9 +100,48 @@ async def test_gemini_provider_parses_fenced_json_response(monkeypatch) -> None:
 
 
 @pytest.mark.asyncio
-async def test_gemini_provider_pdf_fallback_not_supported() -> None:
+async def test_gemini_provider_extract_text_from_pdf(monkeypatch) -> None:
     settings = Settings(gemini_api_key="test-key", gemini_model="gemini-3.1-flash-lite")
     provider = GeminiProvider(settings)
 
-    with pytest.raises(LLMProviderError, match="PDF multimodal fallback is not supported"):
-        await provider.extract_text_from_pdf(b"%PDF-1.4")
+    class _Response:
+        text = "Jane Doe\nSoftware Engineer\nPython FastAPI"
+
+    class _Models:
+        async def generate_content(self, **_kwargs):
+            return _Response()
+
+    class _Aio:
+        models = _Models()
+
+    class _Client:
+        aio = _Aio()
+
+    monkeypatch.setattr("google.genai.Client", lambda **_: _Client())
+
+    text = await provider.extract_text_from_pdf(b"%PDF-1.4 fake")
+    assert "Jane Doe" in text
+
+
+@pytest.mark.asyncio
+async def test_gemini_provider_extract_text_from_pdf_empty_response(monkeypatch) -> None:
+    settings = Settings(gemini_api_key="test-key", gemini_model="gemini-3.1-flash-lite")
+    provider = GeminiProvider(settings)
+
+    class _Response:
+        text = ""
+
+    class _Models:
+        async def generate_content(self, **_kwargs):
+            return _Response()
+
+    class _Aio:
+        models = _Models()
+
+    class _Client:
+        aio = _Aio()
+
+    monkeypatch.setattr("google.genai.Client", lambda **_: _Client())
+
+    with pytest.raises(LLMProviderError, match="returned no text"):
+        await provider.extract_text_from_pdf(b"%PDF-1.4 fake")

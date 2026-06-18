@@ -13,7 +13,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ChevronDown, Layers, RefreshCw, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { MetricCard, SummaryStrip } from './metric-card'
-import { getTaxonomyHealth, type TaxonomyHealthResponse } from '@/lib/api'
+import {
+  getTaxonomyHealth,
+  setTaxonomyDomainAcknowledged,
+  type TaxonomyHealthResponse,
+} from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { formatNumber } from '@/lib/dashboard-utils'
 
@@ -75,7 +79,16 @@ export function TaxonomyTab() {
 
   if (!data) return null
 
-  const flaggedCount = data.domains.filter((d) => d.flagged).length
+  const needsReviewCount = data.domains_needing_review
+
+  const toggleAcknowledged = async (domain: string, acknowledged: boolean) => {
+    try {
+      const response = await setTaxonomyDomainAcknowledged(domain, acknowledged)
+      setData(response)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update acknowledgement')
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -105,9 +118,10 @@ export function TaxonomyTab() {
           valueClassName={pctColor(data.global_no_pool_pct, data.global_no_pool_pct >= THRESHOLD_PCT)}
         />
         <MetricCard
-          title={`Domains flagged (≥${THRESHOLD_PCT}%)`}
-          value={flaggedCount}
-          valueClassName={flaggedCount > 0 ? 'text-red-600' : undefined}
+          title={`Domains needing review`}
+          value={needsReviewCount}
+          subtitle={`${data.domains_flagged} flagged (≥${THRESHOLD_PCT}%)`}
+          valueClassName={needsReviewCount > 0 ? 'text-red-600' : undefined}
         />
       </SummaryStrip>
 
@@ -124,14 +138,18 @@ export function TaxonomyTab() {
                 <TableHead className="text-right">No-pool</TableHead>
                 <TableHead className="text-right">No-pool %</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="w-[120px]" />
+                <TableHead className="w-[100px]" />
+                <TableHead className="w-[130px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {data.domains.map((domain) => (
                 <Fragment key={domain.domain}>
                   <TableRow
-                    className={cn(domain.flagged && 'bg-destructive/5')}
+                    className={cn(
+                      domain.needs_review && 'bg-destructive/5',
+                      domain.acknowledged && domain.flagged && 'bg-muted/40',
+                    )}
                   >
                     <TableCell>
                       <code className="text-xs">{domain.domain}</code>
@@ -146,16 +164,35 @@ export function TaxonomyTab() {
                       <PctBadge pct={domain.no_pool_pct} flagged={domain.flagged} />
                     </TableCell>
                     <TableCell>
-                      {domain.flagged ? (
+                      {domain.needs_review ? (
                         <span className="inline-flex items-center gap-1 text-xs text-amber-600">
                           <AlertTriangle className="size-3.5" />
                           Review taxonomy
+                        </span>
+                      ) : domain.acknowledged && domain.flagged ? (
+                        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                          <CheckCircle2 className="size-3.5" />
+                          Acknowledged
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-xs text-green-600">
                           <CheckCircle2 className="size-3.5" />
                           OK
                         </span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {domain.flagged && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs"
+                          onClick={() =>
+                            void toggleAcknowledged(domain.domain, !domain.acknowledged)
+                          }
+                        >
+                          {domain.acknowledged ? 'Unack' : 'Ack'}
+                        </Button>
                       )}
                     </TableCell>
                     <TableCell>
@@ -183,7 +220,7 @@ export function TaxonomyTab() {
                   </TableRow>
                   {expanded === domain.domain && domain.top_no_pool_titles.length > 0 && (
                     <TableRow className="bg-muted/30 hover:bg-muted/30">
-                      <TableCell colSpan={6} className="py-3">
+                      <TableCell colSpan={7} className="py-3">
                         <p className="text-xs text-muted-foreground mb-2">
                           Top no-pool job titles in <strong>{domain.domain}</strong>
                           {domain.flagged && (
@@ -216,7 +253,8 @@ export function TaxonomyTab() {
       <p className="text-xs text-muted-foreground">
         Generated {new Date(data.generated_at).toLocaleString()}. Threshold: flag domains with
         no-pool ≥ {THRESHOLD_PCT}%. To fix: expand titles above, update taxonomy/prompt if titles
-        cluster, then re-enrich flagged domain jobs manually.
+        cluster, then re-enrich flagged domain jobs manually. Acknowledge domains with
+        intentional exclusions (e.g. Business ministry/trader jobs) to suppress repeat alerts.
       </p>
     </div>
   )

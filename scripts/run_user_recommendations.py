@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import sys
 import uuid
 from pathlib import Path
@@ -12,7 +13,9 @@ from pathlib import Path
 import httpx
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "recommendation_service"))
+RECO_ROOT = ROOT / "recommendation_service"
+sys.path.insert(0, str(RECO_ROOT))
+os.chdir(RECO_ROOT)
 
 from sqlalchemy import and_, func, select, text
 
@@ -138,7 +141,10 @@ async def list_real_users() -> list[dict]:
                     FROM candidates c
                     JOIN candidate_profiles cp
                       ON cp.candidate_id = c.id AND cp.is_current = true
-                    WHERE c.email NOT LIKE '%@example.com'
+                    WHERE c.email NOT LIKE 'test-%%@example.com'
+                      AND c.email NOT LIKE 'ev-%%@example.com'
+                      AND c.email NOT LIKE 'gemini-smoke%%@example.com'
+                      AND c.email NOT IN ('alice.dev@example.com', 'bob.fullstack@example.com')
                     ORDER BY c.email
                     """
                 )
@@ -191,7 +197,7 @@ async def recommend_for_user(user: dict, *, pools: list[str]) -> dict:
         if profile is None:
             raise RuntimeError(f"No profile for {user['email']}")
 
-        filters = build_constraint_filters(profile)
+        filters = build_constraint_filters(profile, settings)
 
         all_jobs: list[NormalizedJob] = []
         offset = 0

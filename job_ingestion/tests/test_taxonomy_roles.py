@@ -68,7 +68,13 @@ def test_engineering_roles_include_solutions_and_support() -> None:
 
 
 def test_new_research_and_aerospace_roles_in_taxonomy() -> None:
-    for role in ("RESEARCH_SCIENTIST", "LIFE_SCIENTIST", "AEROSPACE_ENGINEER"):
+    for role in (
+        "RESEARCH_SCIENTIST",
+        "LIFE_SCIENTIST",
+        "AEROSPACE_ENGINEER",
+        "FIELD_SERVICE_ENGINEER",
+        "CONTROLS_ENGINEER",
+    ):
         assert role in NORMALIZED_ROLES
 
 
@@ -86,3 +92,29 @@ def test_enrichment_prompt_includes_critical_domain_rule() -> None:
     assert "CRITICAL RULE" in ENRICHMENT_SYSTEM_PROMPT
     assert "company's industry never determines the domain" in ENRICHMENT_SYSTEM_PROMPT
     assert "RESEARCH_SCIENTIST:" in ENRICHMENT_SYSTEM_PROMPT
+
+
+def test_enrichment_prompt_includes_secondary_domain_and_systems_rules() -> None:
+    assert "Management + Business:" in ENRICHMENT_SYSTEM_PROMPT
+    assert "NOT for people leadership" in ENRICHMENT_SYSTEM_PROMPT
+    assert "SYSTEMS_ENGINEER at tech companies" in ENRICHMENT_SYSTEM_PROMPT
+    assert "FIELD_SERVICE_ENGINEER:" in ENRICHMENT_SYSTEM_PROMPT
+    assert "CONTROLS_ENGINEER:" in ENRICHMENT_SYSTEM_PROMPT
+
+
+def test_field_service_and_controls_pools_map_to_domains() -> None:
+    field_pools = assign_validated_retrieval_pools(
+        ["FIELD_SERVICE_ENGINEER"],
+        is_internship=False,
+        is_new_grad=False,
+        job_domain="Hardware_Electrical",
+    )
+    assert field_pools == ["FIELD_SERVICE_ENGINEER_FULLTIME"]
+
+    controls_pools = assign_validated_retrieval_pools(
+        ["CONTROLS_ENGINEER"],
+        is_internship=False,
+        is_new_grad=False,
+        job_domain="Industrial_Automation",
+    )
+    assert controls_pools == ["CONTROLS_ENGINEER_FULLTIME"]

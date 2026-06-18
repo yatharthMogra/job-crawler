@@ -73,7 +73,8 @@
       "instance": "wd5",
       "career_site": "rec_rtx_ext_gateway",
       "public_path_prefix": "en-US/rec_rtx_ext_gateway",
-      "max_posted_age_days": 30
+      "max_posted_age_days": 30,
+      "stop_pagination_on_stale_tail": true
     },
     "is_active": true
   },
@@ -716,6 +717,891 @@
     "platform": "icims",
     "board_token": "sri",
     "platform_config": {},
+    "is_active": true
+  },
+  {
+    "company": "GE Vernova",
+    "platform": "workday",
+    "board_token": "gevernova",
+    "platform_config": {
+      "tenant": "gevernova",
+      "instance": "wd5",
+      "career_site": "Vernova_ExternalSite",
+      "public_path_prefix": "Vernova_ExternalSite",
+      "max_posted_age_days": 30,
+      "workday_fetch_mode": "incremental",
+      "workday_full_refresh_days": 7
+    },
+    "is_active": true
+  },
+  {
+    "company": "Quadric",
+    "platform": "workable",
+    "board_token": "quadric-dot-i-o-inc",
+    "is_active": true
+  },
+  {
+    "company": "Cox",
+    "platform": "workday",
+    "board_token": "cox",
+    "platform_config": {
+      "tenant": "cox",
+      "instance": "wd1",
+      "career_site": "Cox_External_Career_Site_1",
+      "public_path_prefix": "Cox_External_Career_Site_1",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Applied Materials",
+    "platform": "workday",
+    "board_token": "amat",
+    "platform_config": {
+      "tenant": "amat",
+      "instance": "wd1",
+      "career_site": "External",
+      "public_path_prefix": "External",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "LexisNexis Risk Solutions",
+    "platform": "workday",
+    "board_token": "relx",
+    "platform_config": {
+      "tenant": "relx",
+      "instance": "wd3",
+      "career_site": "RiskSolutions",
+      "public_path_prefix": "en-US/RiskSolutions",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "LivaNova",
+    "platform": "workday",
+    "board_token": "livanova",
+    "platform_config": {
+      "tenant": "livanova",
+      "instance": "wd5",
+      "career_site": "search",
+      "public_path_prefix": "search",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "The Boeing Company",
+    "platform": "workday",
+    "board_token": "boeing-external-careers",
+    "platform_config": {
+      "tenant": "boeing",
+      "instance": "wd1",
+      "career_site": "EXTERNAL_CAREERS",
+      "public_path_prefix": "EXTERNAL_CAREERS",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "RELX",
+    "platform": "workday",
+    "board_token": "relx-relx",
+    "platform_config": {
+      "tenant": "relx",
+      "instance": "wd3",
+      "career_site": "relx",
+      "public_path_prefix": "en-US/relx",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "The Coca-Cola Company",
+    "platform": "workday",
+    "board_token": "coke",
+    "platform_config": {
+      "tenant": "coke",
+      "instance": "wd1",
+      "career_site": "coca-cola-careers",
+      "public_path_prefix": "coca-cola-careers",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Truist Bank",
+    "platform": "workday",
+    "board_token": "truist",
+    "platform_config": {
+      "tenant": "truist",
+      "instance": "wd1",
+      "career_site": "Careers",
+      "public_path_prefix": "en-US/Careers",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Authorium",
+    "platform": "ashby",
+    "board_token": "Authorium",
+    "is_active": true
+  },
+  {
+    "company": "Danaher Corporation",
+    "platform": "workday",
+    "board_token": "danaher",
+    "platform_config": {
+      "tenant": "danaher",
+      "instance": "wd1",
+      "career_site": "DanaherJobs",
+      "public_path_prefix": "DanaherJobs",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Medtronic",
+    "platform": "workday",
+    "board_token": "medtronic-redeploymentmedtroniccareers",
+    "platform_config": {
+      "tenant": "medtronic",
+      "instance": "wd1",
+      "career_site": "redeploymentmedtroniccareers",
+      "public_path_prefix": "redeploymentmedtroniccareers",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "TD Bank",
+    "platform": "workday",
+    "board_token": "td",
+    "platform_config": {
+      "tenant": "td",
+      "instance": "wd3",
+      "career_site": "TD_Bank_Careers",
+      "public_path_prefix": "TD_Bank_Careers",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "mthree",
+    "platform": "greenhouse",
+    "board_token": "mthreerecruitingportal",
+    "is_active": true
+  },
+  {
+    "company": "Wyetech",
+    "platform": "lever",
+    "board_token": "wyetechllc",
+    "is_active": true
+  },
+  {
+    "company": "Epic Kids",
+    "platform": "greenhouse",
+    "board_token": "epickids",
+    "is_active": true
+  },
+  {
+    "company": "General Dynamics Mission Systems",
+    "platform": "icims",
+    "board_token": "gdms",
+    "platform_config": {},
+    "is_active": true
+  },
+  {
+    "company": "Captivation",
+    "platform": "greenhouse",
+    "board_token": "captivation",
+    "is_active": true
+  },
+  {
+    "company": "Sony Interactive Entertainment",
+    "platform": "greenhouse",
+    "board_token": "sonyinteractiveentertainmentglobal",
+    "is_active": true
+  },
+  {
+    "company": "Julius AI",
+    "platform": "ashby",
+    "board_token": "julius",
+    "is_active": true
+  },
+  {
+    "company": "Cadence Design Systems",
+    "platform": "workday",
+    "board_token": "cadence",
+    "platform_config": {
+      "tenant": "cadence",
+      "instance": "wd1",
+      "career_site": "University_Talent",
+      "public_path_prefix": "University_Talent",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "General Motors",
+    "platform": "workday",
+    "board_token": "generalmotors",
+    "platform_config": {
+      "tenant": "generalmotors",
+      "instance": "wd5",
+      "career_site": "Careers_GM",
+      "public_path_prefix": "en-CA/Careers_GM",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Cadence Design Systems",
+    "platform": "workday",
+    "board_token": "cadence-external-careers",
+    "platform_config": {
+      "tenant": "cadence",
+      "instance": "wd1",
+      "career_site": "External_Careers",
+      "public_path_prefix": "External_Careers",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Cadence Design Systems",
+    "platform": "workday",
+    "board_token": "cadence-univ-careers",
+    "platform_config": {
+      "tenant": "cadence",
+      "instance": "wd1",
+      "career_site": "Univ_Careers",
+      "public_path_prefix": "Univ_Careers",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "TSC",
+    "platform": "workday",
+    "board_token": "tsc",
+    "platform_config": {
+      "tenant": "tsc",
+      "instance": "wd12",
+      "career_site": "TSC-Careers",
+      "public_path_prefix": "en-US/TSC-Careers",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Glean",
+    "platform": "greenhouse",
+    "board_token": "gleanwork",
+    "is_active": true
+  },
+  {
+    "company": "Compa",
+    "platform": "ashby",
+    "board_token": "compa",
+    "is_active": true
+  },
+  {
+    "company": "Stewart",
+    "platform": "workday",
+    "board_token": "stewart",
+    "platform_config": {
+      "tenant": "stewart",
+      "instance": "wd1",
+      "career_site": "External",
+      "public_path_prefix": "External",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Mirage",
+    "platform": "ashby",
+    "board_token": "mirage",
+    "is_active": true
+  },
+  {
+    "company": "Twitch",
+    "platform": "greenhouse",
+    "board_token": "twitch",
+    "is_active": true
+  },
+  {
+    "company": "Loop",
+    "platform": "greenhouse",
+    "board_token": "loop",
+    "is_active": true
+  },
+  {
+    "company": "Wonderschool",
+    "platform": "greenhouse",
+    "board_token": "wonderschool",
+    "is_active": true
+  },
+  {
+    "company": "Anduril",
+    "platform": "greenhouse",
+    "board_token": "andurilindustries",
+    "is_active": true
+  },
+  {
+    "company": "Fortinet",
+    "platform": "oracle_hcm",
+    "board_token": "edel",
+    "platform_config": {
+      "datacenter": "us2",
+      "site_number": "CX_2001",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Rokt",
+    "platform": "workable",
+    "board_token": "rokt",
+    "is_active": true
+  },
+  {
+    "company": "Liquid",
+    "platform": "ashby",
+    "board_token": "liquid",
+    "is_active": true
+  },
+  {
+    "company": "Whoop",
+    "platform": "lever",
+    "board_token": "whoop",
+    "is_active": true
+  },
+  {
+    "company": "Realm",
+    "platform": "ashby",
+    "board_token": "realmalliance",
+    "is_active": true
+  },
+  {
+    "company": "CACI",
+    "platform": "workday",
+    "board_token": "caci",
+    "platform_config": {
+      "tenant": "caci",
+      "instance": "wd1",
+      "career_site": "external",
+      "public_path_prefix": "en-US/external",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Leidos",
+    "platform": "workday",
+    "board_token": "leidos",
+    "platform_config": {
+      "tenant": "leidos",
+      "instance": "wd5",
+      "career_site": "external",
+      "public_path_prefix": "en-US/external",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "KBR",
+    "platform": "workday",
+    "board_token": "kbr",
+    "platform_config": {
+      "tenant": "kbr",
+      "instance": "wd5",
+      "career_site": "kbr_careers",
+      "public_path_prefix": "en-US/kbr_careers",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Berkshire Hathaway Energy",
+    "platform": "oracle_hcm",
+    "board_token": "fa-essf-saasfaprod1",
+    "platform_config": {
+      "datacenter": "ocs",
+      "site_number": "CX_1",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Sigma Computing",
+    "platform": "greenhouse",
+    "board_token": "sigmacomputing",
+    "is_active": true
+  },
+  {
+    "company": "Aquatic Capital Management",
+    "platform": "greenhouse",
+    "board_token": "aquaticcapitalmanagement",
+    "is_active": true
+  },
+  {
+    "company": "Scout AI",
+    "platform": "greenhouse",
+    "board_token": "scoutai",
+    "is_active": true
+  },
+  {
+    "company": "Ellipsis Labs",
+    "platform": "ashby",
+    "board_token": "ellipsislabs",
+    "is_active": true
+  },
+  {
+    "company": "Freedom Technology Solutions Group",
+    "platform": "greenhouse",
+    "board_token": "freedomconsulting",
+    "is_active": true
+  },
+  {
+    "company": "Remodel Health",
+    "platform": "greenhouse",
+    "board_token": "remodelhealth",
+    "is_active": true
+  },
+  {
+    "company": "Geneva Trading",
+    "platform": "greenhouse",
+    "board_token": "genevatrading",
+    "is_active": true
+  },
+  {
+    "company": "Ivo",
+    "platform": "lever",
+    "board_token": "ivo",
+    "is_active": true
+  },
+  {
+    "company": "N1",
+    "platform": "ashby",
+    "board_token": "n1",
+    "is_active": true
+  },
+  {
+    "company": "Orb",
+    "platform": "ashby",
+    "board_token": "orb",
+    "is_active": true
+  },
+  {
+    "company": "PingWind",
+    "platform": "lever",
+    "board_token": "pingwind",
+    "is_active": true
+  },
+  {
+    "company": "Northslope Technologies",
+    "platform": "ashby",
+    "board_token": "northslope-technologies",
+    "is_active": true
+  },
+  {
+    "company": "Titan",
+    "platform": "ashby",
+    "board_token": "titan-msp",
+    "is_active": true
+  },
+  {
+    "company": "Deliveroo",
+    "platform": "ashby",
+    "board_token": "deliveroo",
+    "is_active": true
+  },
+  {
+    "company": "Capital One",
+    "platform": "workday",
+    "board_token": "capitalone",
+    "platform_config": {
+      "tenant": "capitalone",
+      "instance": "wd12",
+      "career_site": "Capital_One",
+      "public_path_prefix": "Capital_One",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Giga AI",
+    "platform": "ashby",
+    "board_token": "gigaml",
+    "is_active": true
+  },
+  {
+    "company": "Baton Corporation",
+    "platform": "ashby",
+    "board_token": "batoncorporation",
+    "is_active": true
+  },
+  {
+    "company": "NOV",
+    "platform": "oracle_hcm",
+    "board_token": "egay",
+    "platform_config": {
+      "datacenter": "us6",
+      "site_number": "CX_4001",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "8VC",
+    "platform": "ashby",
+    "board_token": "8vc",
+    "is_active": true
+  },
+  {
+    "company": "Perpay",
+    "platform": "greenhouse",
+    "board_token": "perpay",
+    "is_active": true
+  },
+  {
+    "company": "Blue Origin",
+    "platform": "workday",
+    "board_token": "blueorigin",
+    "platform_config": {
+      "tenant": "blueorigin",
+      "instance": "wd5",
+      "career_site": "blueorigin",
+      "public_path_prefix": "blueorigin",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "TrueBuilt",
+    "platform": "greenhouse",
+    "board_token": "applytotruebuilt",
+    "is_active": true
+  },
+  {
+    "company": "Uare.ai",
+    "platform": "greenhouse",
+    "board_token": "uareai",
+    "is_active": true
+  },
+  {
+    "company": "Lightfield",
+    "platform": "ashby",
+    "board_token": "Lightfield",
+    "is_active": true
+  },
+  {
+    "company": "Continue",
+    "platform": "ashby",
+    "board_token": "continue",
+    "is_active": true
+  },
+  {
+    "company": "Uncountable",
+    "platform": "ashby",
+    "board_token": "uncountable",
+    "is_active": true
+  },
+  {
+    "company": "NVIDIA",
+    "platform": "workday",
+    "board_token": "nvidia",
+    "platform_config": {
+      "tenant": "nvidia",
+      "instance": "wd5",
+      "career_site": "NVIDIAExternalCareerSite",
+      "public_path_prefix": "NVIDIAExternalCareerSite",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "University of Texas at Austin",
+    "platform": "workday",
+    "board_token": "utaustin",
+    "platform_config": {
+      "tenant": "utaustin",
+      "instance": "wd1",
+      "career_site": "UTstaff",
+      "public_path_prefix": "UTstaff",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Bonterra",
+    "platform": "workday",
+    "board_token": "bonterra",
+    "platform_config": {
+      "tenant": "bonterra",
+      "instance": "wd1",
+      "career_site": "bonterratech",
+      "public_path_prefix": "bonterratech",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "PROS Holdings, Inc.",
+    "platform": "workday",
+    "board_token": "pros",
+    "platform_config": {
+      "tenant": "pros",
+      "instance": "wd5",
+      "career_site": "pros_careers",
+      "public_path_prefix": "pros_careers",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "LG Ad Solutions",
+    "platform": "ashby",
+    "board_token": "lgads",
+    "is_active": true
+  },
+  {
+    "company": "Bank of Montreal",
+    "platform": "workday",
+    "board_token": "bmo",
+    "platform_config": {
+      "tenant": "bmo",
+      "instance": "wd3",
+      "career_site": "External",
+      "public_path_prefix": "External",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Bank of Montreal",
+    "platform": "workday",
+    "board_token": "bmo-campus",
+    "platform_config": {
+      "tenant": "bmo",
+      "instance": "wd3",
+      "career_site": "Campus",
+      "public_path_prefix": "Campus",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Peraton",
+    "platform": "icims",
+    "board_token": "peraton",
+    "platform_config": {},
+    "is_active": true
+  },
+  {
+    "company": "ClimateAI",
+    "platform": "greenhouse",
+    "board_token": "climateai",
+    "is_active": true
+  },
+  {
+    "company": "AMERICAN SYSTEMS",
+    "platform": "icims",
+    "board_token": "americansystems",
+    "platform_config": {},
+    "is_active": true
+  },
+  {
+    "company": "LMI",
+    "platform": "icims",
+    "board_token": "lmi",
+    "platform_config": {},
+    "is_active": true
+  },
+  {
+    "company": "Travelers",
+    "platform": "workday",
+    "board_token": "travelers",
+    "platform_config": {
+      "tenant": "travelers",
+      "instance": "wd5",
+      "career_site": "External",
+      "public_path_prefix": "External",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "dv01",
+    "platform": "greenhouse",
+    "board_token": "dv01",
+    "is_active": true
+  },
+  {
+    "company": "University of Arkansas",
+    "platform": "workday",
+    "board_token": "uasys",
+    "platform_config": {
+      "tenant": "uasys",
+      "instance": "wd5",
+      "career_site": "uasys",
+      "public_path_prefix": "uasys",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "SentiLink",
+    "platform": "ashby",
+    "board_token": "sentilink",
+    "is_active": true
+  },
+  {
+    "company": "Latitude",
+    "platform": "lever",
+    "board_token": "latitudeinc",
+    "is_active": true
+  },
+  {
+    "company": "Parallel Web Systems",
+    "platform": "ashby",
+    "board_token": "parallel",
+    "is_active": true
+  },
+  {
+    "company": "Artefact",
+    "platform": "greenhouse",
+    "board_token": "artefactus",
+    "is_active": true
+  },
+  {
+    "company": "Brain Co.",
+    "platform": "ashby",
+    "board_token": "brainco",
+    "is_active": true
+  },
+  {
+    "company": "Manulife Financial",
+    "platform": "workday",
+    "board_token": "manulife",
+    "platform_config": {
+      "tenant": "manulife",
+      "instance": "wd3",
+      "career_site": "MFCJH_Jobs",
+      "public_path_prefix": "en-US/MFCJH_Jobs",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "TransMarket Group",
+    "platform": "greenhouse",
+    "board_token": "transmarketgroup",
+    "is_active": true
+  },
+  {
+    "company": "Susquehanna International Group (SIG)",
+    "platform": "icims",
+    "board_token": "sig",
+    "platform_config": {},
+    "is_active": true
+  },
+  {
+    "company": "Northrop Grumman",
+    "platform": "workday",
+    "board_token": "ngc",
+    "platform_config": {
+      "tenant": "ngc",
+      "instance": "wd1",
+      "career_site": "Northrop_Grumman_External_Site",
+      "public_path_prefix": "Northrop_Grumman_External_Site",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "SpaceX",
+    "platform": "greenhouse",
+    "board_token": "spacex",
+    "is_active": true
+  },
+  {
+    "company": "Micron Technology",
+    "platform": "workday",
+    "board_token": "micron",
+    "platform_config": {
+      "tenant": "micron",
+      "instance": "wd1",
+      "career_site": "External",
+      "public_path_prefix": "External",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Dexcom",
+    "platform": "workday",
+    "board_token": "dexcom",
+    "platform_config": {
+      "tenant": "dexcom",
+      "instance": "wd1",
+      "career_site": "Dexcom",
+      "public_path_prefix": "Dexcom",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "GlobalFoundries",
+    "platform": "workday",
+    "board_token": "globalfoundries",
+    "platform_config": {
+      "tenant": "globalfoundries",
+      "instance": "wd1",
+      "career_site": "External",
+      "public_path_prefix": "External",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Ciena",
+    "platform": "workday",
+    "board_token": "ciena",
+    "platform_config": {
+      "tenant": "ciena",
+      "instance": "wd5",
+      "career_site": "Careers",
+      "public_path_prefix": "Careers",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Life Fitness",
+    "platform": "workday",
+    "board_token": "lifefitness",
+    "platform_config": {
+      "tenant": "lifefitness",
+      "instance": "wd1",
+      "career_site": "searchLFN",
+      "public_path_prefix": "searchLFN",
+      "max_posted_age_days": 30
+    },
+    "is_active": true
+  },
+  {
+    "company": "Work at a Startup (YC)",
+    "platform": "workatastartup",
+    "board_token": "yc-global",
+    "platform_config": {
+      "company_slugs": ["firecrawl"]
+    },
     "is_active": true
   }
 ]

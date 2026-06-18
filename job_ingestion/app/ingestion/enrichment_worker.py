@@ -338,6 +338,8 @@ def _apply_enrichment_to_job(
     normalized.salary_max = enrichment.salary_max
     normalized.job_domain = enrichment.job_domain
     normalized.job_secondary_domain = enrichment.job_secondary_domain
+    normalized.requires_clearance = enrichment.requires_clearance
+    normalized.role_intent = enrichment.role_intent
     normalized.retrieval_pools = assign_validated_retrieval_pools(
         normalized.normalized_roles,
         normalized.is_internship,
@@ -358,6 +360,21 @@ def _apply_enrichment_to_job(
     normalized.processing_state = ProcessingState.SUCCESS
     normalized.failure_reason = None
     normalized.last_failure_at = None
+
+
+def _apply_waas_sponsorship_hint(normalized: NormalizedJob, raw_job: RawJob) -> None:
+    if raw_job.platform != "workatastartup":
+        return
+    payload = raw_job.raw_api_response
+    if not isinstance(payload, dict):
+        return
+    visa = payload.get("visa_sponsorship")
+    if visa is True:
+        normalized.sponsorship_status = "yes"
+        normalized.sponsorship_confidence = "high"
+    elif visa is False:
+        normalized.sponsorship_status = "no"
+        normalized.sponsorship_confidence = "high"
 
 
 def _recommendation_fields_from_enrichment(
@@ -388,6 +405,8 @@ def _recommendation_fields_from_enrichment(
         "retrieval_pools": retrieval_pools,
         "job_domain": enrichment.job_domain,
         "job_secondary_domain": enrichment.job_secondary_domain,
+        "requires_clearance": enrichment.requires_clearance,
+        "role_intent": enrichment.role_intent,
         "salary_min": enrichment.salary_min,
         "salary_max": enrichment.salary_max,
         "opportunity_score": opportunity_score,
@@ -564,6 +583,7 @@ async def _process_batch(
                 continue
 
             _apply_enrichment_to_job(row.normalized, enrichment, settings)
+            _apply_waas_sponsorship_hint(row.normalized, row.raw_job)
             if row.normalized.job_archive_id is not None:
                 await update_job_archive_after_enrichment(
                     db,
@@ -578,6 +598,8 @@ async def _process_batch(
                     salary_max=enrichment.salary_max,
                     job_domain=enrichment.job_domain,
                     job_secondary_domain=enrichment.job_secondary_domain,
+                    requires_clearance=enrichment.requires_clearance,
+                    role_intent=enrichment.role_intent,
                 )
             recommendation_fields = _recommendation_fields_from_enrichment(row.normalized, enrichment, settings)
             row.queue_row.status = "completed"

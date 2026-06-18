@@ -21,7 +21,7 @@ def _archive_values_from_deterministic(
     return {
         "external_job_id": det_fields["external_job_id"],
         "company_id": company.id,
-        "company_name": company.name,
+        "company_name": det_fields.get("company_name") or company.name,
         "platform": company.platform,
         "title": det_fields.get("title"),
         "location": det_fields.get("location"),
@@ -103,6 +103,10 @@ async def upsert_job_archive_from_normalized(
             "skills": normalized.skills or None,
             "tech_stack": normalized.tech_stack or None,
             "remote_type": normalized.remote_type,
+            "job_domain": normalized.job_domain,
+            "job_secondary_domain": normalized.job_secondary_domain,
+            "requires_clearance": normalized.requires_clearance,
+            "role_intent": normalized.role_intent,
         }
     )
     conflict_update = _archive_conflict_update(
@@ -118,6 +122,10 @@ async def upsert_job_archive_from_normalized(
             "remote_type": normalized.remote_type,
             "salary_min": normalized.salary_min,
             "salary_max": normalized.salary_max,
+            "job_domain": normalized.job_domain,
+            "job_secondary_domain": normalized.job_secondary_domain,
+            "requires_clearance": normalized.requires_clearance,
+            "role_intent": normalized.role_intent,
         }
     )
     stmt = (
@@ -147,6 +155,8 @@ async def update_job_archive_after_enrichment(
     salary_max: Optional[int],
     job_domain: Optional[str] = None,
     job_secondary_domain: Optional[str] = None,
+    requires_clearance: bool = False,
+    role_intent: Optional[str] = None,
 ) -> None:
     await db.execute(
         update(JobArchive)
@@ -162,6 +172,8 @@ async def update_job_archive_after_enrichment(
             salary_max=salary_max,
             job_domain=job_domain,
             job_secondary_domain=job_secondary_domain,
+            requires_clearance=requires_clearance,
+            role_intent=role_intent,
         )
     )
 
@@ -184,4 +196,6 @@ async def update_job_archive_from_normalized_fields(
         salary_max=normalized.salary_max,
         job_domain=normalized.job_domain,
         job_secondary_domain=normalized.job_secondary_domain,
+        requires_clearance=normalized.requires_clearance,
+        role_intent=normalized.role_intent,
     )

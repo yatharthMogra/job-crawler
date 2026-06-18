@@ -23,8 +23,10 @@ async def main() -> None:
                 text(
                     """
                     SELECT
-                      COUNT(*) FILTER (WHERE is_active AND job_domain IS NOT NULL) AS with_domain,
+                      COUNT(*) FILTER (WHERE is_active AND role_intent IS NOT NULL) AS with_role_intent,
+                      COUNT(*) FILTER (WHERE is_active AND requires_clearance) AS requires_clearance,
                       COUNT(*) FILTER (WHERE is_active) AS active,
+                      COUNT(*) FILTER (WHERE is_active AND extraction_version = 'v6') AS on_v6,
                       COUNT(*) FILTER (WHERE is_active AND extraction_version = 'v5') AS on_v5
                     FROM normalized_jobs
                     """
@@ -68,9 +70,13 @@ async def main() -> None:
             )
         ).all()
 
-    with_domain, active, on_v5 = jobs
-    pct = 100 * with_domain / active if active else 0
-    print(f"domain={with_domain}/{active} ({pct:.1f}%) v5={on_v5}")
+    with_role_intent, requires_clearance, active, on_v6, on_v5 = jobs
+    role_pct = 100 * with_role_intent / active if active else 0
+    v6_pct = 100 * on_v6 / active if active else 0
+    print(
+        f"role_intent={with_role_intent}/{active} ({role_pct:.1f}%) "
+        f"requires_clearance={requires_clearance} v6={on_v6} ({v6_pct:.1f}%) v5={on_v5}"
+    )
     print(f"completed_last_5min={completed_recent} last_completion={last_completed}")
     print("queue:")
     for status, reason, count in queue:

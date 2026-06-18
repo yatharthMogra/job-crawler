@@ -12,7 +12,7 @@ from app.database import AsyncSessionLocal
 from app.models.notification import NotificationBatch, NotificationJobHistory
 from app.models.shared import Candidate
 from app.models.subscription import UserPoolSubscription
-from app.notification.ranker import deduplicate_ranked_jobs, rank_jobs, select_top_jobs
+from app.notification.ranker import deduplicate_ranked_jobs, rank_jobs_with_h1b, select_top_jobs
 from app.notification.renderer import render_daily_briefing
 from app.notification.retrieval import build_constraint_filters, fetch_new_jobs_in_pools
 from app.notification.sender import send_email
@@ -93,7 +93,9 @@ async def run_notification_for_user(
         await _skip_batch(batch, "no_jobs_after_filter", db)
         return
 
-    ranked_jobs = deduplicate_ranked_jobs(rank_jobs(filtered_jobs, user_profile, settings))
+    ranked_jobs = deduplicate_ranked_jobs(
+        await rank_jobs_with_h1b(db, filtered_jobs, user_profile, settings)
+    )
     batch.jobs_ranked = len(ranked_jobs)
     if not should_send_notification(len(ranked_jobs), settings):
         await _skip_batch(batch, "insufficient_eligible_jobs", db)

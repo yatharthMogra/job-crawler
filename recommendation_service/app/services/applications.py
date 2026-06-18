@@ -101,6 +101,7 @@ async def apply_to_job(
     stmt = (
         pg_insert(UserApplication)
         .values(
+            id=uuid.uuid4(),
             candidate_id=candidate_id,
             job_archive_id=job.job_archive_id,
             company_name=job.company_name,

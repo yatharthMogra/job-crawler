@@ -71,6 +71,9 @@ _ROLE_DOMAIN_MAP: dict[str, DomainName] = {
     "AEROSPACE_ENGINEER": "Aerospace_Defense",
     # Hardware_Electrical
     "HARDWARE_ENGINEER": "Hardware_Electrical",
+    "FIELD_SERVICE_ENGINEER": "Hardware_Electrical",
+    # Industrial_Automation
+    "CONTROLS_ENGINEER": "Industrial_Automation",
     # Research_Science
     "RESEARCH_SCIENTIST": "Research_Science",
     "LIFE_SCIENTIST": "Research_Science",
@@ -181,9 +184,31 @@ DOMAIN_PROMPT_RULES = (
     "Systems, Avionics, Flight Software, Space Systems); clearance required. Examples: Mission "
     "Systems SWE @ RTX; Avionics Software Engineer @ Boeing.\n"
     "Software + Aerospace_Defense is not a valid secondary pair.\n\n"
+    "SYSTEMS_ENGINEER at tech companies (not aerospace/defense/industrial context):\n"
+    "  → At SaaS or general tech companies, 'Systems Engineer' usually means platform, "
+    "distributed systems, or infrastructure engineering — use BACKEND_ENGINEER or "
+    "DEVOPS_ENGINEER, NOT SYSTEMS_ENGINEER.\n"
+    "  → SYSTEMS_ENGINEER is for aerospace/defense/industrial systems integration "
+    "(avionics, radar, PLC-adjacent integration, V&V of complex physical systems).\n\n"
     "job_secondary_domain: Second domain ONLY when the role requires substantial expertise in "
     "two disciplines as core responsibilities. If in doubt, leave null. Must differ from "
-    "job_domain. Invalid pairs are stripped automatically."
+    "job_domain. Invalid pairs are stripped automatically.\n\n"
+    "Secondary domain assignment rules (apply ONLY when criteria match — do NOT assign "
+    "secondary to every job in a primary domain):\n"
+    "  - Management + Business: ONLY when the role is project/program/PMO/operations "
+    "management (project manager, program manager, program scheduler, PMO). NOT for people "
+    "leadership, home care team managers, bereavement managers, or manufacturing floor "
+    "supervisors without PM scope.\n"
+    "  - Management + Software: ONLY for TECHNICAL_PROGRAM_MANAGER roles working in a "
+    "software engineering context (engineering roadmaps, delivery to eng teams).\n"
+    "  - Mechanical + Hardware_Electrical: mechanical design roles that also need hardware "
+    "engineering pools (mechanical engineer, CAD, structural design).\n"
+    "  - Hardware_Electrical + Aerospace_Defense: field service or systems integration in "
+    "defense electronics / aerospace hardware context.\n"
+    "  - Industrial_Automation + Hardware_Electrical: automation/controls roles spanning "
+    "industrial electronics and PLC/SCADA work.\n"
+    "  - Do NOT assign Business secondary to all Management jobs — many Management roles "
+    "should have null secondary and stay without cross-domain pools."
 )
 
 

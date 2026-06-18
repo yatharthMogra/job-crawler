@@ -8,12 +8,21 @@ from app.config import Settings
 from app.models.shared import NormalizedJob
 from app.scoring.location import location_alignment_score
 from app.scoring.seniority import seniority_score_multiplier
+from app.scoring.sponsorship import compute_sponsorship_score
+from app.services.h1b_lookup import H1bLookup
+from app.services.h1b_pool_family import pool_family_from_roles
 from app.services.profile_loader import UserProfile
 
 log = structlog.get_logger(__name__)
 
 
-def score_job(job: NormalizedJob, user_profile: UserProfile, settings: Settings) -> float:
+def score_job(
+    job: NormalizedJob,
+    user_profile: UserProfile,
+    settings: Settings,
+    *,
+    h1b_lookup: H1bLookup | None = None,
+) -> float:
     cap_score = _capability_overlap(job.job_capabilities, user_profile.capabilities)
     skill_score = _skill_overlap(job.tech_stack + job.skills, user_profile.skills)
     loc_score = _location_alignment(
@@ -27,12 +36,32 @@ def score_job(job: NormalizedJob, user_profile: UserProfile, settings: Settings)
     comp_score = _compensation_alignment(job.salary_min, job.salary_max, user_profile.constraints)
     seniority_multiplier = seniority_score_multiplier(job.seniority, user_profile.constraints)
 
-    base_score = (
-        settings.score_capability_weight * cap_score
-        + settings.score_skill_weight * skill_score
-        + settings.score_location_weight * loc_score
-        + settings.score_compensation_weight * comp_score
-    )
+    constraints = user_profile.constraints or {}
+    needs_sponsorship = bool(constraints.get("sponsorship_required"))
+    use_sponsorship = settings.sponsorship_score_enabled and needs_sponsorship
+
+    if use_sponsorship:
+        pool_family = pool_family_from_roles(job.normalized_roles or [])
+        sponsorship_score = compute_sponsorship_score(
+            job.company_id,
+            pool_family,
+            needs_sponsorship,
+            h1b_lookup,
+        )
+        base_score = (
+            settings.score_capability_weight_with_sponsorship * cap_score
+            + settings.score_skill_weight_with_sponsorship * skill_score
+            + settings.score_location_weight_with_sponsorship * loc_score
+            + settings.score_compensation_weight_with_sponsorship * comp_score
+            + settings.score_sponsorship_weight * sponsorship_score
+        )
+    else:
+        base_score = (
+            settings.score_capability_weight * cap_score
+            + settings.score_skill_weight * skill_score
+            + settings.score_location_weight * loc_score
+            + settings.score_compensation_weight * comp_score
+        )
     return base_score * seniority_multiplier
 
 

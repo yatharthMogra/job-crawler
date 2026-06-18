@@ -253,6 +253,66 @@ def test_icims_employment_type_mapping() -> None:
     )
 
 
+def test_extract_workable_fields() -> None:
+    raw_job = {
+        "id": "48DBFB8E87",
+        "title": "AI Applications Engineer",
+        "employment_type": "Full-time",
+        "department": "Software Engineering",
+        "url": "https://apply.workable.com/j/48DBFB8E87",
+        "published_on": "2025-08-25",
+        "telecommuting": False,
+        "locations": [
+            {
+                "country": "United States",
+                "city": "Burlingame",
+                "region": "California",
+            }
+        ],
+        "description": "Build AI applications on Quadric hardware.",
+    }
+
+    fields = extract_deterministic_fields(raw_job, platform="workable")
+
+    assert fields["external_job_id"] == "48DBFB8E87"
+    assert fields["title"] == "AI Applications Engineer"
+    assert fields["location"] == "Burlingame, California, United States"
+    assert fields["department"] == "Software Engineering"
+    assert fields["employment_type"] == "Full-time"
+    assert fields["posting_url"] == "https://apply.workable.com/j/48DBFB8E87"
+    assert fields["posted_at"] is not None
+    assert fields["raw_html"] == "Build AI applications on Quadric hardware."
+
+
+def test_extract_workable_remote_location() -> None:
+    fields = extract_deterministic_fields(
+        {
+            "id": "36FEA4E309",
+            "title": "Field Application Engineer",
+            "telecommuting": True,
+            "locations": [{"country": "Israel", "countryCode": "IL"}],
+        },
+        platform="workable",
+    )
+    assert fields["location"] == "Remote | Israel"
+
+
+def test_extract_workable_multi_location() -> None:
+    fields = extract_deterministic_fields(
+        {
+            "id": "B463DB2082",
+            "title": "Field Application Engineer",
+            "telecommuting": True,
+            "locations": [
+                {"country": "China", "countryCode": "CN"},
+                {"country": "Taiwan", "countryCode": "TW"},
+            ],
+        },
+        platform="workable",
+    )
+    assert fields["location"] == "Remote | China | Taiwan"
+
+
 def test_extract_job_country() -> None:
     from app.ingestion.extractor.deterministic import extract_job_country
 
@@ -265,6 +325,10 @@ def test_extract_job_country() -> None:
     assert extract_job_country("US-CA-Menlo Park") == "US"
     assert extract_job_country(None) is None
     assert extract_job_country("Unknown City") is None
+    assert extract_job_country("AUSTIN, TX") == "US"
+    assert extract_job_country("Manulife Tower, Manulife (Singapore) Pte Ltd") == "SG"
+    assert extract_job_country("Fab 10A, Singapore") == "SG"
+    assert extract_job_country("Hong Kong") == "HK"
 
 
 def test_icims_posting_url_no_iframe_param() -> None:
@@ -276,3 +340,25 @@ def test_icims_posting_url_no_iframe_param() -> None:
         platform="icims",
     )
     assert fields["posting_url"] == "https://careers-sri.icims.com/jobs/1/example/job"
+
+
+def test_extract_workatastartup_fields() -> None:
+    raw_job = {
+        "id": "yc_123",
+        "title": "Senior Backend Engineer",
+        "location": "San Francisco, CA",
+        "remote": False,
+        "description": "<p>Build systems</p>",
+        "apply_url": "https://www.workatastartup.com/jobs/123",
+        "created_at": "2026-06-10T18:00:00Z",
+        "job_type": "fulltime",
+        "company": {"name": "Acme AI", "slug": "acme-ai", "batch": "S24"},
+    }
+    fields = extract_deterministic_fields(raw_job, platform="workatastartup")
+    assert fields["external_job_id"] == "yc_123"
+    assert fields["title"] == "Senior Backend Engineer"
+    assert fields["location"] == "San Francisco, CA"
+    assert fields["company_name"] == "Acme AI"
+    assert fields["employment_type"] == "Full-time"
+    assert fields["job_country"] == "US"
+    assert fields["posting_url"] == "https://www.workatastartup.com/jobs/123"

@@ -29,6 +29,21 @@ def build_scheduler(settings: Optional[Settings] = None) -> AsyncIOScheduler:
         async with AsyncSessionLocal() as db:
             await run_archive_cleanup(db)
 
+    async def run_h1b_ingestion_job() -> None:
+        from app.schedulers.h1b_ingestion import run_h1b_ingestion_job as _run_h1b
+
+        await _run_h1b()
+
+    async def run_yc_directory_crawl_job() -> None:
+        from app.schedulers.yc_ingestion import run_yc_directory_crawl_job as _run_yc_directory
+
+        await _run_yc_directory()
+
+    async def run_yc_waas_health_check_job() -> None:
+        from app.schedulers.yc_ingestion import run_yc_waas_health_check_job as _run_yc_health
+
+        await _run_yc_health()
+
     scheduler.add_job(
         scheduled_pipeline,
         trigger="interval",
@@ -52,6 +67,36 @@ def build_scheduler(settings: Optional[Settings] = None) -> AsyncIOScheduler:
         hour=2,
         minute=30,
         id="archive_cleanup",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        run_h1b_ingestion_job,
+        trigger="cron",
+        month=2,
+        day=15,
+        hour=3,
+        minute=0,
+        id="h1b-ingestion",
+        max_instances=1,
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        run_yc_directory_crawl_job,
+        trigger="cron",
+        day_of_week="sun",
+        hour=1,
+        minute=0,
+        id="yc-directory-crawl",
+        max_instances=1,
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        run_yc_waas_health_check_job,
+        trigger="cron",
+        hour=4,
+        minute=0,
+        id="yc-waas-health-check",
+        max_instances=1,
         replace_existing=True,
     )
     return scheduler

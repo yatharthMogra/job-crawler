@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -40,6 +40,8 @@ class JobArchive(Base):
     remote_type: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     job_domain: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     job_secondary_domain: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    requires_clearance: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    role_intent: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     description_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

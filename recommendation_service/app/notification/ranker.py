@@ -3,9 +3,12 @@ from __future__ import annotations
 import re
 from datetime import timezone
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.config import Settings
 from app.models.shared import NormalizedJob
 from app.scoring.recommendation import score_job
+from app.services.h1b_lookup import H1bLookup, load_h1b_summary_lookup
 from app.services.profile_loader import UserProfile
 
 _WHITESPACE = re.compile(r"\s+")
@@ -70,7 +73,23 @@ def rank_jobs(
     jobs: list[NormalizedJob],
     user_profile: UserProfile,
     settings: Settings,
+    *,
+    h1b_lookup: H1bLookup | None = None,
 ) -> list[tuple[NormalizedJob, float]]:
-    scored = [(job, score_job(job, user_profile, settings)) for job in jobs]
+    scored = [(job, score_job(job, user_profile, settings, h1b_lookup=h1b_lookup)) for job in jobs]
     scored.sort(key=_rank_sort_key, reverse=True)
     return scored
+
+
+async def rank_jobs_with_h1b(
+    db: AsyncSession,
+    jobs: list[NormalizedJob],
+    user_profile: UserProfile,
+    settings: Settings,
+) -> list[tuple[NormalizedJob, float]]:
+    h1b_lookup: H1bLookup | None = None
+    constraints = user_profile.constraints or {}
+    if settings.sponsorship_score_enabled and constraints.get("sponsorship_required"):
+        company_ids = {job.company_id for job in jobs}
+        h1b_lookup = await load_h1b_summary_lookup(db, company_ids)
+    return rank_jobs(jobs, user_profile, settings, h1b_lookup=h1b_lookup)

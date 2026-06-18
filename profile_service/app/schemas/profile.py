@@ -40,6 +40,7 @@ class ConstraintsUpdate(BaseModel):
     fulltime_only: bool | None = None
     minimum_salary: float | None = None
     minimum_hourly_rate: float | None = None
+    has_clearance: bool | None = None
     exclude_security_clearance: bool | None = None
     exclude_us_citizen_only: bool | None = None
     target_seniority: list[str] | None = None
@@ -67,6 +68,8 @@ class PreferencesUpdate(BaseModel):
     min_years_experience: float | None = None
     max_job_age_days: int | None = None
     role_type: str | None = None
+    role_intents: list[str] | None = None
+    primary_role_intents: list[str] | None = None
 
 
 class EducationContactUpdate(BaseModel):

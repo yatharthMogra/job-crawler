@@ -67,6 +67,7 @@ CONNECTORS = {
     "greenhouse": GreenhouseConnector,
     "lever": LeverConnector,
     "ashby": AshbyConnector,
+    "workable": WorkableConnector,
 }
 ```
 
@@ -222,6 +223,57 @@ Removal detection: jobs that were previously active but missing from the latest 
 
 ---
 
+### 4.4 Workable
+
+**Simple connector — single REST call with descriptions via query param.**
+
+| | |
+|---|---|
+| **Auth** | None (public widget API) |
+| **Endpoint** | `GET https://apply.workable.com/api/v1/widget/accounts/{board_token}?details=true` |
+| **`board_token`** | Account slug from the hosted careers URL (e.g. `quadric-dot-i-o-inc` from `https://apply.workable.com/quadric-dot-i-o-inc/`) |
+| **Implementation** | `app/ingestion/connectors/workable.py` |
+
+**Fetch pattern:**
+
+1. Single GET with `details=true` → all active jobs with plain-text descriptions.
+2. Dedupe by `shortcode` (multi-region roles may appear twice in the list).
+3. Map `shortcode` → `id` for change detection.
+
+**Per-job fields we rely on:**
+
+| Platform field | Used for |
+|---|---|
+| `shortcode` → `id` | External job ID (connector maps shortcode to `id`) |
+| `title` | Job title |
+| `locations[]` + `telecommuting` | Location (joined with ` \| `; prefix `Remote` when telecommuting) |
+| `department` | Department |
+| `employment_type` | Employment type |
+| `url` or `shortlink` | Posting URL |
+| `published_on` | Posted date (`YYYY-MM-DD`) |
+| `description` | Plain-text description → `raw_html` (requires `?details=true`) |
+
+**Dedupe requirement:** Some companies list the same `shortcode` multiple times for multi-region variants (e.g. China + Taiwan). The connector merges `locations[]` and returns one dict per shortcode.
+
+**Example minimal job dict (after connector normalization):**
+
+```json
+{
+  "id": "48DBFB8E87",
+  "shortcode": "48DBFB8E87",
+  "title": "AI Applications Engineer",
+  "department": "Software Engineering",
+  "employment_type": "Full-time",
+  "url": "https://apply.workable.com/j/48DBFB8E87",
+  "published_on": "2025-08-25",
+  "telecommuting": false,
+  "locations": [{"country": "United States", "city": "Burlingame", "region": "California"}],
+  "description": "Build AI applications..."
+}
+```
+
+---
+
 ## 5. Deterministic Extraction (Pre-LLM)
 
 After fetch, `extract_deterministic_fields(job, platform)` in `app/ingestion/extractor/deterministic.py` maps each platform's native dict into a **common schema**. This is the boundary between platform-specific and platform-agnostic data.
@@ -250,16 +302,16 @@ The pipeline additionally computes (not in the extractor):
 
 ### 5.2 Platform field mapping reference
 
-| Common field | Greenhouse | Lever | Ashby |
-|---|---|---|---|
-| `external_job_id` | `id` | `id` | `id` |
-| `title` | `title` | `text` | `title` |
-| `location` | `location.name` | `categories.location` | `locationName` (+ secondary) |
-| `department` | `departments[0].name` | `categories.department` or `.team` | `departmentName` |
-| `posting_url` | `absolute_url` | `hostedUrl` | `externalLink` |
-| `posted_at` | `updated_at` (ISO) | `createdAt` (epoch ms) | `publishedDate` (ISO) |
-| `employment_type` | `metadata[]` scan | `categories.commitment` | `employmentType` |
-| `raw_html` | `content` | `description` or `descriptionPlain` | `descriptionHtml` |
+| Common field | Greenhouse | Lever | Ashby | Workable |
+|---|---|---|---|---|
+| `external_job_id` | `id` | `id` | `id` | `shortcode` (mapped to `id`) |
+| `title` | `title` | `text` | `title` | `title` |
+| `location` | `location.name` | `categories.location` | `locationName` (+ secondary) | `locations[]` (+ `telecommuting`) |
+| `department` | `departments[0].name` | `categories.department` or `.team` | `departmentName` | `department` |
+| `posting_url` | `absolute_url` | `hostedUrl` | `externalLink` | `url` or `shortlink` |
+| `posted_at` | `updated_at` (ISO) | `createdAt` (epoch ms) | `publishedDate` (ISO) | `published_on` (date) |
+| `employment_type` | `metadata[]` scan | `categories.commitment` | `employmentType` | `employment_type` |
+| `raw_html` | `content` | `description` or `descriptionPlain` | `descriptionHtml` | `description` (plain text) |
 
 ### 5.3 What gets stored before enrichment
 
@@ -394,6 +446,7 @@ The full platform response should remain in the dict (or as the dict itself) so 
 | `app/ingestion/connectors/greenhouse.py` | Greenhouse connector |
 | `app/ingestion/connectors/lever.py` | Lever connector |
 | `app/ingestion/connectors/ashby.py` | Ashby connector (two-step GraphQL) |
+| `app/ingestion/connectors/workable.py` | Workable connector (single-call widget API) |
 | `app/ingestion/fetcher.py` | Connector registry and dispatcher |
 | `app/ingestion/pipeline.py` | Main ingestion orchestration |
 | `app/ingestion/change_detector.py` | New/updated/unchanged/removed classification |

@@ -8,6 +8,7 @@ from sqlalchemy import and_, not_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import Settings, get_settings
+from app.services.role_intent_preferences import effective_role_intents
 from app.domain import build_domain_filters, candidate_domains_from_profile
 from app.models.notification import NotificationJobHistory
 from app.models.shared import NormalizedJob
@@ -76,6 +77,19 @@ def build_constraint_filters(
     settings = settings or get_settings()
     filters: list[Any] = []
     constraints = user_profile.constraints or {}
+    preferences = user_profile.preferences or {}
+
+    if settings.role_intent_filter_enabled:
+        role_intents = effective_role_intents(preferences)
+        filters.append(
+            and_(
+                NormalizedJob.role_intent.isnot(None),
+                NormalizedJob.role_intent.in_(role_intents),
+            )
+        )
+
+    if settings.clearance_filter_enabled and not constraints.get("has_clearance", False):
+        filters.append(NormalizedJob.requires_clearance.is_(False))
 
     if settings.domain_filter_enabled:
         candidate_domains = candidate_domains_from_profile(

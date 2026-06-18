@@ -92,6 +92,8 @@ class NormalizedJob(Base):
     retrieval_pools: Mapped[list[str]] = mapped_column(ARRAY(String(128)), nullable=False)
     job_domain: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     job_secondary_domain: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    requires_clearance: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    role_intent: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     salary_min: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     salary_max: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     opportunity_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
@@ -143,3 +145,17 @@ class UserApplication(Base):
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class H1bCompanyPoolSummary(Base):
+    __tablename__ = "h1b_company_pool_summary"
+
+    company_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    pool_family: Mapped[str] = mapped_column(String(50), primary_key=True)
+    years_covered: Mapped[list[int]] = mapped_column(ARRAY(Integer), nullable=False)
+    latest_year: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    total_lca_3yr: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    total_h1b_3yr: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    approval_rate_3yr: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    is_top_sponsor: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    last_updated: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

@@ -152,12 +152,17 @@ export type TaxonomyHealthResponse = {
   total_active_enriched: number
   global_no_pool_count: number
   global_no_pool_pct: number
+  domains_flagged: number
+  domains_needing_review: number
   domains: Array<{
     domain: string
     total: number
     no_pool: number
     no_pool_pct: number
     flagged: boolean
+    acknowledged: boolean
+    acknowledged_at: string | null
+    needs_review: boolean
     top_no_pool_titles: Array<{ title: string; count: number }>
   }>
 }
@@ -305,6 +310,73 @@ export async function getEvents(filters?: {
 
 export async function getTaxonomyHealth(): Promise<TaxonomyHealthResponse> {
   return apiRequest<TaxonomyHealthResponse>('/admin/taxonomy-health')
+}
+
+export async function setTaxonomyDomainAcknowledged(
+  domain: string,
+  acknowledged: boolean,
+): Promise<TaxonomyHealthResponse> {
+  const encoded = encodeURIComponent(domain)
+  return apiRequest<TaxonomyHealthResponse>(
+    `/admin/taxonomy-health/domains/${encoded}/acknowledge`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ acknowledged }),
+    },
+  )
+}
+
+export type H1bStatsResponse = {
+  generated_at: string
+  total_employers: number
+  matched_employers: number
+  unmatched_employers: number
+  match_rate_pct: number
+  lca_rows_by_year: Array<{ fiscal_year: number; count: number }>
+  total_lca_rows: number
+}
+
+export type H1bReviewQueueResponse = {
+  items: Array<{
+    id: number
+    employer_name_norm: string
+    match_method: string
+    match_confidence: number | null
+    total_lca: number
+  }>
+}
+
+export type H1bCoverageResponse = {
+  items: Array<{
+    pool_family: string
+    tracked_companies: number
+    companies_with_data: number
+    coverage_pct: number
+    flagged: boolean
+  }>
+}
+
+export async function getH1bStats(): Promise<H1bStatsResponse> {
+  return apiRequest<H1bStatsResponse>('/admin/h1b-stats')
+}
+
+export async function getH1bReviewQueue(): Promise<H1bReviewQueueResponse> {
+  return apiRequest<H1bReviewQueueResponse>('/admin/h1b-review-queue')
+}
+
+export async function getH1bCoverage(): Promise<H1bCoverageResponse> {
+  return apiRequest<H1bCoverageResponse>('/admin/h1b-coverage')
+}
+
+export async function linkH1bEmployer(employerId: number, companyId: string): Promise<void> {
+  await apiRequest(`/admin/h1b-employer/${employerId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ company_id: companyId }),
+  })
+}
+
+export async function triggerH1bIngest(): Promise<{ status: string; results: Record<string, unknown> }> {
+  return apiRequest('/admin/h1b-ingest', { method: 'POST' })
 }
 
 export async function getCostUsage(params: {

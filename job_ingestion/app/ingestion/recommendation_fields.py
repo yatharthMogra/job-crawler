@@ -6,7 +6,6 @@ from datetime import datetime, timezone
 from typing import Any
 
 from app.config import Settings, get_settings
-from app.ingestion.taxonomy import validate_pools_against_domain
 
 _JOB_ENRICHMENT_RECORD_FIELDS = frozenset(
     {
@@ -43,8 +42,7 @@ def assign_validated_retrieval_pools(
     job_domain: str,
     job_secondary_domain: str | None = None,
 ) -> list[str]:
-    pools = assign_retrieval_pools(normalized_roles, is_internship, is_new_grad)
-    return validate_pools_against_domain(job_domain, pools, job_secondary_domain)
+    return assign_retrieval_pools(normalized_roles, is_internship, is_new_grad)
 
 
 def _resolve_role_type(is_internship: bool, is_new_grad: bool) -> str:

@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import re
+
 COUNTRY_SIGNALS: list[tuple[list[str], str | None]] = [
     (
-        ["canada", ", on", ", bc", ", qc", "ontario", "british columbia", "toronto", "montreal", "vancouver"],
+        ["canada", "ontario", "british columbia", "toronto", "montreal", "vancouver"],
         "CA",
     ),
     (
@@ -45,6 +47,25 @@ COUNTRY_SIGNALS: list[tuple[list[str], str | None]] = [
         ["australia", "sydney", "melbourne", "brisbane", "perth"],
         "AU",
     ),
+    (["singapore"], "SG"),
+    (["hong kong"], "HK"),
+    (["japan", "tokyo", "osaka"], "JP"),
+    (["china", "beijing", "shanghai"], "CN"),
+    (["taiwan", "taipei"], "TW"),
+    (["south korea", "seoul"], "KR"),
+    (["france", "paris"], "FR"),
+    (["netherlands", "amsterdam"], "NL"),
+    (["switzerland", "zurich"], "CH"),
+    (["ireland", "dublin"], "IE"),
+    (["israel", "tel aviv"], "IL"),
+    (["brazil", "são paulo", "sao paulo"], "BR"),
+    (["mexico"], "MX"),
+    (["poland", "warsaw"], "PL"),
+    (["philippines", "manila"], "PH"),
+    (["malaysia", "kuala lumpur"], "MY"),
+    (["thailand", "bangkok"], "TH"),
+    (["vietnam"], "VN"),
+    (["indonesia", "jakarta"], "ID"),
     (
         [
             "new york",
@@ -57,22 +78,6 @@ COUNTRY_SIGNALS: list[tuple[list[str], str | None]] = [
             "denver",
             "atlanta",
             "washington, d.c",
-            ", ny",
-            ", ca",
-            ", wa",
-            ", tx",
-            ", ma",
-            ", co",
-            ", ga",
-            ", fl",
-            ", va",
-            ", dc",
-            ", nc",
-            ", il",
-            ", oh",
-            ", pa",
-            ", az",
-            ", mn",
         ],
         "US",
     ),
@@ -81,6 +86,14 @@ COUNTRY_SIGNALS: list[tuple[list[str], str | None]] = [
         None,
     ),
 ]
+
+_US_STATE_ABBRS = ("ny", "ca", "wa", "tx", "ma", "co", "ga", "fl", "va", "dc", "nc", "il", "oh", "pa", "az", "mn")
+_CA_PROV_ABBRS = ("on", "bc", "qc")
+
+
+def _matches_abbr_after_comma(loc_lower: str, abbr: str) -> bool:
+    pattern = r",\s*" + re.escape(abbr) + r"(?:\s|,|\)|$)"
+    return bool(re.search(pattern, loc_lower))
 
 US_AUTH_TYPES = frozenset(
     {
@@ -113,6 +126,11 @@ def extract_job_country(location: str | None) -> str | None:
             continue
         if any(sig in loc_lower for sig in signals):
             return code
+
+    if any(_matches_abbr_after_comma(loc_lower, abbr) for abbr in _US_STATE_ABBRS):
+        return "US"
+    if any(_matches_abbr_after_comma(loc_lower, abbr) for abbr in _CA_PROV_ABBRS):
+        return "CA"
 
     return None
 

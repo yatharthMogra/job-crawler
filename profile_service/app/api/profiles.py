@@ -190,6 +190,8 @@ async def patch_preferences(
     updates = payload.model_dump(exclude_none=True)
     if not updates:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No updates provided")
+    if "role_intents" in updates:
+        updates["primary_role_intents"] = updates.pop("role_intents")
     profile = await write_profile_section(
         db, candidate_id=candidate_id, section="preferences", new_values=updates, settings=settings
     )

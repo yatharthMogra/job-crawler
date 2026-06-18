@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.constants import normalize_pool_names
 from app.database import get_db
 from app.models.subscription import UserPoolSubscription
+from app.services.role_intent_preferences import sync_pool_role_intents
 from app.schemas.subscription import (
     SubscriptionCreateIn,
     SubscriptionListOut,
@@ -43,6 +44,7 @@ async def create_subscriptions(
         )
         db.add(row)
         created.append(row)
+    await sync_pool_role_intents(db, candidate_id=payload.candidate_id)
     await db.commit()
     for row in created:
         await db.refresh(row)
@@ -93,6 +95,7 @@ async def update_subscriptions(
         db.add(row)
         updated.append(row)
 
+    await sync_pool_role_intents(db, candidate_id=candidate_id)
     await db.commit()
     for row in updated:
         await db.refresh(row)

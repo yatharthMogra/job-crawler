@@ -11,6 +11,8 @@ from app.ingestion.constants_taxonomy import (
     ENGINEERING_ROLES,
     NORMALIZED_ROLES,
     ROLE_CLASSIFICATION_RULES,
+    ROLE_INTENT_PROMPT_RULES,
+    coerce_role_intent,
 )
 
 _VALID_NORMALIZED_ROLES = frozenset(NORMALIZED_ROLES)
@@ -166,11 +168,37 @@ ENRICHMENT_SYSTEM_PROMPT = (
     "- Examples: distributed systems, NLP, computer vision, CI/CD, data pipelines\n"
     "- Do not duplicate job_capabilities taxonomy labels here\n"
     "- Leave empty only when no technical themes are present\n\n"
-    f"{DOMAIN_PROMPT_RULES}"
+    f"{DOMAIN_PROMPT_RULES}\n\n"
+    f"{ROLE_INTENT_PROMPT_RULES}"
 )
 
 
-class _DomainFieldsMixin(BaseModel):
+class _ClearanceRoleIntentMixin(BaseModel):
+    requires_clearance: bool = False
+    role_intent: str = "other"
+
+    @field_validator("requires_clearance", mode="before")
+    @classmethod
+    def _coerce_requires_clearance(cls, value: object) -> bool:
+        if isinstance(value, bool):
+            return value
+        if value is None:
+            return False
+        if isinstance(value, str):
+            lowered = value.strip().lower()
+            if lowered in {"true", "yes", "1"}:
+                return True
+            if lowered in {"false", "no", "0", ""}:
+                return False
+        return bool(value)
+
+    @field_validator("role_intent", mode="before")
+    @classmethod
+    def _coerce_role_intent_field(cls, value: object) -> str:
+        return coerce_role_intent(value)
+
+
+class _DomainFieldsMixin(_ClearanceRoleIntentMixin):
     job_domain: str = "Other"
     job_secondary_domain: Optional[str] = None
 
@@ -345,6 +373,8 @@ DEFAULT_ENRICHMENT = JobEnrichment(
     application_effort="MEDIUM",
     salary_min=None,
     salary_max=None,
+    requires_clearance=False,
+    role_intent="other",
 )
 
 
