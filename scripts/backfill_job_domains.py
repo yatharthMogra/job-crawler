@@ -24,8 +24,9 @@ from app.database import AsyncSessionLocal
 from app.ingestion.constants import ProcessingState
 from app.ingestion.enrichment_worker import (
     cleanup_orphan_enrichment_queue,
-    process_enrichment_window,
+    get_enrichment_worker,
     queue_job_for_enrichment,
+    reset_stuck_queue_rows,
 )
 from app.models.normalized_job import NormalizedJob
 
@@ -93,27 +94,6 @@ async def requeue_jobs(*, target_version: str, limit: int | None) -> int:
     return requeued
 
 
-async def drain_queue(*, max_windows: int, target_version: str) -> int:
-    from app.config import Settings
-
-    settings = Settings(extraction_version=target_version)
-    processed = 0
-    idle_rounds = 0
-    for _ in range(max_windows):
-        async with AsyncSessionLocal() as db:
-            window_processed, _ = await process_enrichment_window(db=db, settings=settings)
-        if window_processed == 0:
-            idle_rounds += 1
-            if idle_rounds >= 3:
-                break
-            await asyncio.sleep(2)
-            continue
-        idle_rounds = 0
-        processed += window_processed
-        await asyncio.sleep(settings.enrichment_window_seconds)
-    return processed
-
-
 async def sync_all_candidate_domains() -> list[tuple[str, str | None, str | None]]:
     if str(PROFILE_SERVICE) not in sys.path:
         sys.path.insert(0, str(PROFILE_SERVICE))
@@ -165,10 +145,8 @@ async def main() -> None:
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--skip-requeue", action="store_true")
-    parser.add_argument("--skip-drain", action="store_true")
     parser.add_argument("--skip-candidates", action="store_true")
     parser.add_argument("--reset-failed", action="store_true", help="Reset failed queue rows for jobs missing domain")
-    parser.add_argument("--max-windows", type=int, default=50)
     args = parser.parse_args()
 
     target_version = os.environ.get("EXTRACTION_VERSION", "v5")
@@ -184,33 +162,13 @@ async def main() -> None:
             cleanup = await cleanup_orphan_enrichment_queue(db)
             print(f"Orphan cleanup: {cleanup}")
         async with AsyncSessionLocal() as db:
-            result = await db.execute(
-                text(
-                    """
-                    UPDATE enrichment_queue eq
-                    SET status = 'queued',
-                        attempt_count = 0,
-                        next_retry_at = NULL,
-                        last_error = NULL,
-                        last_failure_reason = NULL
-                    FROM normalized_jobs nj
-                    JOIN raw_jobs rj ON rj.id = nj.raw_job_id
-                    WHERE eq.normalized_job_id = nj.id
-                      AND eq.status IN ('failed', 'quota_blocked')
-                      AND nj.is_active
-                    """
-                )
-            )
-            await db.commit()
-            print(f"Reset {result.rowcount} failed queue rows")
+            reset_count = await reset_stuck_queue_rows(db)
+            print(f"Reset {reset_count} stuck queue rows")
 
     if not args.skip_requeue:
         requeued = await requeue_jobs(target_version=target_version, limit=args.limit)
+        get_enrichment_worker().wake()
         print(f"Requeued {requeued} jobs for {target_version}")
-
-    if not args.skip_drain:
-        processed = await drain_queue(max_windows=args.max_windows, target_version=target_version)
-        print(f"Processed {processed} jobs in enrichment windows")
 
     if not args.skip_candidates:
         synced = await sync_all_candidate_domains()

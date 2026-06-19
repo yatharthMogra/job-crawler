@@ -1,11 +1,18 @@
-from app.config import Settings, pipeline_interval_kwargs
+import json
+
+from app.ingestion.fetch_schedule_config import parse_fetch_schedule_json
 
 
-def test_pipeline_interval_kwargs_uses_minutes_when_set() -> None:
-    settings = Settings(fetch_cadence_minutes=30, fetch_cadence_hours=6)
-    assert pipeline_interval_kwargs(settings) == {"minutes": 30}
-
-
-def test_pipeline_interval_kwargs_falls_back_to_hours() -> None:
-    settings = Settings(fetch_cadence_minutes=None, fetch_cadence_hours=6)
-    assert pipeline_interval_kwargs(settings) == {"hours": 6}
+def test_parse_fetch_schedule_json_waas_and_throttles() -> None:
+    raw = json.dumps(
+        {
+            "waas": {"dedicated_job": False, "interval_minutes": 45},
+            "throttles": {"default_concurrency": 5, "platforms": {"ashby": {"concurrency": 1}}},
+        }
+    )
+    schedule = parse_fetch_schedule_json(raw)
+    assert schedule.waas.dedicated_job is False
+    assert schedule.waas.interval_minutes == 45
+    assert schedule.throttles.default_concurrency == 5
+    assert schedule.throttles.for_platform("ashby").concurrency == 1
+    assert schedule.throttles.for_platform("greenhouse").concurrency == 5

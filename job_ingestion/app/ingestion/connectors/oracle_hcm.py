@@ -13,6 +13,7 @@ try:
 except ImportError:  # pragma: no cover
     structlog = None
 
+from app.config import get_settings
 from app.exceptions import ConnectorFetchError, ParseError
 from app.ingestion.connectors.base import BaseConnector
 from app.models.company import Company
@@ -22,7 +23,6 @@ logger = structlog.get_logger(__name__) if structlog else logging.getLogger(__na
 DETAIL_DELAY = 0.5
 LIST_PAGE_DELAY = 0.5
 MAX_PAGE_SIZE = 100
-DEFAULT_MAX_POSTED_AGE_DAYS = 30
 
 ORACLE_HEADERS = {
     "ora-irc-language": "en",
@@ -71,13 +71,8 @@ class OracleHCMConnector(BaseConnector):
             f"/requisitions/{job_id}/details"
         )
 
-    def _max_posted_age_days(self, company: Company) -> int:
-        config = self._platform_config(company)
-        value = config.get("max_posted_age_days", DEFAULT_MAX_POSTED_AGE_DAYS)
-        try:
-            return max(1, int(value))
-        except (TypeError, ValueError):
-            return DEFAULT_MAX_POSTED_AGE_DAYS
+    def _max_posted_age_days(self, company: Company) -> int:  # noqa: ARG002
+        return max(1, get_settings().job_max_age_days)
 
     @staticmethod
     def _parse_posted_date(value: object) -> Optional[date]:

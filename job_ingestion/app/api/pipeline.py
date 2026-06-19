@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.ingestion.pipeline import run_pipeline
+from app.models.company import Company
 from app.models.pipeline_run import CompanyRunResult, PipelineRun
 from app.schemas.pipeline import PipelineRunOut, TriggerPipelineOut
 
@@ -13,8 +14,22 @@ router = APIRouter(prefix="/pipeline", tags=["pipeline"])
 
 
 @router.post("/trigger", response_model=TriggerPipelineOut)
-async def trigger_pipeline(db: AsyncSession = Depends(get_db)) -> TriggerPipelineOut:
-    snapshot = await run_pipeline(db=db, run_type="manual")
+async def trigger_pipeline(
+    scope: str = Query(default="batch", pattern="^(batch|full)$"),
+    db: AsyncSession = Depends(get_db),
+) -> TriggerPipelineOut:
+    if scope == "full":
+        companies = (
+            await db.scalars(select(Company).where(Company.is_active.is_(True)))
+        ).all()
+        snapshot = await run_pipeline(
+            db=db,
+            run_type="manual",
+            company_ids=[company.id for company in companies],
+            schedule_metadata={"scope": "full", "companies_selected": len(companies)},
+        )
+    else:
+        snapshot = await run_pipeline(db=db, run_type="manual")
     return TriggerPipelineOut(**snapshot.__dict__)
 
 
@@ -83,6 +98,7 @@ async def get_pipeline_run(run_id: str, db: AsyncSession = Depends(get_db)) -> d
             "jobs_unchanged": run.jobs_unchanged,
             "jobs_removed": run.jobs_removed,
             "error_summary": run.error_summary,
+            "schedule_metadata": run.schedule_metadata,
         },
         "companies": [
             {

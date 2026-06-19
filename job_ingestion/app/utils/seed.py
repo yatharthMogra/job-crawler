@@ -5,6 +5,7 @@ from pathlib import Path
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import get_settings
 from app.database import AsyncSessionLocal
 from app.models.company import Company
 
@@ -28,6 +29,13 @@ async def seed_companies(db: AsyncSession, source_file: str = "data/companies.js
         board_token = item.get("board_token")
         is_active = bool(item.get("is_active", True))
         platform_config = item.get("platform_config")
+        raw_tier = item.get("fetch_tier")
+        if raw_tier is not None:
+            fetch_tier = int(raw_tier)
+        else:
+            fetch_tier = get_settings().fetch_schedule().default_fetch_tier
+        if fetch_tier not in (1, 2, 3):
+            fetch_tier = get_settings().fetch_schedule().default_fetch_tier
         if not name or not board_token:
             continue
         token = str(board_token)
@@ -39,6 +47,7 @@ async def seed_companies(db: AsyncSession, source_file: str = "data/companies.js
             existing.platform = str(platform)
             existing.is_active = is_active
             existing.platform_config = platform_config if isinstance(platform_config, dict) else None
+            existing.fetch_tier = fetch_tier
             updated += 1
             continue
 
@@ -47,6 +56,7 @@ async def seed_companies(db: AsyncSession, source_file: str = "data/companies.js
             platform=str(platform),
             board_token=token,
             is_active=is_active,
+            fetch_tier=fetch_tier,
             platform_config=platform_config if isinstance(platform_config, dict) else None,
         )
         db.add(company)

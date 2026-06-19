@@ -87,7 +87,7 @@ def test_archive_values_from_deterministic() -> None:
 
 @pytest.mark.asyncio
 async def test_active_cleanup_deletes_expired_in_batches() -> None:
-    settings = Settings(active_job_retention_days=7, cleanup_batch_size=2)
+    settings = Settings(job_max_age_days=7, cleanup_batch_size=2)
     archive_id = uuid4()
     batch1 = [
         SimpleNamespace(id=uuid4(), raw_job_id=uuid4(), job_archive_id=archive_id),
@@ -119,7 +119,7 @@ async def test_active_cleanup_deletes_expired_in_batches() -> None:
 
 @pytest.mark.asyncio
 async def test_active_cleanup_skips_when_none_expired() -> None:
-    settings = Settings(active_job_retention_days=7, cleanup_batch_size=500)
+    settings = Settings(job_max_age_days=7, cleanup_batch_size=500)
     db = AsyncMock()
     db.execute = AsyncMock(return_value=MagicMock(all=lambda: []))
 

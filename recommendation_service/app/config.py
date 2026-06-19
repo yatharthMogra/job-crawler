@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     notification_retrieval_limit: int = 500
     notification_jobs_per_email: int = 4
     notification_max_jobs_per_company: int = 1
-    notification_max_job_age_days: int = 60
+    job_max_age_days: int = 7
     notification_min_jobs_to_send: int = 3
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 587

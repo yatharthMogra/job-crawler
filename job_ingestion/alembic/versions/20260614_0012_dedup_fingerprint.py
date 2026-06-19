@@ -1,7 +1,7 @@
 """dedup_fingerprint column on normalized_jobs
 
 Revision ID: 20260614_0012
-Revises: 20260613_0011
+Revises: 20260613_0001
 Create Date: 2026-06-14 12:00:00.000000
 """
 
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "20260614_0012"
-down_revision: str = "20260613_0011"
+down_revision: str = "20260613_0001"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

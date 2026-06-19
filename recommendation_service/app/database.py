@@ -17,7 +17,7 @@ def _engine_kwargs(database_url: str) -> dict:
             "pool_pre_ping": True,
             "pool_size": 5,
             "max_overflow": 2,
-            "connect_args": {"prepared_statement_cache_size": 0},
+            "connect_args": {"statement_cache_size": 0,"prepared_statement_cache_size": 0},
         }
     return {"pool_pre_ping": True}
 

@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Re-queue jobs for batched taxonomy v4 LLM re-enrichment and drain the queue."""
+"""Re-queue jobs for batched taxonomy v4 LLM re-enrichment.
+
+Run with job_ingestion up; the in-process enrichment worker pool drains the queue.
+"""
 
 from __future__ import annotations
 
@@ -24,10 +27,7 @@ from sqlalchemy import text
 from app.config import Settings
 from app.database import AsyncSessionLocal
 from app.ingestion.constants import ProcessingState
-from app.ingestion.enrichment_worker import (
-    process_enrichment_window,
-    queue_job_for_enrichment,
-)
+from app.ingestion.enrichment_worker import get_enrichment_worker, queue_job_for_enrichment
 from app.models.normalized_job import NormalizedJob
 
 
@@ -161,64 +161,12 @@ async def _stats() -> dict:
         return payload
 
 
-async def run_worker_until_drained(
-    settings: Settings,
-    *,
-    timeout_s: int,
-    poll_s: float,
-) -> dict:
-    start = time.monotonic()
-    last: dict | None = None
-    idle_rounds = 0
-
-    while time.monotonic() - start < timeout_s:
-        processed = 0
-        batches = 0
-        try:
-            async with AsyncSessionLocal() as db:
-                processed, batches = await process_enrichment_window(db=db, settings=settings)
-        except Exception as exc:
-            if "deadlock" in str(exc).lower():
-                print(json.dumps({"event": "deadlock_retry", "message": str(exc)[:200]}), flush=True)
-                await asyncio.sleep(2)
-                continue
-            raise
-
-        row = await _stats()
-        if row != last:
-            print(json.dumps({"event": "progress", **row, "last_window_jobs": processed, "last_window_batches": batches}, default=str), flush=True)
-            last = row
-
-        if processed == 0:
-            idle_rounds += 1
-        else:
-            idle_rounds = 0
-
-        if row["queued"] == 0 and row["in_progress"] == 0 and row["cooldown"] == 0:
-            return row
-
-        if processed > 0:
-            await asyncio.sleep(settings.enrichment_window_seconds)
-        elif row["cooldown"] > 0:
-            await asyncio.sleep(max(poll_s, settings.enrichment_cooldown_seconds / 4))
-        else:
-            await asyncio.sleep(poll_s)
-
-        if idle_rounds >= 3 and row["queued"] == 0 and row["in_progress"] == 0:
-            return row
-
-    raise TimeoutError(f"Re-enrichment timed out: {last}")
-
-
 async def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--target-version", default="v4")
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--include-inactive", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--drain-only", action="store_true", help="Process existing queue without re-enqueueing")
-    parser.add_argument("--queue-only", action="store_true", help="Only enqueue; rely on running job_ingestion worker")
-    parser.add_argument("--timeout-s", type=int, default=7200)
     args = parser.parse_args()
 
     settings = Settings()
@@ -227,13 +175,7 @@ async def main() -> None:
             {
                 "target_version": args.target_version,
                 "extraction_version_env": settings.extraction_version,
-                "model": settings.gemini_model,
-                "llm_max_rpm": settings.enrichment_llm_max_rpm,
-                "batch_interval_seconds": settings.enrichment_batch_interval_seconds,
-                "micro_batch_size": settings.enrichment_micro_batch_size,
-                "max_tokens_per_batch": settings.enrichment_max_input_tokens_per_batch,
-                "window_token_budget": settings.enrichment_window_token_budget,
-                "max_jobs_per_window": settings.enrichment_max_jobs_per_window,
+                "workers": settings.resolved_enrichment_worker_count(),
             }
         ),
         flush=True,
@@ -244,46 +186,14 @@ async def main() -> None:
     if args.dry_run:
         return
 
-    if not args.drain_only and not args.queue_only and _port_open("127.0.0.1", 8000):
-        print(
-            json.dumps(
-                {
-                    "warning": "job_ingestion appears to be running on :8000; "
-                    "use --queue-only to avoid duplicate workers, or stop the service first",
-                }
-            ),
-            flush=True,
-        )
-        print("Aborting inline worker to prevent duplicate batch processing.", flush=True)
-        args.queue_only = True
-
-    if not args.drain_only:
-        requeued = await requeue_jobs(
-            target_version=args.target_version,
-            source="seniority_v4_requeue",
-            limit=args.limit,
-            active_only=not args.include_inactive,
-        )
-        print(json.dumps({"event": "requeued", "count": requeued}), flush=True)
-        if requeued == 0 and not args.queue_only:
-            final = await _stats()
-            print(json.dumps({"event": "done", **final}, default=str), flush=True)
-            return
-
-    if args.queue_only:
-        print(
-            json.dumps(
-                {
-                    "event": "queued",
-                    "message": "Jobs queued; ensure job_ingestion service is running with EXTRACTION_VERSION=v4",
-                }
-            ),
-            flush=True,
-        )
-        return
-
-    final = await run_worker_until_drained(settings, timeout_s=args.timeout_s, poll_s=5.0)
-    print(json.dumps({"event": "done", **final}, default=str), flush=True)
+    requeued = await requeue_jobs(
+        target_version=args.target_version,
+        source="seniority_v4_requeue",
+        limit=args.limit,
+        active_only=not args.include_inactive,
+    )
+    get_enrichment_worker().wake()
+    print(json.dumps({"event": "requeued", "count": requeued}), flush=True)
 
 
 if __name__ == "__main__":

@@ -22,7 +22,7 @@ from app.services.profile_loader import UserProfile
 
 def build_notification_age_filter(settings: Settings) -> list[Any]:
     """Exclude stale postings from notification retrieval."""
-    days = settings.notification_max_job_age_days
+    days = settings.job_max_age_days
     if days <= 0:
         return []
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)

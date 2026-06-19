@@ -666,7 +666,7 @@ async def test_oracle_post_detail_rejects_stale_when_list_date_missing(monkeypat
 
 
 @pytest.mark.asyncio
-async def test_oracle_respects_max_posted_age_days_config(monkeypatch) -> None:
+async def test_oracle_respects_job_max_age_days_setting(monkeypatch) -> None:
     company = Company(
         name="American Express",
         platform="oracle_hcm",
@@ -674,10 +674,14 @@ async def test_oracle_respects_max_posted_age_days_config(monkeypatch) -> None:
         platform_config={
             "datacenter": "us2",
             "site_number": "CX_1",
-            "max_posted_age_days": 7,
         },
         is_active=True,
     )
+
+    class _FakeSettings:
+        job_max_age_days = 7
+
+    monkeypatch.setattr("app.ingestion.connectors.oracle_hcm.get_settings", lambda: _FakeSettings())
 
     class _FakeResponse:
         def __init__(self, payload: dict[str, object], status_code: int = 200) -> None:

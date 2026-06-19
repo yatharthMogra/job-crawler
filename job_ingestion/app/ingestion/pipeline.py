@@ -17,6 +17,8 @@ except ImportError:  # pragma: no cover - dependency fallback path
 
 from app.config import Settings, get_settings
 from app.database import AsyncSessionLocal
+from app.ingestion.fetch_schedule import select_due_companies
+from app.ingestion.fetch_schedule_config import FetchScheduleConfig
 from app.exceptions import IngestionError
 from app.ingestion.alerts import write_failure_alert
 from app.ingestion.change_detector import classify_jobs
@@ -468,14 +470,51 @@ async def _process_single_company(
         return outcome
 
 
+class _PlatformFetchLimiter:
+    def __init__(self, schedule: FetchScheduleConfig) -> None:
+        self._schedule = schedule
+        self._semaphores: dict[str, asyncio.Semaphore] = {}
+
+    def _semaphore_for(self, platform: str) -> asyncio.Semaphore:
+        if platform not in self._semaphores:
+            throttle = self._schedule.throttles.for_platform(platform)
+            self._semaphores[platform] = asyncio.Semaphore(throttle.concurrency)
+        return self._semaphores[platform]
+
+    async def run_company(
+        self,
+        platform: str,
+        runner: Any,
+    ) -> Any:
+        throttle = self._schedule.throttles.for_platform(platform)
+        async with self._semaphore_for(platform):
+            result = await runner()
+            if throttle.inter_company_seconds > 0:
+                await asyncio.sleep(throttle.inter_company_seconds)
+            return result
+
+
 async def run_pipeline(
     db: AsyncSession,
     run_type: str = "manual",
     settings: Optional[Settings] = None,
+    company_ids: Optional[list[UUID]] = None,
+    schedule_metadata: Optional[dict[str, Any]] = None,
 ) -> PipelineSnapshot:
     settings = settings or get_settings()
+    schedule = settings.fetch_schedule()
 
-    run = PipelineRun(run_type=run_type, status="running", started_at=_utcnow())
+    if company_ids is None and schedule_metadata is None:
+        selection = await select_due_companies(db=db, settings=settings)
+        company_ids = selection.company_ids
+        schedule_metadata = selection.schedule_metadata
+
+    run = PipelineRun(
+        run_type=run_type,
+        status="running",
+        started_at=_utcnow(),
+        schedule_metadata=schedule_metadata,
+    )
     db.add(run)
     await db.flush()
 
@@ -485,13 +524,26 @@ async def run_pipeline(
         category=EventCategory.PIPELINE,
         severity=EventSeverity.INFO,
         pipeline_run_id=run.id,
+        metadata=schedule_metadata,
     )
     # Make the parent run visible to worker sessions before they emit events.
     await db.commit()
 
-    companies = (
-        await db.scalars(select(Company).where(Company.is_active.is_(True)).order_by(Company.name.asc()))
-    ).all()
+    if company_ids is not None:
+        if not company_ids:
+            companies = []
+        else:
+            companies = (
+                await db.scalars(
+                    select(Company)
+                    .where(Company.id.in_(company_ids), Company.is_active.is_(True))
+                    .order_by(Company.name.asc())
+                )
+            ).all()
+    else:
+        companies = (
+            await db.scalars(select(Company).where(Company.is_active.is_(True)).order_by(Company.name.asc()))
+        ).all()
 
     run.total_companies = len(companies)
     successful_companies = 0
@@ -499,13 +551,47 @@ async def run_pipeline(
     aggregate = CompanyStats()
     errors: list[dict[str, str]] = []
 
-    semaphore = asyncio.Semaphore(settings.fetch_concurrency)
+    if not companies:
+        persisted_run = await db.get(PipelineRun, run.id)
+        if persisted_run is None:
+            raise RuntimeError(f"Pipeline run {run.id} missing before finalization.")
+        persisted_run.status = "completed"
+        persisted_run.completed_at = _utcnow()
+        await write_event(
+            db,
+            event_type=EventType.PIPELINE_COMPLETED,
+            category=EventCategory.PIPELINE,
+            severity=EventSeverity.INFO,
+            pipeline_run_id=run.id,
+            metadata={"companies_selected": 0},
+        )
+        await db.commit()
+        return PipelineSnapshot(
+            run_id=str(persisted_run.id),
+            status=persisted_run.status,
+            total_companies=0,
+            successful_companies=0,
+            failed_companies=0,
+            jobs_fetched=0,
+            jobs_new=0,
+            jobs_updated=0,
+            jobs_unchanged=0,
+            jobs_removed=0,
+        )
 
-    async def _run_company(company_id: UUID) -> CompanyRunOutcome:
-        async with semaphore:
-            return await _process_single_company(company_id=company_id, pipeline_run_id=run.id, settings=settings)
+    limiter = _PlatformFetchLimiter(schedule)
 
-    outcomes = await asyncio.gather(*[_run_company(company.id) for company in companies], return_exceptions=True)
+    async def _run_company(company: Company) -> CompanyRunOutcome:
+        async def _runner() -> CompanyRunOutcome:
+            return await _process_single_company(
+                company_id=company.id,
+                pipeline_run_id=run.id,
+                settings=settings,
+            )
+
+        return await limiter.run_company(company.platform, _runner)
+
+    outcomes = await asyncio.gather(*[_run_company(company) for company in companies], return_exceptions=True)
     for company, raw_outcome in zip(companies, outcomes):
         if isinstance(raw_outcome, Exception):
             failed_companies += 1
@@ -559,6 +645,10 @@ async def run_pipeline(
     )
 
     await db.commit()
+
+    from app.ingestion.stats_publisher import publish_ops_stats
+
+    await publish_ops_stats(db, settings=settings, trigger=f"pipeline_{run_type}")
 
     return PipelineSnapshot(
         run_id=str(persisted_run.id),
