@@ -1,0 +1,15 @@
+[Unit]
+Description=Job Crawler Ingestion Service
+After=network.target
+
+[Service]
+Type=simple
+User=YOUR_USER
+WorkingDirectory=/path/to/job-crawler/job_ingestion
+EnvironmentFile=/path/to/job-crawler/job_ingestion/.env
+ExecStart=/path/to/job-crawler/job-crawler/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

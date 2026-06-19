@@ -25,7 +25,8 @@ async def test_pymupdf_extraction_success(tmp_path, monkeypatch) -> None:
             return "fallback"
 
     settings = Settings(pymupdf_min_char_threshold=10)
-    text, method, status = await extract_text(str(pdf_path), settings=settings, llm_provider=DummyLLM())
+    pdf_bytes = pdf_path.read_bytes()
+    text, method, status = await extract_text(pdf_bytes, settings=settings, llm_provider=DummyLLM())
     assert method == "pymupdf"
     assert status == "success"
     assert "Python" in text
@@ -51,7 +52,8 @@ async def test_multimodal_fallback_on_short_text(tmp_path) -> None:
             )
 
     settings = Settings(pymupdf_min_char_threshold=100)
-    text, method, status = await extract_text(str(pdf_path), settings=settings, llm_provider=DummyLLM())
+    pdf_bytes = pdf_path.read_bytes()
+    text, method, status = await extract_text(pdf_bytes, settings=settings, llm_provider=DummyLLM())
     assert method == "multimodal"
     assert status == "fallback_used"
     assert "Recovered resume" in text

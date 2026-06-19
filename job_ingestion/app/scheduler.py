@@ -6,7 +6,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from app.archival.active_cleanup import run_active_cleanup
 from app.archival.archive_cleanup import run_archive_cleanup
-from app.config import Settings, get_settings
+from app.config import Settings, get_settings, pipeline_interval_kwargs
 from app.database import AsyncSessionLocal
 from app.ingestion.constants import EventCategory, EventSeverity, EventType
 from app.ingestion.events import write_event
@@ -47,7 +47,7 @@ def build_scheduler(settings: Optional[Settings] = None) -> AsyncIOScheduler:
     scheduler.add_job(
         scheduled_pipeline,
         trigger="interval",
-        hours=settings.fetch_cadence_hours,
+        **pipeline_interval_kwargs(settings),
         id="pipeline-runner",
         max_instances=1,
         coalesce=True,

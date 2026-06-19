@@ -1,20 +1,18 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 from app.config import Settings
 from app.exceptions import ExtractionError
 from app.llm.base import LLMProvider
 from app.utils.text_utils import is_garbage_text
 
 
-def extract_text_pymupdf(pdf_path: str) -> str:
+def extract_text_pymupdf(pdf_bytes: bytes) -> str:
     try:
         import fitz
     except ImportError as exc:
         raise ExtractionError("PyMuPDF is not installed.") from exc
 
-    doc = fitz.open(pdf_path)
+    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     parts: list[str] = []
     for page in doc:
         parts.append(page.get_text())
@@ -23,7 +21,7 @@ def extract_text_pymupdf(pdf_path: str) -> str:
 
 
 async def extract_text(
-    pdf_path: str,
+    pdf_bytes: bytes,
     *,
     settings: Settings,
     llm_provider: LLMProvider,
@@ -33,13 +31,12 @@ async def extract_text(
     method_used: pymupdf | multimodal
     extraction_status: success | fallback_used | failed
     """
-    text = extract_text_pymupdf(pdf_path)
+    text = extract_text_pymupdf(pdf_bytes)
     threshold = settings.pymupdf_min_char_threshold
 
     if len(text.strip()) >= threshold and not is_garbage_text(text):
         return text, "pymupdf", "success"
 
-    pdf_bytes = Path(pdf_path).read_bytes()
     try:
         fallback_text = await llm_provider.extract_text_from_pdf(pdf_bytes)
     except Exception as exc:

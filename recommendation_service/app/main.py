@@ -5,7 +5,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.dashboard import router as dashboard_router
@@ -21,8 +21,9 @@ _scheduler: AsyncIOScheduler | None = None
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     global _scheduler
     settings = get_settings()
-    _scheduler = create_scheduler(settings)
-    _scheduler.start()
+    if settings.enable_notification_scheduler:
+        _scheduler = create_scheduler(settings)
+        _scheduler.start()
     yield
     if _scheduler is not None:
         _scheduler.shutdown(wait=False)
@@ -50,5 +51,10 @@ async def health() -> dict[str, str]:
 
 @app.post("/notifications/run")
 async def trigger_notification_pipeline() -> dict[str, str]:
+    if not get_settings().enable_notification_scheduler:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Notification pipeline is disabled on this deployment",
+        )
     asyncio.create_task(run_notification_pipeline())
     return {"status": "started"}

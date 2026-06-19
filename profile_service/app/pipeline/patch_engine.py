@@ -18,6 +18,7 @@ from app.pipeline.capability_engine import recompute_capabilities
 from app.pipeline.diff_engine import compute_proposed_operations
 from app.pipeline.extractor import extract_text
 from app.pipeline.llm_parser import extract_resume_evidence
+from app.storage import get_resume_storage
 from app.utils.text_utils import (
     default_constraints,
     default_education,
@@ -215,8 +216,10 @@ async def process_resume_upload(
     await _reject_all_pending_patches(db, candidate_id)
 
     llm_provider = get_llm_provider(settings)
+    storage = get_resume_storage(settings)
+    pdf_bytes = storage.read_bytes(resume.file_path)
     extracted_text, method, status = await extract_text(
-        resume.file_path,
+        pdf_bytes,
         settings=settings,
         llm_provider=llm_provider,
     )
