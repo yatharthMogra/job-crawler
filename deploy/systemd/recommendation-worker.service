@@ -1,0 +1,16 @@
+[Unit]
+Description=Job Crawler Notification Worker
+After=network.target
+
+[Service]
+Type=simple
+User=YOUR_USER
+WorkingDirectory=/path/to/job-crawler/recommendation_service
+EnvironmentFile=/path/to/job-crawler/recommendation_service/.env
+Environment=ENABLE_NOTIFICATION_SCHEDULER=true
+ExecStart=/path/to/job-crawler/job-crawler/bin/uvicorn app.main:app --host 127.0.0.1 --port 8002
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

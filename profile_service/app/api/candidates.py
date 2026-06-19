@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import uuid
-from pathlib import Path
 
 import structlog
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
@@ -17,6 +16,7 @@ from app.models.candidate import Candidate
 from app.models.resume import CandidateResume
 from app.pipeline.patch_engine import process_resume_upload
 from app.services.domain_sync import sync_candidate_domains
+from app.storage import get_resume_storage
 from app.schemas.candidate import (
     CandidateCreate,
     CandidateOAuthCreate,
@@ -115,15 +115,13 @@ async def upload_resume(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File exceeds 5MB limit")
 
     resume_id = uuid.uuid4()
-    storage_dir = settings.resume_storage_dir / str(candidate_id)
-    storage_dir.mkdir(parents=True, exist_ok=True)
-    file_path = storage_dir / f"{resume_id}.pdf"
-    Path(file_path).write_bytes(content)
+    storage = get_resume_storage(settings)
+    storage_key = storage.save(candidate_id, resume_id, content)
 
     resume = CandidateResume(
         id=resume_id,
         candidate_id=candidate_id,
-        file_path=str(file_path),
+        file_path=storage_key,
         original_filename=file.filename,
         file_size_bytes=len(content),
         extraction_status="pending",

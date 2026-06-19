@@ -70,6 +70,8 @@ cd recommendation_service && pytest
 
 See [`testing.md`](testing.md) for end-to-end recommendation testing and [`web/README.md`](web/README.md) for the user-facing frontend.
 
+See [`DEPLOYMENT.md`](DEPLOYMENT.md) for hybrid cloud + home machine deployment (Supabase, Cloud Run, Vercel).
+
 ## Frontend apps
 
 | App | Purpose |

@@ -7,6 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/jobingestion"
     fetch_cadence_hours: int = 6
+    fetch_cadence_minutes: int | None = None
     max_consecutive_failures_before_alert: int = 3
     consecutive_misses_before_inactive: int = 3
     llm_provider: str = "gemini"
@@ -70,6 +71,12 @@ class Settings(BaseSettings):
     @property
     def yc_waas_roles_list(self) -> list[str]:
         return [role.strip() for role in self.yc_waas_roles.split(",") if role.strip()]
+
+
+def pipeline_interval_kwargs(settings: Settings) -> dict[str, int]:
+    if settings.fetch_cadence_minutes is not None:
+        return {"minutes": settings.fetch_cadence_minutes}
+    return {"hours": settings.fetch_cadence_hours}
 
 
 @lru_cache(maxsize=1)

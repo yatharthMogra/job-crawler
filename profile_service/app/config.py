@@ -1,5 +1,6 @@
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -13,7 +14,11 @@ class Settings(BaseSettings):
     pymupdf_min_char_threshold: int = 100
     extraction_version: str = "v1"
     capability_taxonomy_version: str = "v1"
+    resume_storage_backend: Literal["local", "supabase"] = "local"
     resume_storage_path: str = "./data/resumes"
+    supabase_url: str = ""
+    supabase_service_role_key: str = ""
+    supabase_storage_bucket: str = "resumes"
     log_level: str = "INFO"
     cors_origins: str = ""
 

@@ -6,6 +6,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/jobingestion"
     notification_cadence_hours: int = 24
+    notification_cadence_minutes: int | None = None
+    enable_notification_scheduler: bool = True
     notification_retrieval_limit: int = 500
     notification_jobs_per_email: int = 4
     notification_max_jobs_per_company: int = 1
@@ -52,6 +54,12 @@ class Settings(BaseSettings):
             return defaults
         extra = [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
         return list(dict.fromkeys(defaults + extra))
+
+
+def notification_interval_kwargs(settings: Settings) -> dict[str, int]:
+    if settings.notification_cadence_minutes is not None:
+        return {"minutes": settings.notification_cadence_minutes}
+    return {"hours": settings.notification_cadence_hours}
 
 
 @lru_cache(maxsize=1)
