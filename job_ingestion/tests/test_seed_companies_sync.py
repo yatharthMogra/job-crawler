@@ -35,6 +35,39 @@ class _FakeSession:
 
 
 @pytest.mark.asyncio
+async def test_seed_companies_syncs_fetch_tier(tmp_path) -> None:
+    existing = Company(
+        name="Anthropic",
+        platform="greenhouse",
+        board_token="anthropic",
+        is_active=True,
+        fetch_tier=2,
+    )
+    session = _FakeSession(companies=[existing])
+
+    source = tmp_path / "companies.json"
+    source.write_text(
+        json.dumps(
+            [
+                {
+                    "company": "Anthropic",
+                    "platform": "greenhouse",
+                    "board_token": "anthropic",
+                    "fetch_tier": 1,
+                    "is_active": True,
+                },
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = await seed_companies(session, source_file=str(source))
+
+    assert result == {"inserted": 0, "updated": 1, "deleted": 0}
+    assert session.companies[0].fetch_tier == 1
+
+
+@pytest.mark.asyncio
 async def test_seed_companies_hard_deletes_rows_missing_from_source(tmp_path) -> None:
     existing_keep = Company(name="Anthropic", platform="greenhouse", board_token="anthropic", is_active=True)
     existing_stale = Company(name="ScaleAI", platform="lever", board_token="scale-ai", is_active=True)

@@ -7,6 +7,8 @@ from uuid import uuid4
 import pytest
 
 from app.ingestion import pipeline
+from app.ingestion.fetch_schedule import FetchSelectionResult
+from app.ingestion.fetch_schedule_config import parse_fetch_schedule_json
 from app.ingestion.pipeline import CompanyRunOutcome
 from app.models.pipeline_run import PipelineRun
 
@@ -15,6 +17,8 @@ from app.models.pipeline_run import PipelineRun
 class _FakeCompany:
     id: object
     name: str
+    platform: str = "greenhouse"
+    is_active: bool = True
 
 
 class _ScalarResult:
@@ -60,7 +64,16 @@ async def test_run_pipeline_commits_parent_before_workers(monkeypatch) -> None:
         _FakeCompany(id=uuid4(), name="Greenhouse"),
     ]
     fake_db = _FakeDbSession(companies=companies)
-    settings = SimpleNamespace(fetch_concurrency=4)
+    settings = SimpleNamespace(
+        fetch_schedule=lambda: parse_fetch_schedule_json(""),
+        max_consecutive_failures_before_alert=3,
+    )
+
+    async def _fake_select_due_companies(db, settings=None):  # noqa: ANN001, ARG001
+        return FetchSelectionResult(
+            company_ids=[company.id for company in companies],
+            schedule_metadata={"test": True},
+        )
 
     async def _fake_write_event(*args, **kwargs):  # noqa: ANN002, ANN003, ARG001
         return None
@@ -78,6 +91,7 @@ async def test_run_pipeline_commits_parent_before_workers(monkeypatch) -> None:
         )
 
     monkeypatch.setattr(pipeline, "write_event", _fake_write_event)
+    monkeypatch.setattr(pipeline, "select_due_companies", _fake_select_due_companies)
     monkeypatch.setattr(pipeline, "_process_single_company", _fake_process_single_company)
 
     snapshot = await pipeline.run_pipeline(db=fake_db, run_type="manual", settings=settings)

@@ -31,6 +31,7 @@ class PipelineRun(Base):
     jobs_unchanged: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     jobs_removed: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     error_summary: Mapped[Optional[list[dict[str, Any]]]] = mapped_column(JSONB, nullable=True)
+    schedule_metadata: Mapped[Optional[dict[str, Any]]] = mapped_column(JSONB, nullable=True)
 
 
 class CompanyRunResult(Base):

@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Callable, Optional
 from uuid import UUID
 
 from sqlalchemy import and_, or_, select, text
@@ -103,21 +103,10 @@ def _mark_quota_blocked(queue_row: EnrichmentQueue, error_message: str) -> None:
     queue_row.last_error = error_message
 
 
-_quota_paused = False
-
-
-def is_quota_paused() -> bool:
-    return _quota_paused
-
-
-def clear_quota_pause() -> None:
-    global _quota_paused
-    _quota_paused = False
-
-
-def _pause_for_daily_quota(message: str) -> None:
-    global _quota_paused
-    _quota_paused = True
+def _partition_filter(worker_id: int, worker_count: int):
+    return text(
+        "mod(abs(hashtext(enrichment_queue.normalized_job_id::text)), :worker_count) = :worker_id"
+    ).bindparams(worker_count=worker_count, worker_id=worker_id)
 
 
 def _estimate_tokens_fallback(clean_text: str) -> int:
@@ -136,8 +125,17 @@ class WorkItem:
 
 
 class EnrichmentWorker:
-    def __init__(self, settings: Optional[Settings] = None) -> None:
-        self._settings = settings or get_settings()
+    def __init__(
+        self,
+        settings: Settings,
+        *,
+        worker_id: int,
+        worker_count: int,
+    ) -> None:
+        self._settings = settings
+        self._worker_id = worker_id
+        self._worker_count = worker_count
+        self._quota_paused = False
         self._stop = asyncio.Event()
         self._wake = asyncio.Event()
 
@@ -148,16 +146,23 @@ class EnrichmentWorker:
     def wake(self) -> None:
         self._wake.set()
 
+    def pause_for_daily_quota(self, _message: str) -> None:
+        self._quota_paused = True
+
     async def run_forever(self) -> None:
         while not self._stop.is_set():
-            if is_quota_paused():
+            if self._quota_paused:
                 await asyncio.sleep(30.0)
                 continue
             batches_processed = 0
             try:
                 async with AsyncSessionLocal() as db:
                     processed, batches_processed = await process_enrichment_window(
-                        db=db, settings=self._settings
+                        db=db,
+                        settings=self._settings,
+                        worker_id=self._worker_id,
+                        worker_count=self._worker_count,
+                        on_daily_quota_exhausted=self.pause_for_daily_quota,
                     )
             except Exception:
                 processed = 0
@@ -171,6 +176,34 @@ class EnrichmentWorker:
                 await asyncio.wait_for(self._wake.wait(), timeout=2.0)
             except asyncio.TimeoutError:
                 continue
+
+
+class EnrichmentWorkerPool:
+    def __init__(self, settings: Optional[Settings] = None) -> None:
+        base = settings or get_settings()
+        keys = base.gemini_api_keys_list()
+        if not keys:
+            self.worker_count = 0
+            self.workers: list[EnrichmentWorker] = []
+            return
+        worker_count = base.resolved_enrichment_worker_count()
+        self.worker_count = worker_count
+        self.workers = [
+            EnrichmentWorker(
+                base.worker_settings(api_key),
+                worker_id=worker_id,
+                worker_count=worker_count,
+            )
+            for worker_id, api_key in enumerate(keys[:worker_count])
+        ]
+
+    def wake(self) -> None:
+        for worker in self.workers:
+            worker.wake()
+
+    def stop(self) -> None:
+        for worker in self.workers:
+            worker.stop()
 
 
 async def queue_job_for_enrichment(
@@ -436,6 +469,8 @@ async def _process_batch(
     settings: Settings,
     batch_items: list[WorkItem],
     source: str,
+    *,
+    on_daily_quota_exhausted: Callable[[str], None] | None = None,
 ) -> None:
     started = _utcnow()
     batch = EnrichmentBatch(
@@ -641,8 +676,8 @@ async def _process_batch(
         daily_quota = _is_daily_quota_exhausted(message)
         retryable = _is_transient_rate_limit(message)
         schema_error = _is_schema_validation_error(message)
-        if daily_quota and settings.enrichment_stop_on_daily_quota:
-            _pause_for_daily_quota(message)
+        if daily_quota and settings.enrichment_stop_on_daily_quota and on_daily_quota_exhausted is not None:
+            on_daily_quota_exhausted(message)
         if (
             len(batch_items) > 1
             and not daily_quota
@@ -658,7 +693,13 @@ async def _process_batch(
                 row.queue_row.status = "queued"
             await db.flush()
             for row in batch_items:
-                await _process_batch(db=db, settings=settings, batch_items=[row], source="worker_single_fallback")
+                await _process_batch(
+                    db=db,
+                    settings=settings,
+                    batch_items=[row],
+                    source="worker_single_fallback",
+                    on_daily_quota_exhausted=on_daily_quota_exhausted,
+                )
             return
         items = (
             await db.scalars(select(EnrichmentBatchItem).where(EnrichmentBatchItem.batch_id == batch.id))
@@ -768,17 +809,44 @@ async def cleanup_orphan_enrichment_queue(db: AsyncSession) -> dict[str, int]:
     return {"deactivated_jobs": deactivated, "deleted_queue_rows": deleted_queue}
 
 
+async def reset_stuck_queue_rows(db: AsyncSession) -> int:
+    """Re-queue failed, quota_blocked, and cooldown rows for active jobs."""
+    result = await db.execute(
+        text(
+            """
+            UPDATE enrichment_queue eq
+            SET status = 'queued',
+                attempt_count = 0,
+                next_retry_at = NULL,
+                last_error = NULL,
+                last_failure_reason = NULL
+            FROM normalized_jobs nj
+            JOIN raw_jobs rj ON rj.id = nj.raw_job_id
+            WHERE eq.normalized_job_id = nj.id
+              AND nj.is_active
+              AND eq.status IN ('failed', 'quota_blocked', 'cooldown')
+            """
+        )
+    )
+    await db.commit()
+    return int(result.rowcount or 0)
+
+
 async def process_enrichment_window(
-    db: AsyncSession, settings: Optional[Settings] = None
+    db: AsyncSession,
+    *,
+    settings: Optional[Settings] = None,
+    worker_id: int = 0,
+    worker_count: int = 1,
+    on_daily_quota_exhausted: Callable[[str], None] | None = None,
 ) -> tuple[int, int]:
     settings = settings or get_settings()
-    if is_quota_paused():
-        await db.commit()
-        return 0, 0
     now = _utcnow()
+    partition = _partition_filter(worker_id, worker_count)
     eligible = and_(
         EnrichmentQueue.status.in_(["queued", "cooldown"]),
         or_(EnrichmentQueue.next_retry_at.is_(None), EnrichmentQueue.next_retry_at <= now),
+        partition,
     )
     first_attempt_rows = (
         await db.scalars(
@@ -821,7 +889,13 @@ async def process_enrichment_window(
     for idx, batch in enumerate(batches):
         if idx > 0:
             await asyncio.sleep(settings.enrichment_batch_interval_seconds)
-        await _process_batch(db=db, settings=settings, batch_items=batch, source="worker")
+        await _process_batch(
+            db=db,
+            settings=settings,
+            batch_items=batch,
+            source=f"worker_{worker_id}",
+            on_daily_quota_exhausted=on_daily_quota_exhausted,
+        )
         processed_jobs += len(batch)
         await db.commit()
     return processed_jobs, len(batches)
@@ -832,7 +906,7 @@ async def process_job_immediately(
     normalized_job_id: UUID,
     settings: Optional[Settings] = None,
 ) -> dict[str, str]:
-    settings = settings or get_settings()
+    settings = (settings or get_settings()).primary_enrichment_settings()
     normalized = await db.get(NormalizedJob, normalized_job_id)
     if normalized is None:
         raise ValueError("Job not found")
@@ -874,11 +948,15 @@ async def process_job_immediately(
     return {"job_id": str(normalized.id), "status": queue_row.status}
 
 
-_ENRICHMENT_WORKER: Optional[EnrichmentWorker] = None
+_ENRICHMENT_WORKER_POOL: Optional[EnrichmentWorkerPool] = None
 
 
-def get_enrichment_worker(settings: Optional[Settings] = None) -> EnrichmentWorker:
-    global _ENRICHMENT_WORKER
-    if _ENRICHMENT_WORKER is None:
-        _ENRICHMENT_WORKER = EnrichmentWorker(settings=settings)
-    return _ENRICHMENT_WORKER
+def get_enrichment_worker_pool(settings: Optional[Settings] = None) -> EnrichmentWorkerPool:
+    global _ENRICHMENT_WORKER_POOL
+    if _ENRICHMENT_WORKER_POOL is None:
+        _ENRICHMENT_WORKER_POOL = EnrichmentWorkerPool(settings=settings)
+    return _ENRICHMENT_WORKER_POOL
+
+
+def get_enrichment_worker(settings: Optional[Settings] = None) -> EnrichmentWorkerPool:
+    return get_enrichment_worker_pool(settings=settings)

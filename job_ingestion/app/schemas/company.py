@@ -13,6 +13,7 @@ class CompanyOut(BaseModel):
     board_token: str
     platform_config: Optional[dict[str, Any]] = None
     is_active: bool
+    fetch_tier: int
     requires_review: bool
     active_jobs_count: Optional[int] = None
     consecutive_fetch_failures: int
@@ -27,6 +28,7 @@ class CompanyPatchIn(BaseModel):
     board_token: Optional[str] = None
     platform_config: Optional[dict[str, Any]] = None
     is_active: Optional[bool] = None
+    fetch_tier: Optional[int] = None
 
 
 class CompanyFlagIn(BaseModel):

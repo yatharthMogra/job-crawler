@@ -119,6 +119,7 @@ def _serialize_company(row: Company, active_jobs_count: int | None = None) -> Co
         board_token=row.board_token,
         platform_config=row.platform_config,
         is_active=row.is_active,
+        fetch_tier=row.fetch_tier,
         requires_review=row.requires_review,
         active_jobs_count=active_jobs_count,
         consecutive_fetch_failures=row.consecutive_fetch_failures,

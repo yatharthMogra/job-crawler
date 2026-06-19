@@ -15,6 +15,7 @@ try:
 except ImportError:  # pragma: no cover
     structlog = None
 
+from app.config import get_settings
 from app.exceptions import ConnectorFetchError, ParseError
 from app.ingestion.connectors.base import BaseConnector
 from app.models.company import Company
@@ -22,7 +23,6 @@ from app.models.company import Company
 logger = structlog.get_logger(__name__) if structlog else logging.getLogger(__name__)
 
 MAX_PAGE_SIZE = 20
-DEFAULT_MAX_POSTED_AGE_DAYS = 30
 DEFAULT_WORKDAY_FULL_REFRESH_DAYS = 7
 _JOB_REQ_ID_SUFFIX = re.compile(r"_([^/_]+)$")
 _RELATIVE_POSTED_DAYS = re.compile(r"posted\s+(\d+)\s+days?\s+ago", re.IGNORECASE)
@@ -215,13 +215,8 @@ class WorkdayConnector(BaseConnector):
                 return True
         return False
 
-    def _max_posted_age_days(self, company: Company) -> int:
-        config = self._platform_config(company)
-        value = config.get("max_posted_age_days", DEFAULT_MAX_POSTED_AGE_DAYS)
-        try:
-            return max(1, int(value))
-        except (TypeError, ValueError):
-            return DEFAULT_MAX_POSTED_AGE_DAYS
+    def _max_posted_age_days(self, company: Company) -> int:  # noqa: ARG002
+        return max(1, get_settings().job_max_age_days)
 
     def _stop_pagination_on_stale_tail(self, company: Company) -> bool:
         config = self._platform_config(company)

@@ -23,7 +23,7 @@ log = structlog.get_logger() if structlog else logging.getLogger(__name__)
 
 async def run_active_cleanup(db: AsyncSession) -> dict:
     settings = get_settings()
-    cutoff = datetime.now(timezone.utc) - timedelta(days=settings.active_job_retention_days)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=settings.job_max_age_days)
     batch_size = settings.cleanup_batch_size
     total_deleted = 0
 

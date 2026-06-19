@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from functools import lru_cache
 from pathlib import Path
 
@@ -6,12 +8,15 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/jobingestion"
-    fetch_cadence_hours: int = 6
-    fetch_cadence_minutes: int | None = None
+    fetch_schedule_json: str = ""
+    fetch_cadence_hours: int = 6  # deprecated: replaced by FETCH_SCHEDULE_JSON
+    fetch_cadence_minutes: int | None = None  # deprecated: replaced by FETCH_SCHEDULE_JSON
     max_consecutive_failures_before_alert: int = 3
     consecutive_misses_before_inactive: int = 3
     llm_provider: str = "gemini"
     gemini_api_key: str = ""
+    gemini_api_keys: str = ""
+    enrichment_worker_count: int = 0
     gemini_model: str = "gemini-3.1-flash-lite"
     extraction_version: str = "v6"
     default_extraction_version: str = "v6"
@@ -22,13 +27,14 @@ class Settings(BaseSettings):
     compensation_weight: float = 0.40
     effort_weight: float = 0.20
     alerts_file_path: str = "./alerts.json"
-    fetch_concurrency: int = 10
+    ingestion_stats_file_path: str = "exports/ingestion_stats.json"
+    ingestion_stats_interval_minutes: int = 5
     token_spike_threshold: int = 8000
-    enrichment_micro_batch_size: int = 16
+    enrichment_micro_batch_size: int = 12
     enrichment_window_seconds: int = 45
-    enrichment_max_batches_per_window: int = 20
-    enrichment_max_jobs_per_window: int = 100
-    enrichment_llm_max_rpm: int = 12
+    enrichment_max_batches_per_window: int = 12
+    enrichment_max_jobs_per_window: int = 64
+    enrichment_llm_max_rpm: int = 10
     enrichment_cooldown_seconds: int = 120
     enrichment_max_retries: int = 3
     enrichment_max_input_tokens_per_batch: int = 14000
@@ -37,8 +43,8 @@ class Settings(BaseSettings):
     llm_input_token_cost_per_1k: float = 0.0015
     llm_output_token_cost_per_1k: float = 0.002
     enrichment_stop_on_daily_quota: bool = True
+    job_max_age_days: int = 7
     log_level: str = "INFO"
-    active_job_retention_days: int = 7
     archive_retention_days: int = 100
     cleanup_batch_size: int = 500
     archive_dir: str = "data/archives"
@@ -59,6 +65,10 @@ class Settings(BaseSettings):
         return Path(self.alerts_file_path)
 
     @property
+    def ingestion_stats_path(self) -> Path:
+        return Path(self.ingestion_stats_file_path)
+
+    @property
     def effort_scores(self) -> dict[str, float]:
         return {"LOW": 1.0, "MEDIUM": 0.6, "HIGH": 0.2}
 
@@ -72,11 +82,44 @@ class Settings(BaseSettings):
     def yc_waas_roles_list(self) -> list[str]:
         return [role.strip() for role in self.yc_waas_roles.split(",") if role.strip()]
 
+    def fetch_schedule(self):
+        from app.ingestion.fetch_schedule_config import get_fetch_schedule
 
-def pipeline_interval_kwargs(settings: Settings) -> dict[str, int]:
-    if settings.fetch_cadence_minutes is not None:
-        return {"minutes": settings.fetch_cadence_minutes}
-    return {"hours": settings.fetch_cadence_hours}
+        return get_fetch_schedule(self.fetch_schedule_json)
+
+    def gemini_api_keys_list(self) -> list[str]:
+        if self.gemini_api_keys.strip():
+            keys = [key.strip() for key in self.gemini_api_keys.split(",") if key.strip()]
+            if keys:
+                return keys
+        if self.gemini_api_key.strip():
+            return [self.gemini_api_key.strip()]
+        return []
+
+    def resolved_enrichment_worker_count(self) -> int:
+        keys = self.gemini_api_keys_list()
+        if not keys:
+            return 0
+        count = self.enrichment_worker_count if self.enrichment_worker_count > 0 else len(keys)
+        if count > len(keys):
+            raise ValueError(
+                f"ENRICHMENT_WORKER_COUNT={count} exceeds configured Gemini keys ({len(keys)})"
+            )
+        return count
+
+    def worker_settings(self, gemini_api_key: str) -> Settings:
+        return self.model_copy(
+            update={
+                "gemini_api_key": gemini_api_key,
+                "enrichment_stop_on_daily_quota": False,
+            }
+        )
+
+    def primary_enrichment_settings(self) -> Settings:
+        keys = self.gemini_api_keys_list()
+        if not keys:
+            return self
+        return self.worker_settings(keys[0])
 
 
 @lru_cache(maxsize=1)

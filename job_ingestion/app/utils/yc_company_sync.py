@@ -55,6 +55,7 @@ def _workday_entry(discovery: WorkdayDiscovery, company_name: str) -> dict[str, 
         "company": company_name,
         "platform": "workday",
         "board_token": discovery.board_token,
+        "fetch_tier": 3,
         "platform_config": {
             "tenant": discovery.tenant,
             "instance": discovery.instance,
@@ -87,6 +88,7 @@ async def upsert_discovered_companies(
             platform=platform,
             board_token=board_token,
             is_active=extra.get("is_active", True),
+            fetch_tier=int(extra.get("fetch_tier", 2)),
             requires_review=extra.get("requires_review", False),
             platform_config=extra.get("platform_config"),
         )
@@ -98,6 +100,7 @@ async def upsert_discovered_companies(
                 "company": name,
                 "platform": platform,
                 "board_token": board_token,
+                "fetch_tier": extra.get("fetch_tier", 2),
                 "is_active": company.is_active,
                 **(
                     {"platform_config": company.platform_config}
@@ -124,6 +127,7 @@ async def upsert_discovered_companies(
             platform="workday",
             board_token=discovery.board_token,
             is_active=False,
+            fetch_tier=3,
             requires_review=True,
             platform_config={
                 "tenant": discovery.tenant,

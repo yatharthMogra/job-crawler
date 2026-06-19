@@ -1,0 +1,5 @@
+# Environment files - user-managed secrets; agent should use env example files instead.
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.example.*

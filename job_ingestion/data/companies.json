@@ -7,10 +7,10 @@
       "tenant": "medtronic",
       "instance": "wd1",
       "career_site": "MedtronicCareers",
-      "public_path_prefix": "MedtronicCareers",
-      "max_posted_age_days": 30
+      "public_path_prefix": "MedtronicCareers"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Greenheck Group",
@@ -20,10 +20,10 @@
       "tenant": "greenheckgroup",
       "instance": "wd5",
       "career_site": "external",
-      "public_path_prefix": "en-US/external",
-      "max_posted_age_days": 30
+      "public_path_prefix": "en-US/external"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Boeing",
@@ -33,10 +33,10 @@
       "tenant": "boeing",
       "instance": "wd1",
       "career_site": "external_subsidiary",
-      "public_path_prefix": "en-US/external_subsidiary",
-      "max_posted_age_days": 30
+      "public_path_prefix": "en-US/external_subsidiary"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Salesforce",
@@ -46,10 +46,10 @@
       "tenant": "salesforce",
       "instance": "wd12",
       "career_site": "External_Career_Site",
-      "public_path_prefix": "en-US/External_Career_Site",
-      "max_posted_age_days": 30
+      "public_path_prefix": "en-US/External_Career_Site"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Slack (Salesforce)",
@@ -59,10 +59,10 @@
       "tenant": "salesforce",
       "instance": "wd12",
       "career_site": "Slack",
-      "public_path_prefix": "en-US/Slack",
-      "max_posted_age_days": 30
+      "public_path_prefix": "en-US/Slack"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "RTX",
@@ -73,52 +73,59 @@
       "instance": "wd5",
       "career_site": "rec_rtx_ext_gateway",
       "public_path_prefix": "en-US/rec_rtx_ext_gateway",
-      "max_posted_age_days": 30,
       "stop_pagination_on_stale_tail": true
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Greenhouse",
     "platform": "greenhouse",
     "board_token": "greenhouse",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 1
   },
   {
     "company": "OpenAI",
     "platform": "ashby",
     "board_token": "openai",
-    "is_active": false
+    "is_active": false,
+    "fetch_tier": 2
   },
   {
     "company": "ScaleAI",
     "platform": "greenhouse",
     "board_token": "scaleai",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 1
   },
   {
     "company": "Anthropic",
     "platform": "greenhouse",
     "board_token": "anthropic",
-    "is_active": false
+    "is_active": false,
+    "fetch_tier": 2
   },
   {
     "company": "Notion",
     "platform": "ashby",
     "board_token": "notion",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 1
   },
   {
     "company": "Linear",
     "platform": "ashby",
     "board_token": "linear",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 1
   },
   {
     "company": "Ramp",
     "platform": "ashby",
     "board_token": "ramp",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 1
   },
   {
     "company": "Figma",
@@ -127,7 +134,8 @@
     "platform_config": {
       "careers_url": "https://www.figma.com/careers/"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 1
   },
   {
     "company": "C3.ai",
@@ -137,391 +145,456 @@
       "careers_url": "https://c3.ai/careers/",
       "board_token_override": "c3iot"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Basis",
     "platform": "lever",
     "board_token": "basis",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Achievers",
     "platform": "lever",
     "board_token": "achievers",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Palantir",
     "platform": "lever",
     "board_token": "palantir",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Slate",
     "platform": "lever",
     "board_token": "slate",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Solink",
     "platform": "ashby",
     "board_token": "solink",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Clarity Innovations",
     "platform": "greenhouse",
     "board_token": "clarityinnovates",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "iSpot",
     "platform": "greenhouse",
     "board_token": "ispottv",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "BillionToOne",
     "platform": "greenhouse",
     "board_token": "billiontoone",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "GenBio AI",
     "platform": "lever",
     "board_token": "genbio",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Base Power Company",
     "platform": "ashby",
     "board_token": "base-power",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "PlusAI",
     "platform": "lever",
     "board_token": "plus-2",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "iHerb",
     "platform": "greenhouse",
     "board_token": "iherb",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "MaintainX",
     "platform": "greenhouse",
     "board_token": "maintainx",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Great Question",
     "platform": "ashby",
     "board_token": "greatquestion",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Reply",
     "platform": "lever",
     "board_token": "reply",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Nuclear Promise X",
     "platform": "ashby",
     "board_token": "NPX",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Nash",
     "platform": "ashby",
     "board_token": "Nash",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Podium",
     "platform": "greenhouse",
     "board_token": "podium81",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Docugami",
     "platform": "greenhouse",
     "board_token": "docugami",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Astera Institute",
     "platform": "ashby",
     "board_token": "astera",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Super.com",
     "platform": "ashby",
     "board_token": "super.com",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "EnergyHub",
     "platform": "greenhouse",
     "board_token": "energyhub",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Zus Health",
     "platform": "lever",
     "board_token": "zushealth",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "NewsBreak",
     "platform": "greenhouse",
     "board_token": "newsbreak",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Labelbox",
     "platform": "greenhouse",
     "board_token": "labelbox",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Rainmaker Technology",
     "platform": "lever",
     "board_token": "make-rain",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Kira",
     "platform": "ashby",
     "board_token": "kira",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Axiomatic AI",
     "platform": "greenhouse",
     "board_token": "axiomaticai",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Constant Contact",
     "platform": "greenhouse",
     "board_token": "constantcontact",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Visier",
     "platform": "greenhouse",
     "board_token": "visiersolutionsinc",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "d-Matrix",
     "platform": "ashby",
     "board_token": "d-Matrix",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Gelber Group",
     "platform": "greenhouse",
     "board_token": "gelbergroup",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Mariana Minerals",
     "platform": "ashby",
     "board_token": "marianaminerals",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Context",
     "platform": "ashby",
     "board_token": "context",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "XPENG",
     "platform": "greenhouse",
     "board_token": "xpengmotors",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "GeoComply",
     "platform": "lever",
     "board_token": "geocomply-2",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "EarnIn",
     "platform": "greenhouse",
     "board_token": "earnin",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Lendbuzz",
     "platform": "lever",
     "board_token": "lendbuzz",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Sunwater Capital",
     "platform": "lever",
     "board_token": "sunwatercapital",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "QuEra Computing",
     "platform": "greenhouse",
     "board_token": "queracomputinginc",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Lambda",
     "platform": "ashby",
     "board_token": "lambda",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Prosper",
     "platform": "lever",
     "board_token": "prosper",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "60 Decibels",
     "platform": "greenhouse",
     "board_token": "60decibelsinc",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Voltus",
     "platform": "lever",
     "board_token": "voltus",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Zone 5 Technologies",
     "platform": "greenhouse",
     "board_token": "zone5technologies",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Anterior",
     "platform": "ashby",
     "board_token": "anterior",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Mercedes-Benz R&D North America",
     "platform": "lever",
     "board_token": "MBRDNA",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Per Scholas",
     "platform": "greenhouse",
     "board_token": "perscholashires",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "BrightAI",
     "platform": "greenhouse",
     "board_token": "brightai",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Lila Sciences",
     "platform": "greenhouse",
     "board_token": "lilasciences",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Melotech",
     "platform": "ashby",
     "board_token": "melotech",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Wealth.com",
     "platform": "ashby",
     "board_token": "wealth-com",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Icon",
     "platform": "ashby",
     "board_token": "icon",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Northwood Space",
     "platform": "ashby",
     "board_token": "NorthwoodSpace",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Foxglove",
     "platform": "ashby",
     "board_token": "foxglove",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Torc Robotics",
     "platform": "greenhouse",
     "board_token": "torcrobotics",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "True Anomaly",
     "platform": "greenhouse",
     "board_token": "trueanomalyinc",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "CesiumAstro",
     "platform": "lever",
     "board_token": "CesiumAstro",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Monster Energy",
     "platform": "greenhouse",
     "board_token": "monsterenergy",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Cerebras (Early Talent)",
     "platform": "greenhouse",
     "board_token": "earlytalentcerebras",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Further (Early Career)",
     "platform": "greenhouse",
     "board_token": "furtherearlycareer",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Clara",
     "platform": "greenhouse",
     "board_token": "clara",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Apartment Life",
     "platform": "greenhouse",
     "board_token": "apartmentlife",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Appian",
     "platform": "greenhouse",
     "board_token": "appian",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "American Express",
@@ -529,10 +602,10 @@
     "board_token": "egug",
     "platform_config": {
       "datacenter": "us2",
-      "site_number": "CX_1",
-      "max_posted_age_days": 30
+      "site_number": "CX_1"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "GM Financial",
@@ -540,10 +613,10 @@
     "board_token": "fa-exvu-saasfaprod1",
     "platform_config": {
       "datacenter": "ocs",
-      "site_number": "CX_1",
-      "max_posted_age_days": 30
+      "site_number": "CX_1"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Honeywell",
@@ -551,10 +624,10 @@
     "board_token": "ibqbjb",
     "platform_config": {
       "datacenter": "ocs",
-      "site_number": "Honeywell",
-      "max_posted_age_days": 30
+      "site_number": "Honeywell"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "GCI",
@@ -562,10 +635,10 @@
     "board_token": "edqv",
     "platform_config": {
       "datacenter": "us2",
-      "site_number": "CX",
-      "max_posted_age_days": 30
+      "site_number": "CX"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "VITAS Healthcare",
@@ -573,10 +646,10 @@
     "board_token": "ejrz",
     "platform_config": {
       "datacenter": "us2",
-      "site_number": "CX_5001",
-      "max_posted_age_days": 30
+      "site_number": "CX_5001"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Ultra (UIC Careers)",
@@ -586,10 +659,10 @@
       "tenant": "ultra",
       "instance": "wd3",
       "career_site": "uiccareers",
-      "public_path_prefix": "en-US/uiccareers",
-      "max_posted_age_days": 30
+      "public_path_prefix": "en-US/uiccareers"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Ultra",
@@ -599,10 +672,10 @@
       "tenant": "ultra",
       "instance": "wd3",
       "career_site": "ultra-careers",
-      "public_path_prefix": "en-US/ultra-careers",
-      "max_posted_age_days": 30
+      "public_path_prefix": "en-US/ultra-careers"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Motorola Solutions",
@@ -612,10 +685,10 @@
       "tenant": "motorolasolutions",
       "instance": "wd5",
       "career_site": "Careers",
-      "public_path_prefix": "en-US/Careers",
-      "max_posted_age_days": 30
+      "public_path_prefix": "en-US/Careers"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Intel",
@@ -625,10 +698,10 @@
       "tenant": "intel",
       "instance": "wd1",
       "career_site": "external",
-      "public_path_prefix": "en-US/external",
-      "max_posted_age_days": 30
+      "public_path_prefix": "en-US/external"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Valeo",
@@ -638,10 +711,10 @@
       "tenant": "valeo",
       "instance": "wd3",
       "career_site": "valeo_jobs",
-      "public_path_prefix": "en-US/valeo_jobs",
-      "max_posted_age_days": 30
+      "public_path_prefix": "en-US/valeo_jobs"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Delta Dental of Michigan",
@@ -651,16 +724,17 @@
       "tenant": "rhsc",
       "instance": "wd5",
       "career_site": "delta_dental_of_michigan",
-      "public_path_prefix": "en-US/delta_dental_of_michigan",
-      "max_posted_age_days": 30
+      "public_path_prefix": "en-US/delta_dental_of_michigan"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Pebl",
     "platform": "ashby",
     "board_token": "pebl",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Harris Computer",
@@ -670,22 +744,24 @@
       "tenant": "harriscomputer",
       "instance": "wd3",
       "career_site": "1",
-      "public_path_prefix": "en-US/1",
-      "max_posted_age_days": 30
+      "public_path_prefix": "en-US/1"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "FieldAI",
     "platform": "lever",
     "board_token": "field-ai",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Meshy",
     "platform": "ashby",
     "board_token": "meshy",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Chanel",
@@ -695,22 +771,24 @@
       "tenant": "cc",
       "instance": "wd3",
       "career_site": "ChanelCareers",
-      "public_path_prefix": "en-US/ChanelCareers",
-      "max_posted_age_days": 30
+      "public_path_prefix": "en-US/ChanelCareers"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "TribalScale",
     "platform": "greenhouse",
     "board_token": "tribalscale",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Centerfield",
     "platform": "ashby",
     "board_token": "centerfield",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Nidec",
@@ -720,17 +798,18 @@
       "tenant": "nidec",
       "instance": "wd1",
       "career_site": "nidec",
-      "public_path_prefix": "en-US/nidec",
-      "max_posted_age_days": 30
+      "public_path_prefix": "en-US/nidec"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "SRI International",
     "platform": "icims",
     "board_token": "sri",
     "platform_config": {},
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "GE Vernova",
@@ -741,17 +820,18 @@
       "instance": "wd5",
       "career_site": "Vernova_ExternalSite",
       "public_path_prefix": "Vernova_ExternalSite",
-      "max_posted_age_days": 30,
       "workday_fetch_mode": "incremental",
       "workday_full_refresh_days": 7
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Quadric",
     "platform": "workable",
     "board_token": "quadric-dot-i-o-inc",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Cox",
@@ -761,10 +841,10 @@
       "tenant": "cox",
       "instance": "wd1",
       "career_site": "Cox_External_Career_Site_1",
-      "public_path_prefix": "Cox_External_Career_Site_1",
-      "max_posted_age_days": 30
+      "public_path_prefix": "Cox_External_Career_Site_1"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Applied Materials",
@@ -774,10 +854,10 @@
       "tenant": "amat",
       "instance": "wd1",
       "career_site": "External",
-      "public_path_prefix": "External",
-      "max_posted_age_days": 30
+      "public_path_prefix": "External"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "LexisNexis Risk Solutions",
@@ -787,10 +867,10 @@
       "tenant": "relx",
       "instance": "wd3",
       "career_site": "RiskSolutions",
-      "public_path_prefix": "en-US/RiskSolutions",
-      "max_posted_age_days": 30
+      "public_path_prefix": "en-US/RiskSolutions"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "LivaNova",
@@ -800,10 +880,10 @@
       "tenant": "livanova",
       "instance": "wd5",
       "career_site": "search",
-      "public_path_prefix": "search",
-      "max_posted_age_days": 30
+      "public_path_prefix": "search"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "The Boeing Company",
@@ -813,10 +893,10 @@
       "tenant": "boeing",
       "instance": "wd1",
       "career_site": "EXTERNAL_CAREERS",
-      "public_path_prefix": "EXTERNAL_CAREERS",
-      "max_posted_age_days": 30
+      "public_path_prefix": "EXTERNAL_CAREERS"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "RELX",
@@ -826,10 +906,10 @@
       "tenant": "relx",
       "instance": "wd3",
       "career_site": "relx",
-      "public_path_prefix": "en-US/relx",
-      "max_posted_age_days": 30
+      "public_path_prefix": "en-US/relx"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "The Coca-Cola Company",
@@ -839,10 +919,10 @@
       "tenant": "coke",
       "instance": "wd1",
       "career_site": "coca-cola-careers",
-      "public_path_prefix": "coca-cola-careers",
-      "max_posted_age_days": 30
+      "public_path_prefix": "coca-cola-careers"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Truist Bank",
@@ -852,16 +932,17 @@
       "tenant": "truist",
       "instance": "wd1",
       "career_site": "Careers",
-      "public_path_prefix": "en-US/Careers",
-      "max_posted_age_days": 30
+      "public_path_prefix": "en-US/Careers"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Authorium",
     "platform": "ashby",
     "board_token": "Authorium",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Danaher Corporation",
@@ -871,10 +952,10 @@
       "tenant": "danaher",
       "instance": "wd1",
       "career_site": "DanaherJobs",
-      "public_path_prefix": "DanaherJobs",
-      "max_posted_age_days": 30
+      "public_path_prefix": "DanaherJobs"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Medtronic",
@@ -884,10 +965,10 @@
       "tenant": "medtronic",
       "instance": "wd1",
       "career_site": "redeploymentmedtroniccareers",
-      "public_path_prefix": "redeploymentmedtroniccareers",
-      "max_posted_age_days": 30
+      "public_path_prefix": "redeploymentmedtroniccareers"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "TD Bank",
@@ -897,53 +978,60 @@
       "tenant": "td",
       "instance": "wd3",
       "career_site": "TD_Bank_Careers",
-      "public_path_prefix": "TD_Bank_Careers",
-      "max_posted_age_days": 30
+      "public_path_prefix": "TD_Bank_Careers"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "mthree",
     "platform": "greenhouse",
     "board_token": "mthreerecruitingportal",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Wyetech",
     "platform": "lever",
     "board_token": "wyetechllc",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Epic Kids",
     "platform": "greenhouse",
     "board_token": "epickids",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "General Dynamics Mission Systems",
     "platform": "icims",
     "board_token": "gdms",
     "platform_config": {},
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Captivation",
     "platform": "greenhouse",
     "board_token": "captivation",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Sony Interactive Entertainment",
     "platform": "greenhouse",
     "board_token": "sonyinteractiveentertainmentglobal",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Julius AI",
     "platform": "ashby",
     "board_token": "julius",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Cadence Design Systems",
@@ -953,10 +1041,10 @@
       "tenant": "cadence",
       "instance": "wd1",
       "career_site": "University_Talent",
-      "public_path_prefix": "University_Talent",
-      "max_posted_age_days": 30
+      "public_path_prefix": "University_Talent"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "General Motors",
@@ -966,10 +1054,10 @@
       "tenant": "generalmotors",
       "instance": "wd5",
       "career_site": "Careers_GM",
-      "public_path_prefix": "en-CA/Careers_GM",
-      "max_posted_age_days": 30
+      "public_path_prefix": "en-CA/Careers_GM"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Cadence Design Systems",
@@ -979,10 +1067,10 @@
       "tenant": "cadence",
       "instance": "wd1",
       "career_site": "External_Careers",
-      "public_path_prefix": "External_Careers",
-      "max_posted_age_days": 30
+      "public_path_prefix": "External_Careers"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Cadence Design Systems",
@@ -992,10 +1080,10 @@
       "tenant": "cadence",
       "instance": "wd1",
       "career_site": "Univ_Careers",
-      "public_path_prefix": "Univ_Careers",
-      "max_posted_age_days": 30
+      "public_path_prefix": "Univ_Careers"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "TSC",
@@ -1005,22 +1093,24 @@
       "tenant": "tsc",
       "instance": "wd12",
       "career_site": "TSC-Careers",
-      "public_path_prefix": "en-US/TSC-Careers",
-      "max_posted_age_days": 30
+      "public_path_prefix": "en-US/TSC-Careers"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Glean",
     "platform": "greenhouse",
     "board_token": "gleanwork",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Compa",
     "platform": "ashby",
     "board_token": "compa",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Stewart",
@@ -1030,40 +1120,45 @@
       "tenant": "stewart",
       "instance": "wd1",
       "career_site": "External",
-      "public_path_prefix": "External",
-      "max_posted_age_days": 30
+      "public_path_prefix": "External"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Mirage",
     "platform": "ashby",
     "board_token": "mirage",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Twitch",
     "platform": "greenhouse",
     "board_token": "twitch",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Loop",
     "platform": "greenhouse",
     "board_token": "loop",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Wonderschool",
     "platform": "greenhouse",
     "board_token": "wonderschool",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Anduril",
     "platform": "greenhouse",
     "board_token": "andurilindustries",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Fortinet",
@@ -1071,34 +1166,38 @@
     "board_token": "edel",
     "platform_config": {
       "datacenter": "us2",
-      "site_number": "CX_2001",
-      "max_posted_age_days": 30
+      "site_number": "CX_2001"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Rokt",
     "platform": "workable",
     "board_token": "rokt",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Liquid",
     "platform": "ashby",
     "board_token": "liquid",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Whoop",
     "platform": "lever",
     "board_token": "whoop",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Realm",
     "platform": "ashby",
     "board_token": "realmalliance",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "CACI",
@@ -1108,10 +1207,10 @@
       "tenant": "caci",
       "instance": "wd1",
       "career_site": "external",
-      "public_path_prefix": "en-US/external",
-      "max_posted_age_days": 30
+      "public_path_prefix": "en-US/external"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Leidos",
@@ -1121,10 +1220,10 @@
       "tenant": "leidos",
       "instance": "wd5",
       "career_site": "external",
-      "public_path_prefix": "en-US/external",
-      "max_posted_age_days": 30
+      "public_path_prefix": "en-US/external"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "KBR",
@@ -1134,10 +1233,10 @@
       "tenant": "kbr",
       "instance": "wd5",
       "career_site": "kbr_careers",
-      "public_path_prefix": "en-US/kbr_careers",
-      "max_posted_age_days": 30
+      "public_path_prefix": "en-US/kbr_careers"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Berkshire Hathaway Energy",
@@ -1145,94 +1244,108 @@
     "board_token": "fa-essf-saasfaprod1",
     "platform_config": {
       "datacenter": "ocs",
-      "site_number": "CX_1",
-      "max_posted_age_days": 30
+      "site_number": "CX_1"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Sigma Computing",
     "platform": "greenhouse",
     "board_token": "sigmacomputing",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Aquatic Capital Management",
     "platform": "greenhouse",
     "board_token": "aquaticcapitalmanagement",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Scout AI",
     "platform": "greenhouse",
     "board_token": "scoutai",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Ellipsis Labs",
     "platform": "ashby",
     "board_token": "ellipsislabs",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Freedom Technology Solutions Group",
     "platform": "greenhouse",
     "board_token": "freedomconsulting",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Remodel Health",
     "platform": "greenhouse",
     "board_token": "remodelhealth",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Geneva Trading",
     "platform": "greenhouse",
     "board_token": "genevatrading",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Ivo",
     "platform": "lever",
     "board_token": "ivo",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "N1",
     "platform": "ashby",
     "board_token": "n1",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Orb",
     "platform": "ashby",
     "board_token": "orb",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "PingWind",
     "platform": "lever",
     "board_token": "pingwind",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Northslope Technologies",
     "platform": "ashby",
     "board_token": "northslope-technologies",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Titan",
     "platform": "ashby",
     "board_token": "titan-msp",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Deliveroo",
     "platform": "ashby",
     "board_token": "deliveroo",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Capital One",
@@ -1242,22 +1355,24 @@
       "tenant": "capitalone",
       "instance": "wd12",
       "career_site": "Capital_One",
-      "public_path_prefix": "Capital_One",
-      "max_posted_age_days": 30
+      "public_path_prefix": "Capital_One"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Giga AI",
     "platform": "ashby",
     "board_token": "gigaml",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Baton Corporation",
     "platform": "ashby",
     "board_token": "batoncorporation",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "NOV",
@@ -1265,22 +1380,24 @@
     "board_token": "egay",
     "platform_config": {
       "datacenter": "us6",
-      "site_number": "CX_4001",
-      "max_posted_age_days": 30
+      "site_number": "CX_4001"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "8VC",
     "platform": "ashby",
     "board_token": "8vc",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Perpay",
     "platform": "greenhouse",
     "board_token": "perpay",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Blue Origin",
@@ -1290,40 +1407,45 @@
       "tenant": "blueorigin",
       "instance": "wd5",
       "career_site": "blueorigin",
-      "public_path_prefix": "blueorigin",
-      "max_posted_age_days": 30
+      "public_path_prefix": "blueorigin"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "TrueBuilt",
     "platform": "greenhouse",
     "board_token": "applytotruebuilt",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Uare.ai",
     "platform": "greenhouse",
     "board_token": "uareai",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Lightfield",
     "platform": "ashby",
     "board_token": "Lightfield",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Continue",
     "platform": "ashby",
     "board_token": "continue",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Uncountable",
     "platform": "ashby",
     "board_token": "uncountable",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "NVIDIA",
@@ -1333,10 +1455,10 @@
       "tenant": "nvidia",
       "instance": "wd5",
       "career_site": "NVIDIAExternalCareerSite",
-      "public_path_prefix": "NVIDIAExternalCareerSite",
-      "max_posted_age_days": 30
+      "public_path_prefix": "NVIDIAExternalCareerSite"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "University of Texas at Austin",
@@ -1346,10 +1468,10 @@
       "tenant": "utaustin",
       "instance": "wd1",
       "career_site": "UTstaff",
-      "public_path_prefix": "UTstaff",
-      "max_posted_age_days": 30
+      "public_path_prefix": "UTstaff"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Bonterra",
@@ -1359,10 +1481,10 @@
       "tenant": "bonterra",
       "instance": "wd1",
       "career_site": "bonterratech",
-      "public_path_prefix": "bonterratech",
-      "max_posted_age_days": 30
+      "public_path_prefix": "bonterratech"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "PROS Holdings, Inc.",
@@ -1372,16 +1494,17 @@
       "tenant": "pros",
       "instance": "wd5",
       "career_site": "pros_careers",
-      "public_path_prefix": "pros_careers",
-      "max_posted_age_days": 30
+      "public_path_prefix": "pros_careers"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "LG Ad Solutions",
     "platform": "ashby",
     "board_token": "lgads",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Bank of Montreal",
@@ -1391,10 +1514,10 @@
       "tenant": "bmo",
       "instance": "wd3",
       "career_site": "External",
-      "public_path_prefix": "External",
-      "max_posted_age_days": 30
+      "public_path_prefix": "External"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Bank of Montreal",
@@ -1404,37 +1527,41 @@
       "tenant": "bmo",
       "instance": "wd3",
       "career_site": "Campus",
-      "public_path_prefix": "Campus",
-      "max_posted_age_days": 30
+      "public_path_prefix": "Campus"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Peraton",
     "platform": "icims",
     "board_token": "peraton",
     "platform_config": {},
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "ClimateAI",
     "platform": "greenhouse",
     "board_token": "climateai",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "AMERICAN SYSTEMS",
     "platform": "icims",
     "board_token": "americansystems",
     "platform_config": {},
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "LMI",
     "platform": "icims",
     "board_token": "lmi",
     "platform_config": {},
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Travelers",
@@ -1444,16 +1571,17 @@
       "tenant": "travelers",
       "instance": "wd5",
       "career_site": "External",
-      "public_path_prefix": "External",
-      "max_posted_age_days": 30
+      "public_path_prefix": "External"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "dv01",
     "platform": "greenhouse",
     "board_token": "dv01",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "University of Arkansas",
@@ -1463,40 +1591,45 @@
       "tenant": "uasys",
       "instance": "wd5",
       "career_site": "uasys",
-      "public_path_prefix": "uasys",
-      "max_posted_age_days": 30
+      "public_path_prefix": "uasys"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "SentiLink",
     "platform": "ashby",
     "board_token": "sentilink",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Latitude",
     "platform": "lever",
     "board_token": "latitudeinc",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Parallel Web Systems",
     "platform": "ashby",
     "board_token": "parallel",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Artefact",
     "platform": "greenhouse",
     "board_token": "artefactus",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Brain Co.",
     "platform": "ashby",
     "board_token": "brainco",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Manulife Financial",
@@ -1506,23 +1639,25 @@
       "tenant": "manulife",
       "instance": "wd3",
       "career_site": "MFCJH_Jobs",
-      "public_path_prefix": "en-US/MFCJH_Jobs",
-      "max_posted_age_days": 30
+      "public_path_prefix": "en-US/MFCJH_Jobs"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "TransMarket Group",
     "platform": "greenhouse",
     "board_token": "transmarketgroup",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Susquehanna International Group (SIG)",
     "platform": "icims",
     "board_token": "sig",
     "platform_config": {},
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Northrop Grumman",
@@ -1532,16 +1667,17 @@
       "tenant": "ngc",
       "instance": "wd1",
       "career_site": "Northrop_Grumman_External_Site",
-      "public_path_prefix": "Northrop_Grumman_External_Site",
-      "max_posted_age_days": 30
+      "public_path_prefix": "Northrop_Grumman_External_Site"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "SpaceX",
     "platform": "greenhouse",
     "board_token": "spacex",
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 2
   },
   {
     "company": "Micron Technology",
@@ -1551,10 +1687,10 @@
       "tenant": "micron",
       "instance": "wd1",
       "career_site": "External",
-      "public_path_prefix": "External",
-      "max_posted_age_days": 30
+      "public_path_prefix": "External"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Dexcom",
@@ -1564,10 +1700,10 @@
       "tenant": "dexcom",
       "instance": "wd1",
       "career_site": "Dexcom",
-      "public_path_prefix": "Dexcom",
-      "max_posted_age_days": 30
+      "public_path_prefix": "Dexcom"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "GlobalFoundries",
@@ -1577,10 +1713,10 @@
       "tenant": "globalfoundries",
       "instance": "wd1",
       "career_site": "External",
-      "public_path_prefix": "External",
-      "max_posted_age_days": 30
+      "public_path_prefix": "External"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Ciena",
@@ -1590,10 +1726,10 @@
       "tenant": "ciena",
       "instance": "wd5",
       "career_site": "Careers",
-      "public_path_prefix": "Careers",
-      "max_posted_age_days": 30
+      "public_path_prefix": "Careers"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Life Fitness",
@@ -1603,18 +1739,21 @@
       "tenant": "lifefitness",
       "instance": "wd1",
       "career_site": "searchLFN",
-      "public_path_prefix": "searchLFN",
-      "max_posted_age_days": 30
+      "public_path_prefix": "searchLFN"
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 3
   },
   {
     "company": "Work at a Startup (YC)",
     "platform": "workatastartup",
     "board_token": "yc-global",
     "platform_config": {
-      "company_slugs": ["firecrawl"]
+      "company_slugs": [
+        "firecrawl"
+      ]
     },
-    "is_active": true
+    "is_active": true,
+    "fetch_tier": 1
   }
 ]

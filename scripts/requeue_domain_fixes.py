@@ -19,10 +19,9 @@ os.chdir(JOB_INGESTION)
 
 from sqlalchemy import text
 
-from app.config import get_settings
 from app.database import AsyncSessionLocal
 from app.ingestion.constants import ProcessingState
-from app.ingestion.enrichment_worker import process_enrichment_window, queue_job_for_enrichment
+from app.ingestion.enrichment_worker import get_enrichment_worker, queue_job_for_enrichment
 from app.models.normalized_job import NormalizedJob
 
 PRESET_QUERIES = {
@@ -162,31 +161,12 @@ async def requeue(job_ids: list[UUID], source: str) -> int:
     return requeued
 
 
-async def drain(max_windows: int) -> int:
-    settings = get_settings()
-    processed = 0
-    for _ in range(max_windows):
-        async with AsyncSessionLocal() as db:
-            count, _ = await process_enrichment_window(db, settings=settings)
-            await db.commit()
-        if count == 0:
-            break
-        processed += count
-    return processed
-
-
 async def main() -> None:
     parser = argparse.ArgumentParser(description="Re-queue jobs for domain fix presets")
     parser.add_argument("--preset", choices=ALL_PRESETS, action="append")
     parser.add_argument("--all", action="store_true", help="Run all presets 2a–2c and 3a–3h")
     parser.add_argument("--tier1", action="store_true", help="Run tier-1 pool fix presets 3a–3h")
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument(
-        "--drain",
-        action="store_true",
-        help="Drain enrichment queue after requeue (prefer: parallel_gemini_drain_today.py --launch-all)",
-    )
-    parser.add_argument("--max-windows", type=int, default=500)
     args = parser.parse_args()
 
     if args.preset:
@@ -214,11 +194,8 @@ async def main() -> None:
     else:
         source = "domain_fix_batch"
     requeued = await requeue(job_ids, source=source)
-    print(f"requeued {requeued} jobs")
-
-    if args.drain:
-        processed = await drain(args.max_windows)
-        print(f"drained {processed} jobs via enrichment worker")
+    get_enrichment_worker().wake()
+    print(f"requeued {requeued} jobs (job_ingestion worker pool will drain the queue)")
 
 
 if __name__ == "__main__":

@@ -20,6 +20,7 @@ class Company(Base):
     board_token: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
     platform_config: Mapped[Optional[dict[str, Any]]] = mapped_column(JSONB, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    fetch_tier: Mapped[int] = mapped_column(Integer, nullable=False, default=2)
     requires_review: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     flagged_for_review_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     consecutive_fetch_failures: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

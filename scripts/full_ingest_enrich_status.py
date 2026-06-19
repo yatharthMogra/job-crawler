@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Status report for full ingest + parallel Gemini enrichment."""
+"""Status report for ingest + enrichment (job_ingestion service)."""
 
 from __future__ import annotations
 
@@ -18,16 +18,16 @@ from sqlalchemy import text
 from app.database import AsyncSessionLocal
 
 
-def _worker_pids() -> list[str]:
+def _service_running() -> bool:
     try:
         out = subprocess.check_output(
-            ["pgrep", "-fl", "parallel_gemini_drain_today.py"],
+            ["pgrep", "-fl", "uvicorn"],
             text=True,
             stderr=subprocess.DEVNULL,
         )
     except subprocess.CalledProcessError:
-        return []
-    return [line.strip() for line in out.splitlines() if "--worker-id" in line]
+        return False
+    return "app.main:app" in out or "job_ingestion" in out
 
 
 def _pipeline_running() -> bool:
@@ -40,11 +40,11 @@ def _pipeline_running() -> bool:
 
 async def main() -> None:
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-    print(f"=== Full ingest + enrich status @ {now} ===")
+    print(f"=== Ingest + enrich status @ {now} ===")
 
     pipeline = _pipeline_running()
-    workers = _worker_pids()
-    print(f"pipeline_running={pipeline} parallel_workers={len(workers)}")
+    service = _service_running()
+    print(f"pipeline_running={pipeline} job_ingestion_service={service}")
 
     async with AsyncSessionLocal() as db:
         companies = (

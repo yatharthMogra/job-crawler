@@ -6,20 +6,35 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from app.archival.active_cleanup import run_active_cleanup
 from app.archival.archive_cleanup import run_archive_cleanup
-from app.config import Settings, get_settings, pipeline_interval_kwargs
+from app.config import Settings, get_settings
 from app.database import AsyncSessionLocal
 from app.ingestion.constants import EventCategory, EventSeverity, EventType
 from app.ingestion.events import write_event
+from app.ingestion.fetch_schedule import select_waas_companies
 from app.ingestion.pipeline import run_pipeline
 
 
 def build_scheduler(settings: Optional[Settings] = None) -> AsyncIOScheduler:
     settings = settings or get_settings()
+    schedule = settings.fetch_schedule()
     scheduler = AsyncIOScheduler()
 
-    async def scheduled_pipeline() -> None:
+    async def scheduled_fetch_tick() -> None:
         async with AsyncSessionLocal() as db:
             await run_pipeline(db=db, run_type="scheduled", settings=settings)
+
+    async def scheduled_waas_fetch() -> None:
+        async with AsyncSessionLocal() as db:
+            company_ids = await select_waas_companies(db)
+            if not company_ids:
+                return
+            await run_pipeline(
+                db=db,
+                run_type="scheduled_waas",
+                settings=settings,
+                company_ids=company_ids,
+                schedule_metadata={"waas_dedicated": True, "companies_selected": len(company_ids)},
+            )
 
     async def run_active_cleanup_job() -> None:
         async with AsyncSessionLocal() as db:
@@ -44,15 +59,39 @@ def build_scheduler(settings: Optional[Settings] = None) -> AsyncIOScheduler:
 
         await _run_yc_health()
 
+    async def publish_stats_job() -> None:
+        from app.ingestion.stats_publisher import publish_ops_stats_standalone
+
+        await publish_ops_stats_standalone(settings=settings, trigger="scheduled")
+
     scheduler.add_job(
-        scheduled_pipeline,
+        publish_stats_job,
         trigger="interval",
-        **pipeline_interval_kwargs(settings),
-        id="pipeline-runner",
+        minutes=settings.ingestion_stats_interval_minutes,
+        id="ops-stats",
         max_instances=1,
         coalesce=True,
         replace_existing=True,
     )
+    scheduler.add_job(
+        scheduled_fetch_tick,
+        trigger="interval",
+        minutes=schedule.tick_minutes,
+        id="fetch-tick",
+        max_instances=1,
+        coalesce=True,
+        replace_existing=True,
+    )
+    if schedule.waas.dedicated_job:
+        scheduler.add_job(
+            scheduled_waas_fetch,
+            trigger="interval",
+            minutes=schedule.waas.interval_minutes,
+            id="waas-fetch",
+            max_instances=1,
+            coalesce=True,
+            replace_existing=True,
+        )
     scheduler.add_job(
         run_active_cleanup_job,
         trigger="cron",

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Seed companies, fetch jobs for a subset, and drain enrichment with quota-safe stop."""
+"""Seed companies and fetch jobs for a subset. Enrichment is handled by job_ingestion."""
 
 from __future__ import annotations
 
@@ -9,7 +9,6 @@ import json
 import os
 import socket
 import sys
-import time
 from pathlib import Path
 
 import httpx
@@ -23,11 +22,6 @@ from sqlalchemy import text
 
 from app.config import Settings
 from app.database import AsyncSessionLocal
-from app.ingestion.enrichment_worker import (
-    clear_quota_pause,
-    is_quota_paused,
-    process_enrichment_window,
-)
 from app.utils.seed import seed_companies
 
 API_BASE = "http://localhost:8000"
@@ -95,9 +89,10 @@ async def _stats() -> dict:
                     FROM normalized_jobs
                     WHERE is_active
                       AND processing_state = 'success'
-                      AND posted_at >= NOW() - INTERVAL '60 days'
+                      AND posted_at >= NOW() - make_interval(days => :job_max_age_days)
                     """
-                )
+                ),
+                {"job_max_age_days": Settings().job_max_age_days},
             )
         ).one()
         return {
@@ -212,79 +207,6 @@ async def company_enrichment_status(board_token: str) -> dict:
         return {**dict(row._mapping), "queue": {r.status: r.jobs for r in queue}}
 
 
-async def run_worker_until_drained(
-    settings: Settings,
-    *,
-    timeout_s: int,
-    poll_s: float,
-    board_token: str | None = None,
-) -> dict:
-    start = time.monotonic()
-    last: dict | None = None
-
-    while time.monotonic() - start < timeout_s:
-        if is_quota_paused():
-            row = await _stats()
-            row["quota_paused"] = True
-            return row
-
-        processed = 0
-        batches = 0
-        try:
-            async with AsyncSessionLocal() as db:
-                processed, batches = await process_enrichment_window(db=db, settings=settings)
-        except Exception as exc:
-            if "deadlock" in str(exc).lower():
-                print(json.dumps({"event": "deadlock_retry", "message": str(exc)[:200]}), flush=True)
-                await asyncio.sleep(2)
-                continue
-            raise
-
-        row = await _stats()
-        if row != last:
-            print(
-                json.dumps(
-                    {
-                        "event": "progress",
-                        **row,
-                        "last_window_jobs": processed,
-                        "last_window_batches": batches,
-                    },
-                    default=str,
-                ),
-                flush=True,
-            )
-            last = row
-
-        if row["queue"].get("quota_blocked", 0) > 0:
-            row["quota_paused"] = True
-            return row
-
-        if board_token is not None:
-            pending = await company_queue_pending(board_token)
-            if pending == 0:
-                row["company"] = board_token
-                row["company_status"] = await company_enrichment_status(board_token)
-                return row
-        else:
-            pending = (
-                row["queue"].get("queued", 0)
-                + row["queue"].get("in_progress", 0)
-                + row["queue"].get("cooldown", 0)
-            )
-            if pending == 0:
-                return row
-
-        if processed > 0:
-            await asyncio.sleep(settings.enrichment_window_seconds)
-        elif row["queue"].get("cooldown", 0) > 0:
-            await asyncio.sleep(max(poll_s, settings.enrichment_cooldown_seconds / 4))
-        else:
-            await asyncio.sleep(poll_s)
-
-    raise TimeoutError(f"Enrichment timed out: {last}")
-
-
 async def trigger_pipeline(settings: Settings) -> dict:
     if _port_open("127.0.0.1", 8000):
         async with httpx.AsyncClient(timeout=600.0) as client:
@@ -303,7 +225,6 @@ async def process_company_sequential(
     board_token: str,
     settings: Settings,
     *,
-    timeout_s: int,
     ashby_cooldown_s: float,
 ) -> dict:
     payload = json.loads(COMPANIES_JSON.read_text(encoding="utf-8"))
@@ -332,17 +253,11 @@ async def process_company_sequential(
                 "status": "fetch_failed",
             }
 
-    final = await run_worker_until_drained(
-        settings,
-        timeout_s=timeout_s,
-        poll_s=5.0,
-        board_token=board_token,
-    )
     result = {
         "board_token": board_token,
         "pipeline": pipeline,
-        "enrichment": final.get("company_status") or await company_enrichment_status(board_token),
-        "status": "quota_paused" if final.get("quota_paused") else "completed",
+        "enrichment": company_after_fetch,
+        "status": "queued_for_enrichment",
     }
     print(json.dumps({"event": "company_done", **result}, default=str), flush=True)
 
@@ -353,38 +268,23 @@ async def process_company_sequential(
     return result
 
 
-def _quota_message(stats: dict) -> str:
-    queue = stats.get("queue", {})
-    blocked = queue.get("quota_blocked", 0)
-    pending = queue.get("queued", 0) + queue.get("cooldown", 0)
-    return (
-        "GEMINI DAILY QUOTA REACHED — enrichment paused.\n"
-        f"quota_blocked={blocked}, still pending={pending}.\n"
-        "Swap GEMINI_API_KEY or GEMINI_MODEL in job_ingestion/.env, restart job_ingestion, then:\n"
-        "  python scripts/fetch_all_companies.py --drain-only"
-    )
-
-
 async def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--limit", type=int, default=29, help="Number of companies to fetch (default: half of 58)")
     parser.add_argument("--half", action="store_true", help="Fetch half of active companies in companies.json")
-    parser.add_argument("--drain-only", action="store_true", help="Skip seed/fetch; only drain enrichment queue")
     parser.add_argument(
         "--tokens",
         nargs="+",
-        help="Fetch specific board tokens sequentially (fetch + enrich each before next)",
+        help="Fetch specific board tokens sequentially (enrichment handled by job_ingestion)",
     )
     parser.add_argument("--ashby-cooldown-s", type=float, default=45.0)
     parser.add_argument("--dry-run", action="store_true", help="Show selected companies and stats only")
-    parser.add_argument("--timeout-s", type=int, default=14400)
     args = parser.parse_args()
 
     payload = json.loads(COMPANIES_JSON.read_text(encoding="utf-8"))
     active_count = sum(1 for item in payload if item.get("is_active", True))
     limit = max(1, active_count // 2) if args.half else args.limit
 
-    clear_quota_pause()
     settings = Settings()
     if args.tokens:
         selected = args.tokens
@@ -416,70 +316,49 @@ async def main() -> None:
         "before": before,
     }
 
-    if args.tokens and not args.drain_only:
+    if args.tokens:
         company_results: list[dict] = []
         for token in selected:
-            try:
-                company_results.append(
-                    await process_company_sequential(
-                        token,
-                        settings,
-                        timeout_s=args.timeout_s,
-                        ashby_cooldown_s=args.ashby_cooldown_s,
-                    )
+            company_results.append(
+                await process_company_sequential(
+                    token,
+                    settings,
+                    ashby_cooldown_s=args.ashby_cooldown_s,
                 )
-            except TimeoutError as exc:
-                company_results.append({"board_token": token, "status": "timeout", "error": str(exc)})
-            if is_quota_paused() or any(r.get("status") == "quota_paused" for r in company_results):
-                break
+            )
         report["companies"] = company_results
         report["after"] = await _stats()
         REPORT_PATH.parent.mkdir(exist_ok=True)
         REPORT_PATH.write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
         print(json.dumps({"event": "final", **report["after"]}, default=str), flush=True)
         print(f"wrote {REPORT_PATH}", flush=True)
-        if any(r.get("status") in {"fetch_failed", "quota_paused", "timeout"} for r in company_results):
-            failed = [r for r in company_results if r.get("status") != "completed"]
+        if any(r.get("status") == "fetch_failed" for r in company_results):
+            failed = [r for r in company_results if r.get("status") != "queued_for_enrichment"]
             print(json.dumps({"event": "partial_failure", "failed": failed}, default=str), flush=True)
-            raise SystemExit(1 if not any(r.get("status") == "quota_paused" for r in company_results) else 2)
+            raise SystemExit(1)
         return
 
-    if not args.drain_only:
-        seed_result = await restore_companies_from_json()
-        print(json.dumps({"event": "seed", **seed_result}), flush=True)
+    seed_result = await restore_companies_from_json()
+    print(json.dumps({"event": "seed", **seed_result}), flush=True)
 
-        await set_fetch_scope(set(selected))
-        async with AsyncSessionLocal() as db:
-            active_for_fetch = await db.scalar(text("SELECT COUNT(*) FROM companies WHERE is_active"))
+    await set_fetch_scope(set(selected))
+    async with AsyncSessionLocal() as db:
+        active_for_fetch = await db.scalar(text("SELECT COUNT(*) FROM companies WHERE is_active"))
 
-        print(json.dumps({"event": "fetch_scope", "active_companies": active_for_fetch}), flush=True)
+    print(json.dumps({"event": "fetch_scope", "active_companies": active_for_fetch}), flush=True)
 
-        pipeline = await trigger_pipeline(settings)
-        print(json.dumps({"event": "pipeline", **pipeline}, default=str), flush=True)
-        report["pipeline"] = pipeline
+    pipeline = await trigger_pipeline(settings)
+    print(json.dumps({"event": "pipeline", **pipeline}, default=str), flush=True)
+    report["pipeline"] = pipeline
 
-        restored = await restore_companies_from_json()
-        print(json.dumps({"event": "restore_active_flags", **restored}), flush=True)
+    restored = await restore_companies_from_json()
+    print(json.dumps({"event": "restore_active_flags", **restored}), flush=True)
 
-    try:
-        final = await run_worker_until_drained(settings, timeout_s=args.timeout_s, poll_s=5.0)
-        report["after"] = final
-        print(json.dumps({"event": "final", **final}, default=str), flush=True)
-
-        if final.get("quota_paused") or final.get("queue", {}).get("quota_blocked", 0) > 0:
-            print(_quota_message(final), flush=True)
-            REPORT_PATH.parent.mkdir(exist_ok=True)
-            REPORT_PATH.write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
-            raise SystemExit(2)
-
-        REPORT_PATH.parent.mkdir(exist_ok=True)
-        REPORT_PATH.write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
-        print(f"wrote {REPORT_PATH}", flush=True)
-    except TimeoutError as exc:
-        report["error"] = str(exc)
-        REPORT_PATH.parent.mkdir(exist_ok=True)
-        REPORT_PATH.write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
-        raise
+    report["after"] = await _stats()
+    print(json.dumps({"event": "final", **report["after"]}, default=str), flush=True)
+    REPORT_PATH.parent.mkdir(exist_ok=True)
+    REPORT_PATH.write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+    print(f"wrote {REPORT_PATH}", flush=True)
 
 
 if __name__ == "__main__":
