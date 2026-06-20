@@ -13,7 +13,6 @@ const TABS = [
   { href: "/jobs/recommended", label: "Recommended" },
   { href: "/jobs/liked", label: "Liked" },
   { href: "/jobs/applied", label: "Applied" },
-  { href: "/jobs/all", label: "All Jobs" },
 ]
 
 interface JobsHeaderProps {
@@ -28,7 +27,7 @@ function tabLabel(pathname: string) {
 
 export function JobsHeader({ search, onSearchChange }: JobsHeaderProps) {
   const pathname = usePathname()
-  const { savedIds, appliedIds, appliedJobs, filters, clearFilter } = useJobs()
+  const { savedIds, appliedIds, filters, clearFilter } = useJobs()
 
   const activeChips: { label: string; onRemove: () => void }[] = []
   if (filters.role) activeChips.push({ label: filters.role, onRemove: () => clearFilter("role") })
@@ -67,7 +66,7 @@ export function JobsHeader({ search, onSearchChange }: JobsHeaderProps) {
             tab.label === "Liked"
               ? savedIds.size
               : tab.label === "Applied"
-                ? appliedJobs.length || appliedIds.size
+                ? appliedIds.size
                 : null
           return (
             <Link
@@ -100,9 +99,6 @@ export function JobsHeader({ search, onSearchChange }: JobsHeaderProps) {
             All Filters
           </Button>
         </Link>
-        <Button size="sm" variant="outline" className="h-8 border-add/40 text-add-foreground">
-          Hidden Jobs
-        </Button>
       </div>
     </div>
   )

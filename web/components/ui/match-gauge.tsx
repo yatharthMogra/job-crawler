@@ -34,27 +34,27 @@ function MatchRing({
   sidebar?: boolean
 }) {
   const pct = Math.round(Math.min(1, Math.max(0, score)) * 100)
-  const size = sidebar ? 56 : 72
-  const radius = sidebar ? 22 : 28
-  const strokeWidth = sidebar ? 4 : 5
+  const size = sidebar ? 92 : 72
+  const radius = sidebar ? 36 : 28
+  const strokeWidth = sidebar ? 5 : 5
   const circumference = 2 * Math.PI * radius
   const offset = circumference - (pct / 100) * circumference
   const label = matchLabel(score)
 
   const ringClass = sidebar
     ? score >= 0.85
-      ? "stroke-emerald-400"
+      ? "stroke-teal-300"
       : score >= 0.75
-        ? "stroke-sky-400"
-        : "stroke-white/50"
+        ? "stroke-teal-400"
+        : "stroke-teal-500/55"
     : ringColor(score)
 
   const textClass = sidebar
     ? score >= 0.85
-      ? "text-emerald-300"
+      ? "text-teal-200"
       : score >= 0.75
-        ? "text-sky-300"
-        : "text-white/80"
+        ? "text-teal-300"
+        : "text-teal-400/90"
     : ringColor(score).split(" ")[0]
 
   return (
@@ -82,10 +82,14 @@ function MatchRing({
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={cn("text-sm font-bold tabular-nums", textClass)}>{pct}%</span>
+          <span className={cn(sidebar ? "text-xl sm:text-2xl" : "text-sm", "font-bold tabular-nums", textClass)}>
+            {pct}%
+          </span>
         </div>
       </div>
-      <span className={cn("text-[9px] font-bold tracking-wider", textClass)}>{label}</span>
+      <span className={cn("font-bold tracking-wider", sidebar ? "text-[10px]" : "text-[9px]", textClass)}>
+        {label}
+      </span>
     </div>
   )
 }

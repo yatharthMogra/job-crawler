@@ -6,32 +6,30 @@ import {
   Bookmark,
   Briefcase,
   Building2,
+  Check,
+  CheckCircle2,
   DollarSign,
   ExternalLink,
+  Flag,
   GraduationCap,
   MapPin,
-  Zap,
+  Sparkles,
+  ThumbsDown,
 } from "lucide-react"
 import { useJobs } from "@/components/jobs-provider"
 import { CompanyLogo } from "@/components/company-logo"
 import { MatchGauge } from "@/components/ui/match-gauge"
-import { JobActionsMenu } from "@/components/jobs/job-actions-menu"
 import { NotInterestedDialog, ReportIssueDialog } from "@/components/jobs/job-feedback-dialogs"
 import { EMP_LABEL, REMOTE_LABEL, SENIORITY_LABEL } from "@/lib/job-meta"
 import { timeAgo, formatSalary, type JobWithRole } from "@/lib/jobs-data"
 import { cn } from "@/lib/utils"
-
-const EFFORT_LABEL = {
-  LOW: "Low effort apply",
-  MEDIUM: "Medium effort",
-  HIGH: "High effort",
-} as const
 
 interface JobCardProps {
   job: JobWithRole
   showMatch?: boolean
   showRecommendation?: boolean
   featured?: boolean
+  cardMode?: "default" | "applied"
 }
 
 function MetaItem({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
@@ -43,10 +41,47 @@ function MetaItem({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
   )
 }
 
+function WhyThisFitsColumn({ items, className }: { items: string[]; className?: string }) {
+  if (items.length === 0) return null
+
+  return (
+    <div
+      className={cn(
+        "relative flex shrink-0 flex-col justify-center overflow-hidden border-l border-add/25 px-3.5 py-4",
+        "bg-gradient-to-b from-add-muted via-add-muted/80 to-emerald-50/40",
+        "before:absolute before:inset-y-3 before:left-0 before:w-0.5 before:rounded-full before:bg-add/70",
+        className,
+      )}
+    >
+      <div className="flex items-center gap-1.5">
+        <span className="inline-flex size-5 items-center justify-center rounded-full bg-white/80 shadow-sm ring-1 ring-add/20">
+          <Sparkles className="size-3 text-add" aria-hidden="true" />
+        </span>
+        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-add-foreground">
+          Why this fits
+        </p>
+      </div>
+
+      <ul className="mt-3 flex flex-col gap-2">
+        {items.map((item) => (
+          <li
+            key={item}
+            className="flex items-start gap-1.5 rounded-lg border border-add/15 bg-white/75 px-2 py-1.5 shadow-sm backdrop-blur-[1px]"
+          >
+            <Check className="mt-0.5 size-3 shrink-0 text-add" aria-hidden="true" />
+            <span className="text-[11px] font-medium leading-snug text-add-foreground">{item}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 export function JobCard({
   job,
   showMatch = false,
   featured = false,
+  cardMode = "default",
 }: JobCardProps) {
   const {
     toggleSave,
@@ -62,8 +97,12 @@ export function JobCard({
 
   const salary = formatSalary(job.salary_min, job.salary_max)
   const selected = selectedJobId === job.id
+  const isApplied = cardMode === "applied" || job.is_applied
   const isStrongMatch = job.personal_score >= 0.85
-  const matchHints = job.match_reasons.slice(0, 3).join(" · ")
+  const whyFitItems =
+    job.match_reasons.length > 0
+      ? job.match_reasons.slice(0, 3)
+      : job.skills.slice(0, 3)
 
   function stop(e: React.MouseEvent) {
     e.stopPropagation()
@@ -79,64 +118,98 @@ export function JobCard({
           featured && "border-primary/25",
         )}
       >
-        <div className="flex">
-          <div className="flex min-w-0 flex-1 gap-3.5 p-3.5 sm:gap-4 sm:p-4">
+        <div className="flex min-h-[160px]">
+          <div className="flex min-w-0 flex-1 gap-3.5 p-4 sm:gap-4">
             <div className="flex w-12 shrink-0 items-start justify-center pt-0.5 sm:w-14">
-              <CompanyLogo company={job.company} size={48} />
+              <CompanyLogo company={job.company} size={52} />
             </div>
 
-            <div className="min-w-0 flex-1">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                  <span className="rounded-full bg-add-muted px-2.5 py-0.5 text-xs font-semibold text-add-foreground">
-                    {timeAgo(job.posted_at)}
+            <div className="flex min-w-0 flex-1 flex-col">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="rounded-full bg-add-muted px-2.5 py-0.5 text-xs font-semibold text-add-foreground">
+                  {timeAgo(job.posted_at)}
+                </span>
+                {isStrongMatch ? (
+                  <span className="rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-semibold text-sky-800 dark:bg-sky-950 dark:text-sky-200">
+                    Early applicant
                   </span>
-                  {isStrongMatch ? (
-                    <span className="rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-semibold text-sky-800 dark:bg-sky-950 dark:text-sky-200">
-                      Early applicant
-                    </span>
-                  ) : null}
-                  {job.roleCategory ? (
-                    <span className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-semibold text-accent-foreground">
-                      {job.roleCategory}
-                    </span>
-                  ) : null}
-                </div>
-                <JobActionsMenu
-                  isApplied={job.is_applied}
-                  onApplied={() => markApplied(job.id)}
-                  onNotInterested={() => setNotInterestedOpen(true)}
-                  onReportIssue={() => setReportOpen(true)}
-                />
+                ) : null}
+                {job.roleCategory ? (
+                  <span className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-semibold text-accent-foreground">
+                    {job.roleCategory}
+                  </span>
+                ) : null}
               </div>
 
               <h3 className="mt-1.5 line-clamp-2 text-base font-semibold leading-snug text-foreground group-hover:text-primary">
                 {job.title}
               </h3>
-              <p className="mt-1 truncate text-sm text-primary">
+              <p className="mt-0.5 truncate text-sm text-muted-foreground">
                 {job.company}
                 {job.skills.length > 0 ? (
-                  <span className="font-normal text-muted-foreground">
-                    {" "}
-                    · {job.skills.slice(0, 3).join(" · ")}
-                  </span>
+                  <span> · {job.skills.slice(0, 3).join(" · ")}</span>
                 ) : null}
               </p>
 
-              <div className="mt-2.5 grid grid-cols-2 gap-x-5 gap-y-2 sm:grid-cols-3">
+              <div className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
                 <MetaItem icon={MapPin} label={job.location} />
                 <MetaItem icon={Briefcase} label={EMP_LABEL[job.employment_type]} />
                 <MetaItem icon={DollarSign} label={salary ?? "Competitive"} />
                 <MetaItem icon={Building2} label={REMOTE_LABEL[job.remote_type]} />
                 <MetaItem icon={GraduationCap} label={SENIORITY_LABEL[job.seniority_level]} />
-                <MetaItem icon={Zap} label={EFFORT_LABEL[job.application_effort]} />
               </div>
 
-              <div className="mt-2.5 flex items-center justify-between gap-3 border-t border-border/50 pt-2.5">
-                <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
-                  {matchHints || job.recommendation_reason}
-                </p>
-                <div className="flex shrink-0 items-center gap-1.5">
+              {!showMatch ? (
+                <WhyThisFitsColumn
+                  items={whyFitItems}
+                  className="mt-3 rounded-xl border border-add/20 sm:hidden"
+                />
+              ) : null}
+
+              <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-border/50 pt-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    disabled={isApplied}
+                    onClick={(e) => {
+                      stop(e)
+                      if (!isApplied) markApplied(job.id)
+                    }}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 text-xs font-medium transition-colors",
+                      isApplied
+                        ? "cursor-default text-add-foreground"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <CheckCircle2 className="size-3.5" />
+                    {isApplied ? "Already applied" : "Mark as applied"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      stop(e)
+                      setNotInterestedOpen(true)
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    <ThumbsDown className="size-3.5" />
+                    Not interested
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      stop(e)
+                      setReportOpen(true)
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    <Flag className="size-3.5" />
+                    Report issue
+                  </button>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-2">
                   <button
                     type="button"
                     onClick={(e) => {
@@ -144,45 +217,56 @@ export function JobCard({
                       toggleSave(job.id)
                     }}
                     className={cn(
-                      "inline-flex size-8 items-center justify-center rounded-lg border transition-colors",
+                      "inline-flex size-10 items-center justify-center rounded-lg border transition-colors",
                       job.is_saved
                         ? "border-primary/30 bg-accent text-primary"
                         : "border-border text-muted-foreground hover:border-primary/30 hover:text-primary",
                     )}
                     aria-label={job.is_saved ? "Remove bookmark" : "Bookmark job"}
                   >
-                    <Bookmark className={cn("size-3.5", job.is_saved && "fill-current")} />
+                    <Bookmark className={cn("size-4", job.is_saved && "fill-current")} />
                   </button>
-                  <a
-                    href={job.posting_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={(e) => {
-                      stop(e)
-                      startApply(job)
-                    }}
-                    className={cn(
-                      "inline-flex h-8 items-center justify-center rounded-lg px-3.5 text-xs font-semibold transition-colors",
-                      featured || isStrongMatch
-                        ? "btn-brand"
-                        : "border border-border bg-muted/50 text-foreground hover:bg-muted",
-                    )}
-                  >
-                    Apply
-                  </a>
+                  {isApplied ? (
+                    <span
+                      className="inline-flex h-10 min-w-[88px] cursor-default items-center justify-center rounded-lg border border-border bg-muted/40 px-4 text-sm font-semibold text-muted-foreground"
+                      aria-disabled="true"
+                    >
+                      Applied
+                    </span>
+                  ) : (
+                    <a
+                      href={job.posting_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(e) => {
+                        stop(e)
+                        startApply(job)
+                      }}
+                      className="btn-brand inline-flex h-10 min-w-[88px] items-center justify-center rounded-lg px-5 text-sm font-semibold transition-colors"
+                    >
+                      Apply
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
           </div>
 
+          {showMatch && whyFitItems.length > 0 ? (
+            <WhyThisFitsColumn
+              items={whyFitItems}
+              className="hidden w-[124px] sm:flex lg:w-[140px]"
+            />
+          ) : null}
+
           {showMatch ? (
-            <div className="navy-section flex w-[76px] shrink-0 flex-col items-center justify-center border-l border-border/40 px-2 py-3 sm:w-[84px]">
+            <div className="navy-section flex w-[108px] shrink-0 flex-col items-center justify-center border-l border-border/40 px-2 py-4 sm:w-[120px]">
               <MatchGauge score={job.personal_score} variant="sidebar" />
             </div>
           ) : null}
         </div>
 
-        {job.is_applied ? (
+        {isApplied && cardMode !== "applied" ? (
           <div className="border-t border-border/60 px-4 py-1.5 text-[11px] text-muted-foreground">
             <ExternalLink className="mr-1 inline size-3" />
             Applied
