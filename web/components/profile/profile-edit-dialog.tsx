@@ -13,6 +13,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import {
+  DEGREE_OPTIONS,
+  GRADUATION_DATE_OPTIONS,
+  UNIVERSITY_OPTIONS,
+} from "@/lib/profile/education-options"
 
 export type EditSection = "constraints" | "preferences" | "education" | "eeo" | "contact"
 
@@ -162,9 +167,30 @@ export function ProfileEditDialog({
 
         {section === "education" ? (
           <div className="space-y-3">
-            <Field label="Degree" value={values.degree ?? ""} onChange={(v) => setValues((s) => ({ ...s, degree: v }))} />
-            <Field label="University" value={values.university ?? ""} onChange={(v) => setValues((s) => ({ ...s, university: v }))} />
-            <Field label="Graduation date" value={values.graduation_date ?? ""} onChange={(v) => setValues((s) => ({ ...s, graduation_date: v }))} />
+            <SelectField
+              label="Degree / major"
+              value={values.degree ?? ""}
+              onChange={(v) => setValues((s) => ({ ...s, degree: v }))}
+              options={DEGREE_OPTIONS}
+              placeholder="Select degree"
+            />
+            <SelectField
+              label="University"
+              value={values.university ?? ""}
+              onChange={(v) => setValues((s) => ({ ...s, university: v }))}
+              options={UNIVERSITY_OPTIONS}
+              placeholder="Select university"
+            />
+            <SelectField
+              label="Graduation date"
+              value={values.graduation_date ?? ""}
+              onChange={(v) => setValues((s) => ({ ...s, graduation_date: v }))}
+              options={GRADUATION_DATE_OPTIONS.map((opt) => opt.value)}
+              optionLabels={Object.fromEntries(
+                GRADUATION_DATE_OPTIONS.map((opt) => [opt.value, opt.label]),
+              )}
+              placeholder="Select graduation date"
+            />
           </div>
         ) : null}
 
@@ -220,6 +246,40 @@ export function ProfileEditDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  )
+}
+
+function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+  optionLabels,
+  placeholder = "Select…",
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  options: readonly string[]
+  optionLabels?: Record<string, string>
+  placeholder?: string
+}) {
+  return (
+    <label className="block text-sm">
+      <span className="mb-1 block text-muted-foreground">{label}</span>
+      <select
+        className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        <option value="">{placeholder}</option>
+        {options.map((opt) => (
+          <option key={opt} value={opt}>
+            {optionLabels?.[opt] ?? opt}
+          </option>
+        ))}
+      </select>
+    </label>
   )
 }
 

@@ -129,8 +129,8 @@ export function getBrandLogoSources(name: string, variant: "company" | "school" 
   if (local) sources.push(local)
 
   sources.push(
-    `https://unavatar.io/${domain}?fallback=false`,
     `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
+    `https://unavatar.io/${encodeURIComponent(domain)}?fallback=false`,
     `https://icons.duckduckgo.com/ip3/${domain}.ico`,
   )
 

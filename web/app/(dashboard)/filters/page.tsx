@@ -27,8 +27,6 @@ import { cn } from "@/lib/utils"
 const SECTIONS = [
   { id: "basic", label: "Basic Job Criteria", sub: "Job Function / Job Type / Work Model" },
   { id: "comp", label: "Compensation & Sponsorship", sub: "Annual Salary / H1B Sponsorship" },
-  { id: "interests", label: "Areas of Interests", sub: "Industry / Skill / Role" },
-  { id: "company", label: "Company Insights", sub: "Company Search / Exclude Agencies" },
 ] as const
 
 type SectionId = (typeof SECTIONS)[number]["id"]
@@ -42,8 +40,6 @@ export default function FiltersPage() {
   const [section, setSection] = useState<SectionId>("basic")
   const [state, setState] = useState(emptyJobFilters())
   const [saving, setSaving] = useState(false)
-  const [industryInput, setIndustryInput] = useState("")
-  const [skillInput, setSkillInput] = useState("")
 
   useEffect(() => {
     if (candidateId && !rawProfile) {
@@ -87,6 +83,22 @@ export default function FiltersPage() {
       ? state.roleIntents.filter((i) => i !== intent)
       : [...state.roleIntents, intent]
     update("roleIntents", intents)
+  }
+
+  function toggleFulltime(checked: boolean) {
+    if (checked) {
+      setState((prev) => ({ ...prev, fulltimeOnly: true, internshipOnly: false }))
+    } else {
+      setState((prev) => ({ ...prev, fulltimeOnly: false, internshipOnly: false }))
+    }
+  }
+
+  function toggleInternship(checked: boolean) {
+    if (checked) {
+      setState((prev) => ({ ...prev, fulltimeOnly: false, internshipOnly: true }))
+    } else {
+      setState((prev) => ({ ...prev, fulltimeOnly: false, internshipOnly: false }))
+    }
   }
 
   async function handleConfirm() {
@@ -198,7 +210,7 @@ export default function FiltersPage() {
                   <input
                     type="checkbox"
                     checked={state.fulltimeOnly}
-                    onChange={(e) => update("fulltimeOnly", e.target.checked)}
+                    onChange={(e) => toggleFulltime(e.target.checked)}
                   />
                   <span className="text-sm">Full-time</span>
                 </label>
@@ -206,7 +218,7 @@ export default function FiltersPage() {
                   <input
                     type="checkbox"
                     checked={state.internshipOnly}
-                    onChange={(e) => update("internshipOnly", e.target.checked)}
+                    onChange={(e) => toggleInternship(e.target.checked)}
                   />
                   <span className="text-sm">Internship</span>
                 </label>
@@ -337,121 +349,6 @@ export default function FiltersPage() {
                 <p className="mb-3 text-sm font-medium">Equal Employment</p>
                 <EeoForm state={state.eeo} onChange={(eeo) => update("eeo", eeo)} compact />
               </div>
-            </div>
-          ) : null}
-
-          {section === "interests" ? (
-            <div className="mx-auto max-w-2xl space-y-6">
-              <div>
-                <p className="text-sm font-medium">Industry</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {state.preferredIndustries.map((ind) => (
-                    <FilterChip
-                      key={ind}
-                      label={ind}
-                      active
-                      onRemove={() =>
-                        update(
-                          "preferredIndustries",
-                          state.preferredIndustries.filter((i) => i !== ind),
-                        )
-                      }
-                    />
-                  ))}
-                </div>
-                <div className="mt-2 flex gap-2">
-                  <Input
-                    value={industryInput}
-                    onChange={(e) => setIndustryInput(e.target.value)}
-                    placeholder="Add industry"
-                    className="max-w-xs"
-                  />
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => {
-                      if (industryInput.trim()) {
-                        update("preferredIndustries", [
-                          ...state.preferredIndustries,
-                          industryInput.trim(),
-                        ])
-                        setIndustryInput("")
-                      }
-                    }}
-                  >
-                    Add
-                  </Button>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium">Skills</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {state.preferredSkills.map((sk) => (
-                    <FilterChip
-                      key={sk}
-                      label={sk}
-                      active
-                      onRemove={() =>
-                        update(
-                          "preferredSkills",
-                          state.preferredSkills.filter((s) => s !== sk),
-                        )
-                      }
-                    />
-                  ))}
-                </div>
-                <div className="mt-2 flex gap-2">
-                  <Input
-                    value={skillInput}
-                    onChange={(e) => setSkillInput(e.target.value)}
-                    placeholder="Add skill"
-                    className="max-w-xs"
-                  />
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => {
-                      if (skillInput.trim()) {
-                        update("preferredSkills", [...state.preferredSkills, skillInput.trim()])
-                        setSkillInput("")
-                      }
-                    }}
-                  >
-                    Add
-                  </Button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <label className="flex items-center gap-2 rounded-lg border border-border/80 bg-card p-3">
-                  <input
-                    type="radio"
-                    name="roleType"
-                    checked={state.roleType === "ic"}
-                    onChange={() => update("roleType", "ic")}
-                  />
-                  <span className="text-sm">IC (Individual Contributor)</span>
-                </label>
-                <label className="flex items-center gap-2 rounded-lg border border-border/80 bg-card p-3">
-                  <input
-                    type="radio"
-                    name="roleType"
-                    checked={state.roleType === "manager"}
-                    onChange={() => update("roleType", "manager")}
-                  />
-                  <span className="text-sm">Manager</span>
-                </label>
-              </div>
-            </div>
-          ) : null}
-
-          {section === "company" ? (
-            <div className="mx-auto max-w-2xl">
-              <p className="text-sm text-muted-foreground">
-                Company search and staffing agency filters coming soon. Use job function and industry
-                filters to narrow your target companies for now.
-              </p>
             </div>
           ) : null}
         </main>

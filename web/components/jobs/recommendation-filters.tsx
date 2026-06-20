@@ -9,12 +9,22 @@ import { useSession } from "@/components/session-provider"
 import { useJobs } from "@/components/jobs-provider"
 import { FilterChip } from "@/components/ui/filter-chip"
 import { REMOTE_LABEL } from "@/lib/job-meta"
+import {
+  employmentTypeFromFlags,
+  type EmploymentTypeFilter,
+} from "@/lib/employment-type-filter"
+import { cn } from "@/lib/utils"
+
+const EMPLOYMENT_OPTIONS: { value: EmploymentTypeFilter; label: string }[] = [
+  { value: "FULLTIME", label: "Full-time" },
+  { value: "INTERNSHIP", label: "Internship" },
+]
 
 export function RecommendationFilters() {
   const pathname = usePathname()
   const { candidateId } = useSession()
-  const { profileHome, loadProfileHome } = useProfileFlow()
-  const { filters, clearFilter } = useJobs()
+  const { profileHome, rawProfile, loadProfileHome } = useProfileFlow()
+  const { filters, clearFilter, setEmploymentTypeFilter } = useJobs()
 
   const onRecommended =
     pathname === "/jobs/recommended" || pathname.startsWith("/jobs/recommended/")
@@ -24,6 +34,16 @@ export function RecommendationFilters() {
       void loadProfileHome(candidateId).catch(() => undefined)
     }
   }, [onRecommended, candidateId, profileHome, loadProfileHome])
+
+  useEffect(() => {
+    if (!rawProfile || filters.employmentType !== null) return
+    const c = rawProfile.constraints ?? {}
+    const fromProfile = employmentTypeFromFlags(
+      Boolean(c.fulltime_only),
+      Boolean(c.internship_only),
+    )
+    if (fromProfile) setEmploymentTypeFilter(fromProfile)
+  }, [rawProfile, filters.employmentType, setEmploymentTypeFilter])
 
   if (!onRecommended) return null
 
@@ -57,15 +77,22 @@ export function RecommendationFilters() {
     queryChips.push({ label: filters.location, onRemove: () => clearFilter("location") })
   if (filters.remote)
     queryChips.push({
-      label: filters.remote in REMOTE_LABEL ? REMOTE_LABEL[filters.remote as keyof typeof REMOTE_LABEL] : filters.remote,
+      label:
+        filters.remote in REMOTE_LABEL
+          ? REMOTE_LABEL[filters.remote as keyof typeof REMOTE_LABEL]
+          : filters.remote,
       onRemove: () => clearFilter("remote"),
     })
   if (filters.datePosted)
     queryChips.push({ label: filters.datePosted, onRemove: () => clearFilter("datePosted") })
 
-  const hasCriteria = roleChips.length > 0 || prefChips.length > 0 || queryChips.length > 0
-
-  if (!hasCriteria && !profileHome) return null
+  function toggleEmployment(value: EmploymentTypeFilter) {
+    if (filters.employmentType === value) {
+      setEmploymentTypeFilter(null)
+    } else {
+      setEmploymentTypeFilter(value)
+    }
+  }
 
   return (
     <div className="border-b border-border/60 bg-surface/40 px-6 py-3">
@@ -76,11 +103,7 @@ export function RecommendationFilters() {
         </span>
 
         {roleChips.length > 0 ? (
-          <>
-            {roleChips.map((role) => (
-              <FilterChip key={`role-${role}`} label={role} active />
-            ))}
-          </>
+          roleChips.map((role) => <FilterChip key={`role-${role}`} label={role} active />)
         ) : (
           <Link href="/profile/job-intent">
             <FilterChip label="Set target roles" className="border-dashed" />
@@ -95,21 +118,25 @@ export function RecommendationFilters() {
           <FilterChip key={`query-${chip.label}`} label={chip.label} active onRemove={chip.onRemove} />
         ))}
 
-        {!hasCriteria ? (
-          <Link
-            href="/filters"
-            className="text-xs font-medium text-primary underline-offset-2 hover:underline"
-          >
-            Configure filters →
-          </Link>
-        ) : (
-          <Link
-            href="/filters"
-            className="ml-1 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-          >
-            Edit
-          </Link>
-        )}
+        <span className="mx-1 hidden h-4 w-px bg-border sm:inline-block" aria-hidden="true" />
+
+        <div className="inline-flex rounded-lg border border-border/80 bg-card p-0.5">
+          {EMPLOYMENT_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => toggleEmployment(opt.value)}
+              className={cn(
+                "rounded-md px-3 py-1 text-xs font-medium transition-colors",
+                filters.employmentType === opt.value
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   )

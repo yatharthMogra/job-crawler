@@ -26,6 +26,7 @@ interface JobFeedProps {
   loading?: boolean
   title?: string
   subtitle?: string
+  cardMode?: "default" | "applied"
 }
 
 export function JobFeed({
@@ -36,6 +37,7 @@ export function JobFeed({
   loading: externalLoading,
   title = "Recommended Jobs",
   subtitle = "Tailored executive opportunities matching your profile.",
+  cardMode = "default",
 }: JobFeedProps) {
   const { hiddenIds, filters, loading: contextLoading } = useJobs()
   const [initialLoading, setInitialLoading] = useState(true)
@@ -119,6 +121,7 @@ export function JobFeed({
             showMatch={showMatch}
             showRecommendation={showRecommendation}
             featured={index === 0}
+            cardMode={cardMode}
           />
         ))}
       </div>

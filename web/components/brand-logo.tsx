@@ -91,7 +91,10 @@ export function BrandLogo({
         alt=""
         width={size}
         height={size}
-        className="size-full object-cover"
+        loading="lazy"
+        decoding="async"
+        referrerPolicy="no-referrer"
+        className="size-full object-contain p-1.5"
         onError={() => setSourceIndex((i) => i + 1)}
       />
     </div>
