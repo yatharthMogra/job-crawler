@@ -35,12 +35,15 @@ import {
 import { useMockData } from "@/lib/session"
 import { ALL_JOBS } from "@/lib/jobs-data"
 
+import type { EmploymentTypeFilter } from "@/lib/employment-type-filter"
+
 export interface Filters {
   role: string | null
   location: string | null
   remote: string | null
   salaryMin: number | null
   datePosted: string | null
+  employmentType: EmploymentTypeFilter
 }
 
 const EMPTY_FILTERS: Filters = {
@@ -49,6 +52,7 @@ const EMPTY_FILTERS: Filters = {
   remote: null,
   salaryMin: null,
   datePosted: null,
+  employmentType: null,
 }
 
 interface JobsContextValue {
@@ -75,6 +79,7 @@ interface JobsContextValue {
   submitReportIssue: (id: string, reason: ReportIssueReason) => void
   setFilter: (key: keyof Filters, value: Filters[keyof Filters]) => void
   clearFilter: (key: keyof Filters) => void
+  setEmploymentTypeFilter: (value: EmploymentTypeFilter) => void
   selectJob: (id: string | null) => void
   refreshJobs: () => Promise<void>
 }
@@ -206,13 +211,23 @@ export function JobsProvider({ children }: { children: ReactNode }) {
 
   const markApplied = useCallback(
     (id: string) => {
-      if (!candidateId || mockMode) {
-        if (!candidateId) return
+      if (!candidateId) return
+
+      if (mockMode) {
         setAppliedIds((prev) => {
           const next = new Set(prev)
           next.add(id)
           persistAppliedIds(candidateId, next)
           return next
+        })
+        setAppliedJobs((prev) => {
+          if (prev.some((job) => job.id === id)) return prev
+          const fromCatalog =
+            (ALL_JOBS as JobWithRole[]).find((job) => job.id === id) ??
+            allJobs.find((job) => job.id === id) ??
+            recommendedJobs.find((job) => job.id === id)
+          if (!fromCatalog) return prev
+          return [{ ...fromCatalog, is_applied: true }, ...prev]
         })
         clearPendingApply(candidateId)
         setPendingApplyState(null)
@@ -248,7 +263,7 @@ export function JobsProvider({ children }: { children: ReactNode }) {
         }
       })()
     },
-    [candidateId, mockMode],
+    [candidateId, mockMode, allJobs, recommendedJobs],
   )
 
   const startApply = useCallback(
@@ -319,6 +334,10 @@ export function JobsProvider({ children }: { children: ReactNode }) {
     setFilters((prev) => ({ ...prev, [key]: null }))
   }, [])
 
+  const setEmploymentTypeFilter = useCallback((value: EmploymentTypeFilter) => {
+    setFilters((prev) => ({ ...prev, employmentType: value }))
+  }, [])
+
   const jobs = useMemo<JobWithRole[]>(() => {
     return allJobs.map((j) => ({
       ...j,
@@ -369,6 +388,7 @@ export function JobsProvider({ children }: { children: ReactNode }) {
       submitReportIssue,
       setFilter,
       clearFilter,
+      setEmploymentTypeFilter,
       selectJob: setSelectedJobId,
       refreshJobs,
     }),
@@ -396,6 +416,7 @@ export function JobsProvider({ children }: { children: ReactNode }) {
       submitReportIssue,
       setFilter,
       clearFilter,
+      setEmploymentTypeFilter,
       refreshJobs,
     ],
   )

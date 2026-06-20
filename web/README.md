@@ -31,7 +31,6 @@ Mock mode: `NEXT_PUBLIC_USE_MOCK_DATA=true` in `.env.local`
 | `/jobs/recommended` | Personalized job feed |
 | `/jobs/liked` | Saved/liked jobs |
 | `/jobs/applied` | Applied jobs |
-| `/jobs/all` | All jobs with filters |
 | `/resume` | Resume library |
 | `/profile` | Tabbed profile (Personal, Education, Experience, Skills, EEO) |
 | `/filters` | Full job criteria editor |

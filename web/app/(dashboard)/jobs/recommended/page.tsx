@@ -4,11 +4,11 @@ import { useEffect, useMemo } from "react"
 import { Star } from "lucide-react"
 import { useJobs } from "@/components/jobs-provider"
 import { useProfileFlow } from "@/components/profile/profile-flow-provider"
-import { InfoBanner } from "@/components/info-banner"
 import { JobFeed } from "@/components/job-feed"
 import { EmptyState } from "@/components/empty-state"
 import { useJobsSearch } from "@/app/(dashboard)/jobs/layout"
 import { useSession } from "@/components/session-provider"
+import { matchesEmploymentTypeFilter } from "@/lib/employment-type-filter"
 import type { JobWithRole } from "@/lib/jobs-data"
 
 function matchesSearch(job: JobWithRole, q: string) {
@@ -43,7 +43,7 @@ function matchesTargetRoles(
 
 export default function RecommendedPage() {
   const { candidateId } = useSession()
-  const { recommendedJobs, hiddenIds, recommendedLoading, error } = useJobs()
+  const { recommendedJobs, hiddenIds, recommendedLoading, error, filters } = useJobs()
   const { profileHome, loadProfileHome } = useProfileFlow()
   const { search } = useJobsSearch()
 
@@ -62,18 +62,18 @@ export default function RecommendedPage() {
       .filter((j) => !hiddenIds.has(j.id))
       .filter((j) => matchesSearch(j, search))
       .filter((j) => matchesTargetRoles(j, primaryRoles, secondaryRoles))
-  }, [recommendedJobs, hiddenIds, search, profileHome])
+      .filter((j) => matchesEmploymentTypeFilter(j.employment_type, filters.employmentType))
+  }, [recommendedJobs, hiddenIds, search, profileHome, filters.employmentType])
 
   return (
     <div>
-      <InfoBanner />
       {error ? (
         <EmptyState
           icon={Star}
           title="Could not load recommendations."
           description={error}
-          ctaLabel="Try All Jobs →"
-          ctaHref="/jobs/all"
+          ctaLabel="Set job filters →"
+          ctaHref="/filters"
         />
       ) : !recommendedLoading && ranked.length === 0 ? (
         <EmptyState
