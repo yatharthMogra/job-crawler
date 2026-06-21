@@ -209,7 +209,7 @@ Removal detection: jobs that were previously active but missing from the latest 
 3. Merge list + detail into one dict per job.
 4. Synthesize `externalLink` as `https://jobs.ashbyhq.com/{board_token}/{job_id}`.
 
-**Rate limiting:** Detail fetches use concurrency=1, 0.35s delay between requests, exponential backoff on 429.
+**Rate limiting:** All list and detail requests share a global `HostTokenBucket` for `jobs.ashbyhq.com` (see `app/ingestion/rate_limiter.py`, tuned via `ASHBY_HOST_RATE_PER_SECOND` / `ASHBY_HOST_BURST`). Per-company detail concurrency stays at 1. On 429, the connector honors `Retry-After` when present, otherwise exponential backoff. Incremental re-fetch skips unchanged jobs using cached `raw_jobs` (listing fingerprint + `ASHBY_FULL_REFRESH_DAYS`). Partial detail failures fall back to cache or listing-only data rather than failing the whole company.
 
 **Per-job fields we rely on (after merge):**
 

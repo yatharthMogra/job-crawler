@@ -15,8 +15,9 @@ try:
 except ImportError:  # pragma: no cover - dependency fallback path
     structlog = None
 
-from app.config import Settings, get_settings
+from app.config import Settings, get_settings, PLATFORM_FAILURE_ALERT_THRESHOLDS
 from app.database import AsyncSessionLocal
+from app.ingestion.fetch_backpressure import apply_fetch_backpressure, backpressure_metadata
 from app.ingestion.fetch_schedule import select_due_companies
 from app.ingestion.fetch_schedule_config import FetchScheduleConfig
 from app.exceptions import IngestionError
@@ -36,6 +37,7 @@ from app.ingestion.extractor.deterministic import extract_deterministic_fields
 from app.ingestion.extractor.llm import DEFAULT_ENRICHMENT
 from app.ingestion.extractor.text_cleaner import build_description_preview, clean_job_description
 from app.ingestion.fetcher import fetch_company_jobs
+from app.ingestion.job_freshness import FreshnessVerdict, classify_posted_at
 from app.ingestion.job_archive_sync import (
     upsert_job_archive_from_deterministic,
     upsert_job_archive_from_normalized,
@@ -57,6 +59,8 @@ class CompanyStats:
     jobs_updated: int = 0
     jobs_unchanged: int = 0
     jobs_removed: int = 0
+    jobs_rejected_stale_fetch: int = 0
+    jobs_rejected_stale_pipeline: int = 0
 
 
 @dataclass
@@ -83,6 +87,8 @@ class CompanyRunOutcome:
     jobs_unchanged: int = 0
     jobs_removed: int = 0
     jobs_deduped: int = 0
+    jobs_rejected_stale_fetch: int = 0
+    jobs_rejected_stale_pipeline: int = 0
     error_message: Optional[str] = None
 
 
@@ -295,11 +301,12 @@ async def _process_single_company(
                 pipeline_run_id=pipeline_run_id,
             )
 
-            raw_jobs = await fetch_company_jobs(
+            raw_jobs, rejected_stale_fetch = await fetch_company_jobs(
                 company,
                 known_raw_by_id=await _latest_raw_by_external_id(db, company.id),
                 known_raw_fetched_at=await _latest_raw_fetch_times(db, company.id),
             )
+            outcome.jobs_rejected_stale_fetch = rejected_stale_fetch
             outcome.jobs_fetched = len(raw_jobs)
             previous_hashes = await _latest_hashes_for_company(db, company.id)
             normalized_by_external_id = await _normalized_map_for_company(db, company.id)
@@ -312,6 +319,12 @@ async def _process_single_company(
             changed_jobs = classified.new + classified.updated
             for job in changed_jobs:
                 deterministic_fields = extract_deterministic_fields(job, platform=company.platform)
+                if (
+                    classify_posted_at(deterministic_fields.get("posted_at"), settings=settings)
+                    == FreshnessVerdict.STALE
+                ):
+                    outcome.jobs_rejected_stale_pipeline += 1
+                    continue
                 company_name = deterministic_fields.get("company_name") or company.name
                 deterministic_fields["company_name"] = company_name
                 deterministic_fields["dedup_fingerprint"] = build_dedup_fingerprint(
@@ -427,7 +440,11 @@ async def _process_single_company(
                 pipeline_run_id=pipeline_run_id,
                 metadata={"error": outcome.error_message},
             )
-            if company.consecutive_fetch_failures >= settings.max_consecutive_failures_before_alert:
+            threshold = PLATFORM_FAILURE_ALERT_THRESHOLDS.get(
+                company.platform,
+                settings.max_consecutive_failures_before_alert,
+            )
+            if company.consecutive_fetch_failures >= threshold:
                 write_failure_alert(
                     alerts_path=settings.alerts_path,
                     company=company,
@@ -500,6 +517,7 @@ async def run_pipeline(
     settings: Optional[Settings] = None,
     company_ids: Optional[list[UUID]] = None,
     schedule_metadata: Optional[dict[str, Any]] = None,
+    force: bool = False,
 ) -> PipelineSnapshot:
     settings = settings or get_settings()
     schedule = settings.fetch_schedule()
@@ -508,6 +526,21 @@ async def run_pipeline(
         selection = await select_due_companies(db=db, settings=settings)
         company_ids = selection.company_ids
         schedule_metadata = selection.schedule_metadata
+    elif company_ids is not None and not force and company_ids:
+        companies_pre = (
+            await db.scalars(
+                select(Company).where(Company.id.in_(company_ids), Company.is_active.is_(True))
+            )
+        ).all()
+        companies_by_id = {company.id: company for company in companies_pre}
+        ordered = [companies_by_id[company_id] for company_id in company_ids if company_id in companies_by_id]
+        filtered, decision = await apply_fetch_backpressure(db, ordered, settings=settings)
+        schedule_metadata = {
+            **(schedule_metadata or {}),
+            "backpressure": backpressure_metadata(decision),
+            "companies_selected": len(filtered),
+        }
+        company_ids = [company.id for company in filtered]
 
     run = PipelineRun(
         run_type=run_type,
@@ -563,7 +596,14 @@ async def run_pipeline(
             category=EventCategory.PIPELINE,
             severity=EventSeverity.INFO,
             pipeline_run_id=run.id,
-            metadata={"companies_selected": 0},
+            metadata={
+                "companies_selected": 0,
+                **(
+                    {"backpressure": schedule_metadata["backpressure"]}
+                    if schedule_metadata and schedule_metadata.get("backpressure")
+                    else {}
+                ),
+            },
         )
         await db.commit()
         return PipelineSnapshot(
@@ -608,6 +648,8 @@ async def run_pipeline(
         aggregate.jobs_updated += outcome.jobs_updated
         aggregate.jobs_unchanged += outcome.jobs_unchanged
         aggregate.jobs_removed += outcome.jobs_removed
+        aggregate.jobs_rejected_stale_fetch += outcome.jobs_rejected_stale_fetch
+        aggregate.jobs_rejected_stale_pipeline += outcome.jobs_rejected_stale_pipeline
 
     persisted_run = await db.get(PipelineRun, run.id)
     if persisted_run is None:
@@ -626,6 +668,17 @@ async def run_pipeline(
     persisted_run.jobs_unchanged = aggregate.jobs_unchanged
     persisted_run.jobs_removed = aggregate.jobs_removed
     persisted_run.error_summary = errors or None
+    freshness_metadata = {
+        "rejected_fetch": aggregate.jobs_rejected_stale_fetch,
+        "rejected_pipeline": aggregate.jobs_rejected_stale_pipeline,
+    }
+    if persisted_run.schedule_metadata:
+        persisted_run.schedule_metadata = {
+            **persisted_run.schedule_metadata,
+            "freshness": freshness_metadata,
+        }
+    else:
+        persisted_run.schedule_metadata = {"freshness": freshness_metadata}
 
     terminal_event = EventType.PIPELINE_COMPLETED
     terminal_severity = EventSeverity.INFO

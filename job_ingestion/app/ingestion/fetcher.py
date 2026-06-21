@@ -10,7 +10,14 @@ from app.ingestion.connectors.icims import ICIMSConnector
 from app.ingestion.connectors.oracle_hcm import OracleHCMConnector
 from app.ingestion.connectors.workable import WorkableConnector
 from app.ingestion.connectors.workatastartup import WorkAtAStartupConnector
+from app.ingestion.connectors.bamboohr import BambooHRConnector
+from app.ingestion.connectors.rippling import RipplingConnector
+from app.ingestion.connectors.smartrecruiters import SmartRecruitersConnector
+from app.ingestion.connectors.google_careers import GoogleCareersConnector
+from app.ingestion.connectors.amazon_jobs import AmazonJobsConnector
+from app.ingestion.connectors.successfactors import SuccessFactorsConnector
 from app.ingestion.connectors.workday import WorkdayConnector
+from app.ingestion.job_freshness import filter_fetched_jobs
 from app.models.company import Company
 
 
@@ -23,6 +30,12 @@ CONNECTORS: dict[str, type[BaseConnector]] = {
     "icims": ICIMSConnector,
     "workable": WorkableConnector,
     "workatastartup": WorkAtAStartupConnector,
+    "smartrecruiters": SmartRecruitersConnector,
+    "bamboohr": BambooHRConnector,
+    "rippling": RipplingConnector,
+    "successfactors": SuccessFactorsConnector,
+    "google_careers": GoogleCareersConnector,
+    "amazon_jobs": AmazonJobsConnector,
 }
 
 
@@ -38,12 +51,15 @@ async def fetch_company_jobs(
     *,
     known_raw_by_id: dict[str, dict[str, Any]] | None = None,
     known_raw_fetched_at: dict[str, datetime] | None = None,
-) -> list[dict[str, Any]]:
+) -> tuple[list[dict[str, Any]], int]:
     connector = get_connector(company.platform)
-    if company.platform == "workday":
-        return await connector.fetch_jobs(
+    if company.platform in ("workday", "ashby"):
+        jobs = await connector.fetch_jobs(
             company,
             known_raw_by_id=known_raw_by_id or {},
             known_raw_fetched_at=known_raw_fetched_at or {},
         )
-    return await connector.fetch_jobs(company)
+    else:
+        jobs = await connector.fetch_jobs(company)
+    filtered, rejected = filter_fetched_jobs(jobs, company.platform)
+    return filtered, rejected

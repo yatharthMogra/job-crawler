@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Callable, Optional
 
 from app.exceptions import ParseError
@@ -155,14 +155,50 @@ def _parse_epoch_ms(value: Any) -> Optional[datetime]:
         return None
 
 
-def _parse_workday_date(date_str: Optional[str]) -> Optional[datetime]:
+_RELATIVE_POSTED_DAYS = re.compile(r"posted\s+(\d+)\s+days?\s+ago", re.IGNORECASE)
+_RELATIVE_POSTED_DAYS_PLUS = re.compile(r"posted\s+(\d+)\+\s+days?\s+ago", re.IGNORECASE)
+
+
+def _parse_workday_date(
+    date_str: Optional[str],
+    *,
+    reference: date | None = None,
+) -> Optional[datetime]:
     if not date_str:
         return None
+    ref = reference or datetime.now(timezone.utc).date()
     for fmt in ("%m/%d/%Y", "%Y-%m-%d"):
         try:
             return datetime.strptime(date_str, fmt).replace(tzinfo=timezone.utc)
         except ValueError:
             continue
+    lowered = date_str.strip().lower()
+    plus_match = _RELATIVE_POSTED_DAYS_PLUS.search(date_str)
+    if plus_match:
+        days = int(plus_match.group(1))
+        parsed = ref - timedelta(days=days)
+        return datetime(parsed.year, parsed.month, parsed.day, tzinfo=timezone.utc)
+    if "today" in lowered:
+        return datetime(ref.year, ref.month, ref.day, tzinfo=timezone.utc)
+    if "yesterday" in lowered:
+        parsed = ref - timedelta(days=1)
+        return datetime(parsed.year, parsed.month, parsed.day, tzinfo=timezone.utc)
+    match = _RELATIVE_POSTED_DAYS.search(date_str)
+    if match:
+        days = int(match.group(1))
+        parsed = ref - timedelta(days=days)
+        return datetime(parsed.year, parsed.month, parsed.day, tzinfo=timezone.utc)
+    return None
+
+
+def resolve_workday_posted_at(job: dict[str, Any], *, reference: date | None = None) -> Optional[datetime]:
+    info = job.get("jobPostingInfo") or {}
+    for candidate in (info.get("startDate"), info.get("postedOn"), job.get("postedOn")):
+        if not candidate or not isinstance(candidate, str):
+            continue
+        parsed = _parse_workday_date(candidate, reference=reference)
+        if parsed is not None:
+            return parsed
     return None
 
 
@@ -207,6 +243,14 @@ def _extract_workday_location(job: dict[str, Any], info: dict[str, Any]) -> Opti
     return None
 
 
+def _extract_greenhouse_posted_at(job: dict[str, Any]) -> Optional[datetime]:
+    for key in ("first_published", "first_published_at", "created_at"):
+        parsed = _parse_iso_datetime(job.get(key))
+        if parsed is not None:
+            return parsed
+    return None
+
+
 def _extract_greenhouse(job: dict[str, Any]) -> dict[str, Any]:
     location = (job.get("location") or {}).get("name")
     departments = job.get("departments") or []
@@ -218,7 +262,7 @@ def _extract_greenhouse(job: dict[str, Any]) -> dict[str, Any]:
         "location": location,
         "department": department,
         "posting_url": job.get("absolute_url"),
-        "posted_at": _parse_iso_datetime(job.get("updated_at")),
+        "posted_at": _extract_greenhouse_posted_at(job),
         "employment_type": _extract_greenhouse_employment_type(metadata),
         "raw_html": job.get("content") or "",
     }
@@ -246,9 +290,7 @@ def _extract_workday(job: dict[str, Any]) -> dict[str, Any]:
         "location": _extract_workday_location(job, info),
         "department": info.get("department") or info.get("supervisoryOrganization"),
         "posting_url": job.get("externalLink"),
-        "posted_at": _parse_workday_date(
-            info.get("startDate") or info.get("postedOn") or job.get("postedOn")
-        ),
+        "posted_at": resolve_workday_posted_at(job),
         "employment_type": _extract_workday_employment_type(job),
         "raw_html": info.get("jobDescription") or "",
     }
@@ -362,6 +404,47 @@ def _extract_icims(job: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _parse_successfactors_date(value: Optional[str]) -> Optional[datetime]:
+    if not value:
+        return None
+    stripped = value.strip()
+    rmk_pattern = re.compile(
+        r"^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+"
+        r"(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+"
+        r"\d{1,2}\s+\d{2}:\d{2}:\d{2}\s+UTC\s+\d{4}$"
+    )
+    if rmk_pattern.match(stripped):
+        try:
+            return datetime.strptime(stripped, "%a %b %d %H:%M:%S UTC %Y").replace(
+                tzinfo=timezone.utc
+            )
+        except ValueError:
+            pass
+    for fmt in ("%b %d, %Y", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(stripped, fmt).replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+    return _parse_icims_date(stripped)
+
+
+def _extract_successfactors(job: dict[str, Any]) -> dict[str, Any]:
+    posting_url = job.get("externalLink") or job.get("sitemap_url") or job.get("detail_url")
+    posted_at = _parse_successfactors_date(job.get("datePosted")) or _parse_successfactors_date(
+        job.get("lastmod")
+    )
+    return {
+        "external_job_id": str(job["id"]),
+        "title": job.get("title") or "",
+        "location": job.get("location"),
+        "department": None,
+        "posting_url": posting_url,
+        "posted_at": posted_at,
+        "employment_type": None,
+        "raw_html": job.get("raw_html", ""),
+    }
+
+
 def _format_workable_location(job: dict[str, Any]) -> str | None:
     parts: list[str] = []
     if job.get("telecommuting"):
@@ -428,6 +511,216 @@ def _extract_workable(job: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+_SMARTRECRUITERS_SECTION_ORDER = (
+    "companyDescription",
+    "jobDescription",
+    "qualifications",
+    "additionalInformation",
+)
+
+
+def _build_smartrecruiters_html(job: dict[str, Any]) -> str:
+    sections = (job.get("jobAd") or {}).get("sections") or {}
+    if not isinstance(sections, dict):
+        return ""
+    parts: list[str] = []
+    for key in _SMARTRECRUITERS_SECTION_ORDER:
+        section = sections.get(key)
+        if not isinstance(section, dict):
+            continue
+        text = (section.get("text") or "").strip()
+        if text:
+            parts.append(text)
+    return "<hr>".join(parts)
+
+
+def _extract_smartrecruiters_location(job: dict[str, Any]) -> str | None:
+    location = job.get("location")
+    if not isinstance(location, dict):
+        return None
+    parts = [location.get("city"), location.get("region"), location.get("country")]
+    formatted = ", ".join(str(part) for part in parts if part)
+    if location.get("remote"):
+        formatted = f"{formatted} (Remote)" if formatted else "Remote"
+    return formatted or None
+
+
+def _extract_smartrecruiters(job: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "external_job_id": str(job.get("id")),
+        "title": job.get("name") or "",
+        "location": _extract_smartrecruiters_location(job),
+        "department": None,
+        "posting_url": job.get("externalLink"),
+        "posted_at": _parse_iso_datetime(job.get("releasedDate")),
+        "employment_type": None,
+        "raw_html": _build_smartrecruiters_html(job),
+    }
+
+
+def _format_bamboohr_location(job: dict[str, Any]) -> str | None:
+    ats = job.get("atsLocation")
+    if isinstance(ats, dict):
+        parts = [ats.get("city"), ats.get("state"), ats.get("country")]
+        formatted = ", ".join(str(part) for part in parts if part)
+        if formatted:
+            return formatted
+
+    location = job.get("location")
+    if isinstance(location, dict):
+        parts = [location.get("city"), location.get("state")]
+        formatted = ", ".join(str(part) for part in parts if part)
+        if formatted:
+            return formatted
+
+    return None
+
+
+def _extract_bamboohr_employment_type(raw: Optional[str]) -> Optional[str]:
+    if not raw:
+        return None
+    raw_lower = raw.lower()
+    if "full" in raw_lower:
+        return "Full-time"
+    if "part" in raw_lower:
+        return "Part-time"
+    if "contract" in raw_lower:
+        return "Contract"
+    if "intern" in raw_lower:
+        return "Internship"
+    return raw
+
+
+def _extract_bamboohr(job: dict[str, Any]) -> dict[str, Any]:
+    posting_url = job.get("jobOpeningShareUrl") or job.get("externalLink")
+    return {
+        "external_job_id": str(job.get("id")),
+        "title": job.get("jobOpeningName") or "",
+        "location": _format_bamboohr_location(job),
+        "department": job.get("departmentLabel"),
+        "posting_url": posting_url,
+        "posted_at": _parse_iso_datetime(job.get("datePosted")),
+        "employment_type": _extract_bamboohr_employment_type(job.get("employmentStatusLabel")),
+        "raw_html": job.get("description") or "",
+    }
+
+
+def _format_rippling_location(job: dict[str, Any]) -> str | None:
+    work_locations = job.get("workLocations")
+    if isinstance(work_locations, list):
+        names = [str(name) for name in work_locations if name]
+        if names:
+            return " | ".join(names)
+
+    locations = job.get("locations")
+    if not isinstance(locations, list):
+        return None
+
+    formatted: list[str] = []
+    for location in locations:
+        if not isinstance(location, dict):
+            continue
+        name = location.get("name")
+        if not name:
+            continue
+        workplace_type = location.get("workplaceType")
+        if workplace_type == "REMOTE" and "remote" not in str(name).lower():
+            formatted.append(f"{name} (Remote)")
+        elif workplace_type == "HYBRID" and "hybrid" not in str(name).lower():
+            formatted.append(f"{name} (Hybrid)")
+        else:
+            formatted.append(str(name))
+    return " | ".join(formatted) if formatted else None
+
+
+def _extract_rippling_employment_type(raw: Any) -> str | None:
+    if isinstance(raw, dict):
+        label = raw.get("label") or raw.get("id")
+        if label:
+            raw = label
+    if not raw:
+        return None
+    raw_str = str(raw)
+    raw_lower = raw_str.lower()
+    if "salaried_ft" in raw_lower or "full" in raw_lower:
+        return "Full-time"
+    if "part" in raw_lower:
+        return "Part-time"
+    if "contract" in raw_lower:
+        return "Contract"
+    if "intern" in raw_lower:
+        return "Internship"
+    return raw_str.replace("_", " ").title()
+
+
+def _build_rippling_html(job: dict[str, Any]) -> str:
+    description = job.get("description")
+    if not isinstance(description, dict):
+        return ""
+    parts: list[str] = []
+    for key in ("company", "role"):
+        text = (description.get(key) or "").strip()
+        if text:
+            parts.append(text)
+    return "".join(parts)
+
+
+def _extract_rippling(job: dict[str, Any]) -> dict[str, Any]:
+    department = job.get("department")
+    department_name = department.get("name") if isinstance(department, dict) else None
+    posting_url = job.get("url") or job.get("externalLink")
+    return {
+        "external_job_id": str(job.get("uuid") or job.get("id")),
+        "title": job.get("name") or "",
+        "location": _format_rippling_location(job),
+        "department": department_name,
+        "posting_url": posting_url,
+        "posted_at": _parse_iso_datetime(job.get("createdOn")),
+        "employment_type": _extract_rippling_employment_type(job.get("employmentType")),
+        "raw_html": _build_rippling_html(job),
+    }
+
+
+def _build_google_careers_html(job: dict[str, Any]) -> str:
+    raw_html = job.get("raw_html") or ""
+    experience_level = job.get("experience_level")
+    if experience_level and "Experience level:" not in raw_html:
+        return f"<p><strong>Experience level:</strong> {experience_level}</p>\n{raw_html}"
+    return raw_html
+
+
+def _extract_amazon_jobs(job: dict[str, Any]) -> dict[str, Any]:
+    from app.ingestion.connectors.amazon_jobs import (
+        build_amazon_job_location,
+        build_amazon_jobs_html,
+        parse_amazon_posted_date,
+    )
+
+    return {
+        "external_job_id": str(job["id"]),
+        "title": job.get("title") or "",
+        "location": build_amazon_job_location(job) or None,
+        "department": job.get("job_category") or job.get("business_category"),
+        "posting_url": job.get("externalLink"),
+        "posted_at": parse_amazon_posted_date(job.get("posted_date")),
+        "employment_type": job.get("job_schedule_type"),
+        "raw_html": job.get("raw_html") or build_amazon_jobs_html(job),
+    }
+
+
+def _extract_google_careers(job: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "external_job_id": str(job["id"]),
+        "title": job.get("title") or "",
+        "location": job.get("location"),
+        "department": job.get("organization"),
+        "posting_url": job.get("externalLink"),
+        "posted_at": None,
+        "employment_type": None,
+        "raw_html": _build_google_careers_html(job),
+    }
+
+
 def _extract_ashby(job: dict[str, Any]) -> dict[str, Any]:
     secondary_names = job.get("secondaryLocationNames")
     if isinstance(secondary_names, list):
@@ -456,8 +749,14 @@ FIELD_EXTRACTORS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "workday": _extract_workday,
     "oracle_hcm": _extract_oracle_hcm,
     "icims": _extract_icims,
+    "successfactors": _extract_successfactors,
     "workable": _extract_workable,
     "workatastartup": _extract_workatastartup,
+    "smartrecruiters": _extract_smartrecruiters,
+    "bamboohr": _extract_bamboohr,
+    "rippling": _extract_rippling,
+    "google_careers": _extract_google_careers,
+    "amazon_jobs": _extract_amazon_jobs,
 }
 
 

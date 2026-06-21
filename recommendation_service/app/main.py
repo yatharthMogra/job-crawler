@@ -12,6 +12,7 @@ from app.api.dashboard import router as dashboard_router
 from app.api.subscriptions import router as subscriptions_router
 from app.config import get_settings
 from app.notification.pipeline import run_notification_pipeline
+from app.openapi import configure_openapi
 from app.scheduler import create_scheduler
 
 _scheduler: AsyncIOScheduler | None = None
@@ -32,6 +33,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 settings = get_settings()
 app = FastAPI(title="Recommendation Service", lifespan=lifespan)
+configure_openapi(app)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_cors_origins,
@@ -44,12 +46,23 @@ app.include_router(dashboard_router)
 app.include_router(subscriptions_router)
 
 
-@app.get("/health")
+@app.get("/", tags=["meta"])
+async def root() -> dict[str, str]:
+    return {
+        "service": "recommendation-service",
+        "docs": "/docs",
+        "redoc": "/redoc",
+        "openapi": "/openapi.json",
+        "health": "/health",
+    }
+
+
+@app.get("/health", tags=["meta"])
 async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.post("/notifications/run")
+@app.post("/notifications/run", tags=["meta"])
 async def trigger_notification_pipeline() -> dict[str, str]:
     if not get_settings().enable_notification_scheduler:
         raise HTTPException(

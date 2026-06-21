@@ -437,9 +437,14 @@ DATABASE_URL=postgresql+asyncpg://postgres.[ref]:[PASSWORD]@db.[ref].supabase.co
 # Optional — omit FETCH_SCHEDULE_JSON to use built-in tiered defaults (10 min tick, sharded batches)
 # FETCH_SCHEDULE_JSON={"tick_minutes":10,"batch_cap":200,...}
 GEMINI_API_KEY=your-gemini-key
+# Optional — throttle fetch when enrichment backlog is large (defaults in .env.example)
+# FETCH_BACKPRESSURE_ENABLED=true
+# FETCH_BACKPRESSURE_QUEUE_THRESHOLD=2000
 ```
 
 Use the **direct** `:5432` URL, not the pooler.
+
+Watch `GET http://localhost:8000/stats` → `fetch_backpressure.active`. When true, scheduled fetches are skipping tier-3 (or all companies in `halt_all` mode) until pending queue depth drops below the threshold.
 
 #### 6.3 Configure `recommendation_service/.env` (notification worker)
 

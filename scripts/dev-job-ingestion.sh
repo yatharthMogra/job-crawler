@@ -4,4 +4,4 @@ set -euo pipefail
 source "$(dirname "$0")/_venv.sh"
 
 cd "$ROOT/job_ingestion"
-exec "$VENV/bin/uvicorn" app.main:app --port 8000 --reload "$@"
+exec "$VENV/bin/uvicorn" app.main:app --port 8000 --reload --timeout-graceful-shutdown 45 "$@"

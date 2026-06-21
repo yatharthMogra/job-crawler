@@ -1,4 +1,4 @@
-from datetime import timezone
+from datetime import datetime, timezone
 
 from app.ingestion.extractor.deterministic import (
     _parse_icims_date,
@@ -30,7 +30,7 @@ def test_extract_deterministic_fields() -> None:
         "location": {"name": "New York"},
         "departments": [{"name": "Engineering"}],
         "absolute_url": "https://example.com/job/42",
-        "updated_at": "2026-05-20T10:00:00Z",
+        "created_at": "2026-05-20T10:00:00Z",
         "metadata": [{"name": "Employment Type", "value": "Full-time"}],
     }
 
@@ -65,6 +65,9 @@ def test_parse_workday_date() -> None:
     assert parsed.tzinfo == timezone.utc
     assert _parse_workday_date(None) is None
     assert _parse_workday_date("not-a-date") is None
+    relative = _parse_workday_date("Posted 2 Days Ago", reference=datetime(2026, 6, 19).date())
+    assert relative is not None
+    assert relative.day == 17
 
 
 def test_extract_workday_fields() -> None:
@@ -362,3 +365,211 @@ def test_extract_workatastartup_fields() -> None:
     assert fields["employment_type"] == "Full-time"
     assert fields["job_country"] == "US"
     assert fields["posting_url"] == "https://www.workatastartup.com/jobs/123"
+
+
+def test_extract_smartrecruiters_fields() -> None:
+    raw_job = {
+        "id": "74983486",
+        "name": "Senior Backend Engineer",
+        "releasedDate": "2026-06-01T15:28:46.493Z",
+        "location": {
+            "city": "North Chicago",
+            "region": "Illinois",
+            "country": "us",
+            "remote": False,
+        },
+        "externalLink": "https://jobs.smartrecruiters.com/abbvie/74983486",
+        "jobAd": {
+            "sections": {
+                "companyDescription": {"text": "<p>About AbbVie</p>"},
+                "jobDescription": {"text": "<p>Build APIs</p>"},
+                "qualifications": {"text": "<p>5 years experience</p>"},
+                "additionalInformation": {"text": "<p>Benefits</p>"},
+            }
+        },
+    }
+    fields = extract_deterministic_fields(raw_job, platform="smartrecruiters")
+    assert fields["external_job_id"] == "74983486"
+    assert fields["title"] == "Senior Backend Engineer"
+    assert fields["location"] == "North Chicago, Illinois, us"
+    assert fields["job_country"] == "US"
+    assert fields["posted_at"] is not None
+    assert fields["posting_url"] == "https://jobs.smartrecruiters.com/abbvie/74983486"
+    assert fields["raw_html"] == (
+        "<p>About AbbVie</p><hr><p>Build APIs</p><hr>"
+        "<p>5 years experience</p><hr><p>Benefits</p>"
+    )
+
+
+def test_extract_smartrecruiters_missing_sections() -> None:
+    raw_job = {
+        "id": "1",
+        "name": "Engineer",
+        "location": {"city": "Austin", "region": "TX", "country": "us", "remote": False},
+        "jobAd": {
+            "sections": {
+                "jobDescription": {"text": "<p>Only description</p>"},
+            }
+        },
+    }
+    fields = extract_deterministic_fields(raw_job, platform="smartrecruiters")
+    assert fields["raw_html"] == "<p>Only description</p>"
+
+
+def test_extract_smartrecruiters_remote_location() -> None:
+    raw_job = {
+        "id": "2",
+        "name": "Remote Engineer",
+        "location": {"remote": True},
+        "jobAd": {"sections": {}},
+    }
+    fields = extract_deterministic_fields(raw_job, platform="smartrecruiters")
+    assert fields["location"] == "Remote"
+
+
+def test_extract_bamboohr_fields() -> None:
+    raw_job = {
+        "id": "196",
+        "jobOpeningName": "Customer Support Rep",
+        "departmentLabel": "Support",
+        "employmentStatusLabel": "Full-Time",
+        "location": {"city": None, "state": None},
+        "atsLocation": {
+            "country": "United States",
+            "state": "Arizona",
+            "city": "Phoenix",
+        },
+        "jobOpeningShareUrl": "https://fullbay.bamboohr.com/careers/196",
+        "datePosted": "2026-01-07",
+        "description": "<p>Handle incoming customer calls.</p>",
+    }
+    fields = extract_deterministic_fields(raw_job, platform="bamboohr")
+    assert fields["external_job_id"] == "196"
+    assert fields["title"] == "Customer Support Rep"
+    assert fields["location"] == "Phoenix, Arizona, United States"
+    assert fields["department"] == "Support"
+    assert fields["employment_type"] == "Full-time"
+    assert fields["posting_url"] == "https://fullbay.bamboohr.com/careers/196"
+    assert fields["posted_at"] is not None
+    assert fields["raw_html"] == "<p>Handle incoming customer calls.</p>"
+
+
+def test_extract_bamboohr_missing_date_posted() -> None:
+    raw_job = {
+        "id": "64",
+        "jobOpeningName": "Product Owner",
+        "externalLink": "https://lexical.bamboohr.com/careers/64",
+        "description": "<p>Build products.</p>",
+    }
+    fields = extract_deterministic_fields(raw_job, platform="bamboohr")
+    assert fields["posted_at"] is None
+    assert fields["posting_url"] == "https://lexical.bamboohr.com/careers/64"
+
+
+def test_extract_rippling_fields() -> None:
+    raw_job = {
+        "uuid": "03ff755a-8e42-4bb6-a87c-58c85a59ff25",
+        "name": "Senior Backend Engineer",
+        "url": "https://ats.rippling.com/flexai/jobs/03ff755a-8e42-4bb6-a87c-58c85a59ff25",
+        "externalLink": "https://ats.rippling.com/flexai/jobs/03ff755a-8e42-4bb6-a87c-58c85a59ff25",
+        "createdOn": "2026-03-23T18:05:44.354000-07:00",
+        "department": {"name": "Engineering"},
+        "workLocations": ["Santa Clara, CA"],
+        "employmentType": {"label": "SALARIED_FT", "id": "Salaried, full-time"},
+        "description": {
+            "company": "<p>About FlexAI</p>",
+            "role": "<p>Build backend systems</p>",
+        },
+    }
+    fields = extract_deterministic_fields(raw_job, platform="rippling")
+    assert fields["external_job_id"] == "03ff755a-8e42-4bb6-a87c-58c85a59ff25"
+    assert fields["title"] == "Senior Backend Engineer"
+    assert fields["location"] == "Santa Clara, CA"
+    assert fields["department"] == "Engineering"
+    assert fields["employment_type"] == "Full-time"
+    assert fields["posting_url"] == "https://ats.rippling.com/flexai/jobs/03ff755a-8e42-4bb6-a87c-58c85a59ff25"
+    assert fields["posted_at"] is not None
+    assert fields["raw_html"] == "<p>About FlexAI</p><p>Build backend systems</p>"
+
+
+def test_extract_rippling_remote_location() -> None:
+    raw_job = {
+        "id": "abc",
+        "name": "Remote Engineer",
+        "locations": [
+            {
+                "name": "United States",
+                "country": "United States",
+                "workplaceType": "REMOTE",
+            }
+        ],
+    }
+    fields = extract_deterministic_fields(raw_job, platform="rippling")
+    assert fields["location"] == "United States (Remote)"
+
+
+def test_extract_rippling_missing_description() -> None:
+    raw_job = {
+        "uuid": "abc",
+        "name": "Engineer",
+        "url": "https://ats.rippling.com/flexai/jobs/abc",
+    }
+    fields = extract_deterministic_fields(raw_job, platform="rippling")
+    assert fields["raw_html"] == ""
+    assert fields["posting_url"] == "https://ats.rippling.com/flexai/jobs/abc"
+
+
+def test_extract_google_careers_fields() -> None:
+    raw_job = {
+        "id": "143122286080074438",
+        "title": "Forward Deployed Engineer IV, GenAI, Google Cloud",
+        "organization": "Google",
+        "location": "San Francisco, CA, USA; Atlanta, GA, USA; +24 more",
+        "experience_level": "Advanced",
+        "externalLink": "https://www.google.com/about/careers/applications/jobs/results/143122286080074438-forward-deployed-engineer-iv-genai-google-cloud",
+        "raw_html": "<h3>About the job</h3><p>Build AI systems.</p>",
+    }
+    fields = extract_deterministic_fields(raw_job, platform="google_careers")
+    assert fields["external_job_id"] == "143122286080074438"
+    assert fields["title"] == "Forward Deployed Engineer IV, GenAI, Google Cloud"
+    assert fields["location"] == "San Francisco, CA, USA; Atlanta, GA, USA; +24 more"
+    assert fields["department"] == "Google"
+    assert fields["job_country"] == "US"
+    assert fields["posted_at"] is None
+    assert "Experience level:</strong> Advanced" in fields["raw_html"]
+    assert "About the job" in fields["raw_html"]
+
+
+def test_extract_successfactors_mcdonalds_fields() -> None:
+    raw_job = {
+        "id": "1322170500",
+        "title": "Software Engineer I - iOS",
+        "location": "Chicago, IL, US, 60607",
+        "datePosted": "Sat Jun 20 07:00:00 UTC 2026",
+        "externalLink": "https://jobs.mcdonalds.com/job/Chicago-Software-Engineer-I-iOS-IL-60607/1322170500/",
+        "raw_html": "<p>Build mobile apps.</p>",
+    }
+    fields = extract_deterministic_fields(raw_job, platform="successfactors")
+    assert fields["external_job_id"] == "1322170500"
+    assert fields["title"] == "Software Engineer I - iOS"
+    assert fields["location"] == "Chicago, IL, US, 60607"
+    assert fields["job_country"] == "US"
+    assert fields["posted_at"] is not None
+    assert fields["posting_url"].endswith("/1322170500/")
+    assert fields["raw_html"] == "<p>Build mobile apps.</p>"
+
+
+def test_extract_successfactors_westinghouse_lastmod_fallback() -> None:
+    raw_job = {
+        "id": "1385011200",
+        "title": "Senior Data Engineer",
+        "location": "Cranberry Township, US",
+        "lastmod": "2026-06-13",
+        "externalLink": "https://careers.westinghousenuclear.com/job/Cranberry-Township-Senior-Data-Engineer-NC/1385011200/",
+        "raw_html": "<p>Data platform work.</p>",
+    }
+    fields = extract_deterministic_fields(raw_job, platform="successfactors")
+    assert fields["external_job_id"] == "1385011200"
+    assert fields["posted_at"] is not None
+    assert fields["posted_at"].year == 2026
+

@@ -90,9 +90,13 @@ async def test_run_pipeline_commits_parent_before_workers(monkeypatch) -> None:
             jobs_removed=0,
         )
 
+    async def _fake_publish_ops_stats(*args, **kwargs):  # noqa: ANN002, ANN003, ARG001
+        return {}
+
     monkeypatch.setattr(pipeline, "write_event", _fake_write_event)
     monkeypatch.setattr(pipeline, "select_due_companies", _fake_select_due_companies)
     monkeypatch.setattr(pipeline, "_process_single_company", _fake_process_single_company)
+    monkeypatch.setattr("app.ingestion.stats_publisher.publish_ops_stats", _fake_publish_ops_stats)
 
     snapshot = await pipeline.run_pipeline(db=fake_db, run_type="manual", settings=settings)
 

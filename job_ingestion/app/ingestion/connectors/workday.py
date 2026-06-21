@@ -5,7 +5,7 @@ import hashlib
 import json
 import logging
 import re
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timezone
 from typing import Any, Literal, Optional
 
 import httpx
@@ -18,6 +18,7 @@ except ImportError:  # pragma: no cover
 from app.config import get_settings
 from app.exceptions import ConnectorFetchError, ParseError
 from app.ingestion.connectors.base import BaseConnector
+from app.ingestion.job_freshness import FreshnessVerdict, classify_job, workday_listing_recency_hint
 from app.models.company import Company
 
 logger = structlog.get_logger(__name__) if structlog else logging.getLogger(__name__)
@@ -25,10 +26,6 @@ logger = structlog.get_logger(__name__) if structlog else logging.getLogger(__na
 MAX_PAGE_SIZE = 20
 DEFAULT_WORKDAY_FULL_REFRESH_DAYS = 7
 _JOB_REQ_ID_SUFFIX = re.compile(r"_([^/_]+)$")
-_RELATIVE_POSTED_DAYS = re.compile(r"posted\s+(\d+)\s+days?\s+ago", re.IGNORECASE)
-_RELATIVE_POSTED_DAYS_PLUS = re.compile(
-    r"posted\s+(\d+)\+\s+days?\s+ago", re.IGNORECASE
-)
 _CONSECUTIVE_STALE_PAGES_TO_STOP = 2
 
 
@@ -48,13 +45,14 @@ class WorkdayConnector(BaseConnector):
         base_url = self._base_url(company)
         public_base_url = self._public_base_url(company)
         max_posted_age_days = self._max_posted_age_days(company)
-        reference_date = datetime.now(timezone.utc).date()
+        reference = datetime.now(timezone.utc)
+        reference_date = reference.date()
         fetch_mode = self._workday_fetch_mode(company)
         full_refresh_days = self._workday_full_refresh_days(company)
         cached_raw = known_raw_by_id or {}
         cached_fetched_at = known_raw_fetched_at or {}
         listings = await self._fetch_all_pages(
-            base_url, company, max_posted_age_days, reference_date
+            base_url, company, max_posted_age_days, reference
         )
         if not listings:
             return []
@@ -70,8 +68,8 @@ class WorkdayConnector(BaseConnector):
                 if not external_path or not job_req_id:
                     continue
 
-                list_recency = self._listing_recency_hint(
-                    listing.get("postedOn"), reference_date, max_posted_age_days
+                list_recency = workday_listing_recency_hint(
+                    listing.get("postedOn"), reference, max_posted_age_days
                 )
                 if list_recency is False:
                     continue
@@ -90,6 +88,8 @@ class WorkdayConnector(BaseConnector):
                         job["externalLink"] = self._public_posting_url(
                             company, public_base_url, str(external_path)
                         )
+                        if self._job_is_stale(job, reference, max_posted_age_days):
+                            continue
                         jobs_with_detail.append(job)
                         cache_reused += 1
                         continue
@@ -124,9 +124,7 @@ class WorkdayConnector(BaseConnector):
                 else:
                     merged = {**listing, "jobPostingInfo": {}}
 
-                if not self._job_within_posted_window(
-                    merged, reference_date, max_posted_age_days
-                ):
+                if self._job_is_stale(merged, reference, max_posted_age_days):
                     continue
 
                 merged["id"] = str(job_req_id)
@@ -231,57 +229,11 @@ class WorkdayConnector(BaseConnector):
         return company.board_token
 
     @staticmethod
-    def _listing_recency_hint(
-        posted_on: object,
-        reference_date: date,
-        max_age_days: int,
-    ) -> Optional[bool]:
-        if not posted_on or not isinstance(posted_on, str):
-            return None
-        lowered = posted_on.strip().lower()
-        plus_match = _RELATIVE_POSTED_DAYS_PLUS.search(posted_on)
-        if plus_match:
-            minimum_days = int(plus_match.group(1))
-            if minimum_days >= max_age_days:
-                return False
-            return None
-        if "today" in lowered or "yesterday" in lowered:
-            return True
-        match = _RELATIVE_POSTED_DAYS.search(posted_on)
-        if match:
-            return int(match.group(1)) <= max_age_days
-        parsed = WorkdayConnector._parse_posted_date(posted_on)
-        if parsed is not None:
-            return (reference_date - parsed) <= timedelta(days=max_age_days)
-        return None
-
-    @staticmethod
-    def _parse_posted_date(value: str) -> Optional[date]:
-        for fmt in ("%m/%d/%Y", "%Y-%m-%d"):
-            try:
-                return datetime.strptime(value, fmt).date()
-            except ValueError:
-                continue
-        return None
-
-    @classmethod
-    def _job_within_posted_window(
-        cls,
-        job: dict[str, Any],
-        reference_date: date,
-        max_age_days: int,
-    ) -> bool:
-        info = job.get("jobPostingInfo") or {}
-        for candidate in (info.get("startDate"), info.get("postedOn"), job.get("postedOn")):
-            if not candidate or not isinstance(candidate, str):
-                continue
-            parsed = cls._parse_posted_date(candidate)
-            if parsed is not None:
-                return (reference_date - parsed) <= timedelta(days=max_age_days)
-            hint = cls._listing_recency_hint(candidate, reference_date, max_age_days)
-            if hint is not None:
-                return hint
-        return False
+    def _job_is_stale(job: dict[str, Any], reference: datetime, max_age_days: int) -> bool:
+        return (
+            classify_job(job, "workday", reference=reference, max_age_days=max_age_days)
+            == FreshnessVerdict.STALE
+        )
 
     @staticmethod
     def _resolve_job_req_id(listing: dict[str, Any]) -> str | None:
@@ -349,7 +301,7 @@ class WorkdayConnector(BaseConnector):
         base_url: str,
         company: Company,
         max_posted_age_days: int,
-        reference_date: date,
+        reference: datetime,
     ) -> list[dict[str, Any]]:
         all_jobs: list[dict[str, Any]] = []
         offset = 0
@@ -410,8 +362,8 @@ class WorkdayConnector(BaseConnector):
                 for posting in postings:
                     if not isinstance(posting, dict):
                         continue
-                    hint = self._listing_recency_hint(
-                        posting.get("postedOn"), reference_date, max_posted_age_days
+                    hint = workday_listing_recency_hint(
+                        posting.get("postedOn"), reference, max_posted_age_days
                     )
                     page_hints.append(hint)
                     if hint is not False:

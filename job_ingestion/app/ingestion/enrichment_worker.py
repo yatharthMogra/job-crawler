@@ -11,7 +11,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import Settings, get_settings
 from app.database import AsyncSessionLocal
-from app.ingestion.constants import FailureReason, ProcessingState
+from app.ingestion.constants import EventCategory, EventSeverity, EventType, FailureReason, ProcessingState
+from app.ingestion.events import write_event
 from app.ingestion.extractor.llm import (
     BatchJobEnrichment,
     DEFAULT_ENRICHMENT,
@@ -21,6 +22,8 @@ from app.ingestion.extractor.llm import (
 from app.ingestion.extractor.seniority import build_batch_job_payload
 from app.ingestion.extractor.text_cleaner import clean_job_description
 from app.ingestion.job_archive_sync import update_job_archive_after_enrichment
+from app.ingestion.job_freshness import FreshnessVerdict, refresh_posted_at_verdict
+from app.ingestion.job_purge import PurgeTarget, purge_normalized_jobs
 from app.ingestion.recommendation_fields import (
     assign_validated_retrieval_pools,
     compute_opportunity_score,
@@ -113,6 +116,119 @@ def _estimate_tokens_fallback(clean_text: str) -> int:
     return max(32, len(clean_text) // 4)
 
 
+async def _emit_stale_rejection_event(
+    db: AsyncSession,
+    *,
+    normalized: NormalizedJob,
+    company: Company,
+    queue_row: EnrichmentQueue,
+    posted_at: datetime | None,
+    stage: str,
+) -> None:
+    await write_event(
+        db,
+        event_type=EventType.JOB_REJECTED_STALE,
+        category=EventCategory.ENRICHMENT,
+        severity=EventSeverity.INFO,
+        platform=company.platform,
+        company_id=company.id,
+        pipeline_run_id=queue_row.pipeline_run_id,
+        normalized_job_id=normalized.id,
+        metadata={
+            "stage": stage,
+            "external_job_id": normalized.external_job_id,
+            "posted_at": posted_at.isoformat() if posted_at else None,
+        },
+    )
+
+
+async def _purge_if_stale_before_enrichment(
+    db: AsyncSession,
+    *,
+    normalized: NormalizedJob,
+    raw_job: RawJob,
+    company: Company,
+    queue_row: EnrichmentQueue,
+    settings: Settings,
+) -> bool:
+    posted_at, verdict = refresh_posted_at_verdict(
+        normalized.posted_at,
+        raw_job.raw_api_response,
+        company.platform,
+        settings=settings,
+    )
+    if posted_at is not None:
+        normalized.posted_at = posted_at
+    if verdict != FreshnessVerdict.STALE:
+        return False
+
+    await _emit_stale_rejection_event(
+        db,
+        normalized=normalized,
+        company=company,
+        queue_row=queue_row,
+        posted_at=posted_at,
+        stage="pre_enrichment",
+    )
+    await purge_normalized_jobs(
+        db,
+        [
+            PurgeTarget(
+                id=normalized.id,
+                raw_job_id=normalized.raw_job_id,
+                job_archive_id=normalized.job_archive_id,
+            )
+        ],
+    )
+    return True
+
+
+async def _purge_if_stale_after_enrichment(
+    db: AsyncSession,
+    *,
+    normalized: NormalizedJob,
+    raw_job: RawJob,
+    company: Company,
+    queue_row: EnrichmentQueue,
+    settings: Settings,
+    batch_item: EnrichmentBatchItem | None,
+) -> bool:
+    posted_at, verdict = refresh_posted_at_verdict(
+        normalized.posted_at,
+        raw_job.raw_api_response,
+        company.platform,
+        settings=settings,
+    )
+    if posted_at is not None:
+        normalized.posted_at = posted_at
+    if verdict != FreshnessVerdict.STALE:
+        return False
+
+    await _emit_stale_rejection_event(
+        db,
+        normalized=normalized,
+        company=company,
+        queue_row=queue_row,
+        posted_at=posted_at,
+        stage="post_enrichment",
+    )
+    if batch_item is not None:
+        batch_item.status = "failed"
+        batch_item.failure_reason = FailureReason.STALE_POSTING
+        batch_item.last_error = "Job posting date exceeds freshness window after enrichment."
+    await purge_normalized_jobs(
+        db,
+        [
+            PurgeTarget(
+                id=normalized.id,
+                raw_job_id=normalized.raw_job_id,
+                job_archive_id=normalized.job_archive_id,
+            )
+        ],
+    )
+    return True
+
+
 @dataclass
 class WorkItem:
     queue_row: EnrichmentQueue
@@ -149,10 +265,39 @@ class EnrichmentWorker:
     def pause_for_daily_quota(self, _message: str) -> None:
         self._quota_paused = True
 
+    async def _sleep_until_stop(self, seconds: float) -> bool:
+        """Sleep up to `seconds`. Returns True if stop was signaled."""
+        if self._stop.is_set():
+            return True
+        try:
+            await asyncio.wait_for(self._stop.wait(), timeout=seconds)
+            return True
+        except asyncio.TimeoutError:
+            return False
+
+    async def _wait_idle(self, timeout: float) -> bool:
+        """Wait for wake, stop, or timeout. Returns True if stop was signaled."""
+        if self._stop.is_set():
+            return True
+        wake_task = asyncio.create_task(self._wake.wait())
+        stop_task = asyncio.create_task(self._stop.wait())
+        try:
+            done, pending = await asyncio.wait(
+                [wake_task, stop_task],
+                timeout=timeout,
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+            return stop_task in done
+        finally:
+            for task in pending:
+                task.cancel()
+            await asyncio.gather(wake_task, stop_task, return_exceptions=True)
+
     async def run_forever(self) -> None:
         while not self._stop.is_set():
             if self._quota_paused:
-                await asyncio.sleep(30.0)
+                if await self._sleep_until_stop(30.0):
+                    break
                 continue
             batches_processed = 0
             try:
@@ -163,19 +308,24 @@ class EnrichmentWorker:
                         worker_id=self._worker_id,
                         worker_count=self._worker_count,
                         on_daily_quota_exhausted=self.pause_for_daily_quota,
+                        stop_event=self._stop,
                     )
+            except asyncio.CancelledError:
+                raise
             except Exception:
                 processed = 0
 
+            if self._stop.is_set():
+                break
+
             if batches_processed > 0:
-                await asyncio.sleep(self._settings.enrichment_window_seconds)
+                if await self._sleep_until_stop(float(self._settings.enrichment_window_seconds)):
+                    break
                 continue
 
             self._wake.clear()
-            try:
-                await asyncio.wait_for(self._wake.wait(), timeout=2.0)
-            except asyncio.TimeoutError:
-                continue
+            if await self._wait_idle(2.0):
+                break
 
 
 class EnrichmentWorkerPool:
@@ -289,6 +439,15 @@ async def _build_work_items(
             queue_row.status = "failed"
             queue_row.last_failure_reason = FailureReason.MISSING_REQUIRED_FIELDS
             queue_row.last_error = "Company not found."
+            continue
+        if await _purge_if_stale_before_enrichment(
+            db,
+            normalized=normalized,
+            raw_job=raw_job,
+            company=company,
+            queue_row=queue_row,
+            settings=settings,
+        ):
             continue
         clean_text = clean_job_description(raw_job.raw_html or "")
         estimated_tokens = await _estimate_tokens(settings, clean_text)
@@ -637,14 +796,6 @@ async def _process_batch(
                     role_intent=enrichment.role_intent,
                 )
             recommendation_fields = _recommendation_fields_from_enrichment(row.normalized, enrichment, settings)
-            row.queue_row.status = "completed"
-            row.queue_row.next_retry_at = None
-            row.queue_row.last_failure_reason = None
-            row.queue_row.last_error = None
-            if item is not None:
-                item.status = "success"
-                item.actual_input_tokens = input_tokens
-                item.actual_output_tokens = output_tokens
             db.add(
                 JobEnrichment(
                     normalized_job_id=row.normalized.id,
@@ -669,6 +820,25 @@ async def _process_batch(
                     failure_reason=None,
                 )
             )
+            if await _purge_if_stale_after_enrichment(
+                db,
+                normalized=row.normalized,
+                raw_job=row.raw_job,
+                company=row.company,
+                queue_row=row.queue_row,
+                settings=settings,
+                batch_item=item,
+            ):
+                continue
+
+            row.queue_row.status = "completed"
+            row.queue_row.next_retry_at = None
+            row.queue_row.last_failure_reason = None
+            row.queue_row.last_error = None
+            if item is not None:
+                item.status = "success"
+                item.actual_input_tokens = input_tokens
+                item.actual_output_tokens = output_tokens
 
         batch.status = "completed"
     except Exception as exc:
@@ -839,6 +1009,7 @@ async def process_enrichment_window(
     worker_id: int = 0,
     worker_count: int = 1,
     on_daily_quota_exhausted: Callable[[str], None] | None = None,
+    stop_event: asyncio.Event | None = None,
 ) -> tuple[int, int]:
     settings = settings or get_settings()
     now = _utcnow()
@@ -887,8 +1058,17 @@ async def process_enrichment_window(
     batches = batches[: min(settings.enrichment_max_batches_per_window, rpm_cap)]
     processed_jobs = 0
     for idx, batch in enumerate(batches):
+        if stop_event is not None and stop_event.is_set():
+            break
         if idx > 0:
-            await asyncio.sleep(settings.enrichment_batch_interval_seconds)
+            if stop_event is not None:
+                try:
+                    await asyncio.wait_for(stop_event.wait(), timeout=settings.enrichment_batch_interval_seconds)
+                    break
+                except asyncio.TimeoutError:
+                    pass
+            else:
+                await asyncio.sleep(settings.enrichment_batch_interval_seconds)
         await _process_batch(
             db=db,
             settings=settings,
@@ -933,6 +1113,17 @@ async def process_job_immediately(
     estimated_tokens = await _estimate_tokens(settings, clean_text)
     queue_row.estimated_input_tokens = estimated_tokens
     queue_row.source = "manual"
+
+    if await _purge_if_stale_before_enrichment(
+        db,
+        normalized=normalized,
+        raw_job=raw_job,
+        company=company,
+        queue_row=queue_row,
+        settings=settings,
+    ):
+        await db.commit()
+        return {"job_id": str(normalized_job_id), "status": "purged_stale"}
 
     item = WorkItem(
         queue_row=queue_row,

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 import pytest
 
@@ -9,8 +9,20 @@ from app.exceptions import ConnectorFetchError, ParseError
 
 async def _noop_sleep(*_args, **_kwargs) -> None:
     return None
+
+
 from app.ingestion.connectors.workday import WorkdayConnector
+from app.ingestion.job_freshness import workday_listing_recency_hint
 from app.models.company import Company
+
+
+def _recent_iso_date(days_ago: int = 1) -> str:
+    return (datetime.now(timezone.utc).date() - timedelta(days=days_ago)).isoformat()
+
+
+def _recent_us_date(days_ago: int = 1) -> str:
+    posted = datetime.now(timezone.utc).date() - timedelta(days=days_ago)
+    return posted.strftime("%m/%d/%Y")
 
 
 def _workday_company(
@@ -93,7 +105,7 @@ async def test_workday_success_path(monkeypatch) -> None:
                             "title": "Senior Software Engineer",
                             "externalPath": "/job/New-York-NY-USA/Senior-Software-Engineer_JR-12345",
                             "locationsText": "New York, NY, USA",
-                            "postedOn": "05/15/2026",
+                            "postedOn": _recent_us_date(3),
                             "bulletFields": ["Full time"],
                             "jobReqId": "JR-12345",
                         }
@@ -110,7 +122,7 @@ async def test_workday_success_path(monkeypatch) -> None:
                         "jobReqId": "JR-12345",
                         "jobDescription": "<p>Build APIs with Python.</p>",
                         "location": "New York, NY, USA",
-                        "postedOn": "05/15/2026",
+                        "postedOn": _recent_us_date(3),
                         "jobScheduleType": "Full_Time",
                         "department": "Engineering",
                     }
@@ -194,7 +206,7 @@ async def test_workday_pagination(monkeypatch) -> None:
                 {
                     "jobPostingInfo": {
                         "jobDescription": "<p>desc</p>",
-                        "startDate": "2026-06-10",
+                        "startDate": _recent_iso_date(1),
                     }
                 }
             )
@@ -321,7 +333,7 @@ async def test_workday_resolves_job_req_id_from_bullet_fields(monkeypatch) -> No
 
         async def get(self, url: str):  # noqa: ARG002
             return _FakeResponse(
-                {"jobPostingInfo": {"jobDescription": "<p>desc</p>", "startDate": "2026-06-10"}}
+                {"jobPostingInfo": {"jobDescription": "<p>desc</p>", "startDate": _recent_iso_date(1)}}
             )
 
     monkeypatch.setattr("app.ingestion.connectors.workday.httpx.AsyncClient", _FakeClient)
@@ -418,7 +430,7 @@ async def test_workday_skips_jobs_older_than_30_days(monkeypatch) -> None:
                 {
                     "jobPostingInfo": {
                         "jobDescription": "<p>desc</p>",
-                        "startDate": "2026-06-10",
+                        "startDate": _recent_iso_date(1),
                     }
                 }
             )
@@ -434,8 +446,8 @@ async def test_workday_skips_jobs_older_than_30_days(monkeypatch) -> None:
 
 
 def test_listing_recency_hint_custom_max_age() -> None:
-    reference = date(2026, 6, 12)
-    hint = WorkdayConnector._listing_recency_hint
+    reference = datetime(2026, 6, 12, tzinfo=timezone.utc)
+    hint = workday_listing_recency_hint
 
     assert hint("Posted 10 Days Ago", reference, 7) is False
     assert hint("Posted 10 Days Ago", reference, 30) is True
@@ -488,7 +500,7 @@ async def test_workday_stale_listings_skipped_during_accumulation(monkeypatch) -
         connector._base_url(company),
         company,
         connector._max_posted_age_days(company),
-        date(2026, 6, 12),
+        datetime(2026, 6, 12, tzinfo=timezone.utc),
     )
     assert [row["jobReqId"] for row in listings] == ["JR-fresh"]
 
@@ -533,7 +545,7 @@ async def test_workday_no_early_stop_when_flag_false(monkeypatch) -> None:
 
         async def get(self, url: str):  # noqa: ARG002
             return _FakeResponse(
-                {"jobPostingInfo": {"jobDescription": "<p>x</p>", "startDate": "2026-06-10"}}
+                {"jobPostingInfo": {"jobDescription": "<p>x</p>", "startDate": _recent_iso_date(1)}}
             )
 
     monkeypatch.setattr("app.ingestion.connectors.workday.httpx.AsyncClient", _FakeClient)
@@ -582,7 +594,7 @@ async def test_workday_stops_after_two_consecutive_stale_pages(monkeypatch) -> N
 
         async def get(self, url: str):  # noqa: ARG002
             return _FakeResponse(
-                {"jobPostingInfo": {"jobDescription": "<p>x</p>", "startDate": "2026-06-10"}}
+                {"jobPostingInfo": {"jobDescription": "<p>x</p>", "startDate": _recent_iso_date(1)}}
             )
 
     monkeypatch.setattr("app.ingestion.connectors.workday.httpx.AsyncClient", _FakeClient)
@@ -640,7 +652,7 @@ async def test_workday_no_early_stop_without_fresh_page(monkeypatch) -> None:
 
         async def get(self, url: str):  # noqa: ARG002
             return _FakeResponse(
-                {"jobPostingInfo": {"jobDescription": "<p>x</p>", "startDate": "2026-06-10"}}
+                {"jobPostingInfo": {"jobDescription": "<p>x</p>", "startDate": _recent_iso_date(1)}}
             )
 
     monkeypatch.setattr("app.ingestion.connectors.workday.httpx.AsyncClient", _FakeClient)
@@ -698,7 +710,7 @@ async def test_workday_consecutive_counter_resets_on_mixed_page(monkeypatch) -> 
 
         async def get(self, url: str):  # noqa: ARG002
             return _FakeResponse(
-                {"jobPostingInfo": {"jobDescription": "<p>x</p>", "startDate": "2026-06-10"}}
+                {"jobPostingInfo": {"jobDescription": "<p>x</p>", "startDate": _recent_iso_date(1)}}
             )
 
     monkeypatch.setattr("app.ingestion.connectors.workday.httpx.AsyncClient", _FakeClient)
@@ -789,7 +801,7 @@ async def test_workday_incremental_skips_detail_for_cached_unchanged(monkeypatch
     jobs = await connector.fetch_jobs(
         company,
         known_raw_by_id={"JR-1": _cached_job("JR-1")},
-        known_raw_fetched_at={"JR-1": datetime(2026, 6, 11, tzinfo=timezone.utc)},
+        known_raw_fetched_at={"JR-1": datetime.now(timezone.utc) - timedelta(hours=1)},
     )
     assert len(jobs) == 1
     assert jobs[0]["id"] == "JR-1"
@@ -830,7 +842,7 @@ async def test_workday_incremental_details_new_job(monkeypatch) -> None:
                 {
                     "jobPostingInfo": {
                         "jobDescription": "<p>new</p>",
-                        "startDate": "2026-06-10",
+                        "startDate": _recent_iso_date(1),
                     }
                 }
             )
@@ -879,7 +891,7 @@ async def test_workday_incremental_details_on_fingerprint_change(monkeypatch) ->
         async def get(self, url: str):
             get_calls.append(url)
             return _FakeResponse(
-                {"jobPostingInfo": {"jobDescription": "<p>updated</p>", "startDate": "2026-06-10"}}
+                {"jobPostingInfo": {"jobDescription": "<p>updated</p>", "startDate": _recent_iso_date(1)}}
             )
 
     monkeypatch.setattr("app.ingestion.connectors.workday.httpx.AsyncClient", _FakeClient)
@@ -926,7 +938,7 @@ async def test_workday_incremental_details_when_description_missing(monkeypatch)
         async def get(self, url: str):
             get_calls.append(url)
             return _FakeResponse(
-                {"jobPostingInfo": {"jobDescription": "<p>filled</p>", "startDate": "2026-06-10"}}
+                {"jobPostingInfo": {"jobDescription": "<p>filled</p>", "startDate": _recent_iso_date(1)}}
             )
 
     monkeypatch.setattr("app.ingestion.connectors.workday.httpx.AsyncClient", _FakeClient)
@@ -973,7 +985,7 @@ async def test_workday_incremental_refreshes_stale_cache(monkeypatch) -> None:
         async def get(self, url: str):
             get_calls.append(url)
             return _FakeResponse(
-                {"jobPostingInfo": {"jobDescription": "<p>refresh</p>", "startDate": "2026-06-10"}}
+                {"jobPostingInfo": {"jobDescription": "<p>refresh</p>", "startDate": _recent_iso_date(1)}}
             )
 
     monkeypatch.setattr("app.ingestion.connectors.workday.httpx.AsyncClient", _FakeClient)
@@ -1022,7 +1034,7 @@ async def test_workday_full_mode_unchanged(monkeypatch) -> None:
         async def get(self, url: str):
             get_calls.append(url)
             return _FakeResponse(
-                {"jobPostingInfo": {"jobDescription": "<p>x</p>", "startDate": "2026-06-10"}}
+                {"jobPostingInfo": {"jobDescription": "<p>x</p>", "startDate": _recent_iso_date(1)}}
             )
 
     monkeypatch.setattr("app.ingestion.connectors.workday.httpx.AsyncClient", _FakeClient)

@@ -11,6 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import Settings, get_settings
+from app.ingestion.fetch_backpressure import apply_fetch_backpressure, backpressure_metadata
 from app.ingestion.fetch_schedule_config import FetchScheduleConfig
 from app.models.company import Company
 
@@ -114,10 +115,29 @@ async def select_due_companies(
     companies = (
         await db.scalars(select(Company).where(Company.is_active.is_(True)))
     ).all()
-    return select_due_companies_from_rows(
+    result = select_due_companies_from_rows(
         list(companies),
         schedule,
         exclude_platforms=exclude,
+    )
+    if not result.company_ids:
+        return result
+
+    selected_by_id = {
+        company.id: company
+        for company in companies
+        if company.id in result.company_ids
+    }
+    ordered = [selected_by_id[company_id] for company_id in result.company_ids if company_id in selected_by_id]
+    filtered, decision = await apply_fetch_backpressure(db, ordered, settings=settings)
+    schedule_metadata = {
+        **result.schedule_metadata,
+        "backpressure": backpressure_metadata(decision),
+        "companies_selected": len(filtered),
+    }
+    return FetchSelectionResult(
+        company_ids=[company.id for company in filtered],
+        schedule_metadata=schedule_metadata,
     )
 
 
