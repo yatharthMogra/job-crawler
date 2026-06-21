@@ -18,6 +18,9 @@ REGION="${GCP_REGION:-us-central1}"
 REPO="${ARTIFACT_REPO:-job-crawler}"
 REGISTRY="${REGION}-docker.pkg.dev/${PROJECT}/${REPO}"
 
+# Production Vercel frontend — edit if your deploy URL changes.
+CORS_ORIGINS="https://career-match-gcp.vercel.app"
+
 # Docker folder name (underscore) -> Cloud Run service name (dash)
 cloud_run_name() {
   echo "${1//_/-}"
@@ -66,11 +69,11 @@ gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
 
 deploy_service profile_service \
   --set-secrets "DATABASE_URL=database-url:latest,GEMINI_API_KEY=gemini-api-key:latest,API_KEY=profile-api-key:latest,SUPABASE_URL=supabase-url:latest,SUPABASE_SERVICE_ROLE_KEY=supabase-service-role-key:latest" \
-  --set-env-vars "RESUME_STORAGE_BACKEND=supabase,SUPABASE_STORAGE_BUCKET=resumes"
+  --set-env-vars "RESUME_STORAGE_BACKEND=supabase,SUPABASE_STORAGE_BUCKET=resumes,CORS_ORIGINS=${CORS_ORIGINS}"
 
 deploy_service recommendation_service \
   --set-secrets "DATABASE_URL=database-url:latest,GEMINI_API_KEY=gemini-api-key:latest" \
-  --set-env-vars "ENABLE_NOTIFICATION_SCHEDULER=false"
+  --set-env-vars "ENABLE_NOTIFICATION_SCHEDULER=false,CORS_ORIGINS=${CORS_ORIGINS}"
 
 echo ""
 echo "Deploy complete. Service URLs:"
@@ -78,6 +81,8 @@ gcloud run services describe profile-service \
   --project "${PROJECT}" --region "${REGION}" --format='value(status.url)'
 gcloud run services describe recommendation-service \
   --project "${PROJECT}" --region "${REGION}" --format='value(status.url)'
+echo ""
+echo "CORS_ORIGINS=${CORS_ORIGINS} (set on both Cloud Run services)"
 echo ""
 echo "Set Vercel env vars:"
 echo "  NEXT_PUBLIC_RECOMMENDATION_API_URL=<recommendation-service URL>"

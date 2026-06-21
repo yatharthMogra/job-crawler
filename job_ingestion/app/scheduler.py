@@ -59,6 +59,11 @@ def build_scheduler(settings: Optional[Settings] = None) -> AsyncIOScheduler:
 
         await _run_yc_health()
 
+    async def run_company_enrichment_job() -> None:
+        from app.schedulers.company_enrichment import run_company_enrichment_job as _run_company_enrichment
+
+        await _run_company_enrichment()
+
     async def publish_stats_job() -> None:
         from app.ingestion.stats_publisher import publish_ops_stats_standalone
 
@@ -135,6 +140,16 @@ def build_scheduler(settings: Optional[Settings] = None) -> AsyncIOScheduler:
         hour=4,
         minute=0,
         id="yc-waas-health-check",
+        max_instances=1,
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        run_company_enrichment_job,
+        trigger="cron",
+        day=1,
+        hour=5,
+        minute=0,
+        id="company-enrichment",
         max_instances=1,
         replace_existing=True,
     )

@@ -1,5 +1,25 @@
 const BASE_URL = process.env.NEXT_PUBLIC_RECOMMENDATION_API_URL ?? "http://localhost:8002"
 
+export type SponsorshipStatus = "yes" | "no" | "unclear"
+
+export interface H1BSponsorshipInfo {
+  pool_family: string
+  total_lca_3yr: number
+  approval_rate_3yr: number | null
+  is_top_sponsor: boolean
+  years_covered: number[]
+}
+
+export interface CompanyEnrichmentInfo {
+  founded_year: number | null
+  headquarters: string | null
+  employee_count_range: string | null
+  one_line_description: string | null
+  website: string | null
+  linkedin_url: string | null
+  glassdoor_rating: number | null
+}
+
 export interface DashboardJobApi {
   id: string
   title: string
@@ -20,6 +40,14 @@ export interface DashboardJobApi {
   tech_stack: string[]
   skills: string[]
   seniority: string
+  responsibilities: string[]
+  required_qualifications: string[]
+  preferred_qualifications: string[]
+  benefits: string[]
+  sponsorship_status: SponsorshipStatus
+  sponsorship_confidence: string
+  h1b_sponsorship: H1BSponsorshipInfo | null
+  company_info: CompanyEnrichmentInfo | null
 }
 
 export interface RecommendedJobApi extends DashboardJobApi {

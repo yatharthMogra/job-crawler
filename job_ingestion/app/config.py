@@ -31,8 +31,10 @@ class Settings(BaseSettings):
     gemini_api_keys: str = ""
     enrichment_worker_count: int = 0
     gemini_model: str = "gemini-3.1-flash-lite"
-    extraction_version: str = "v6"
-    default_extraction_version: str = "v6"
+    extraction_version: str = "v7"
+    default_extraction_version: str = "v7"
+    company_enrichment_refresh_days: int = 30
+    company_enrichment_batch_size: int = 10
     opportunity_score_freshness_decay: float = 0.01
     comp_floor: int = 40_000
     comp_ceiling: int = 250_000

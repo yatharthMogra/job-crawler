@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import Settings, get_settings
 from app.database import get_db
 from app.models.shared import NormalizedJob
-from app.notification.ranker import deduplicate_ranked_jobs, rank_jobs, rank_jobs_with_h1b
+from app.notification.ranker import deduplicate_ranked_jobs, rank_jobs
 from app.notification.retrieval import build_constraint_filters, query_jobs_in_pools
 from app.scoring.explainability import generate_explanations
 from app.scoring.sponsorship import h1b_info_from_lookup
@@ -20,6 +20,7 @@ from app.schemas.applications import (
     UserApplicationsResponse,
 )
 from app.schemas.dashboard import (
+    CompanyEnrichmentOut,
     DashboardJobOut,
     DashboardJobsResponse,
     DashboardRecommendedJobOut,
@@ -27,15 +28,43 @@ from app.schemas.dashboard import (
     H1BSponsorshipInfo,
 )
 from app.services.applications import apply_to_job, get_user_applications, patch_application
-from app.services.h1b_lookup import load_h1b_summary_lookup
+from app.services.company_enrichment_lookup import load_company_enrichment_lookup
+from app.services.h1b_lookup import H1bLookup, load_h1b_summary_lookup
 from app.services.h1b_pool_family import pool_family_from_roles
-from app.services.profile_loader import load_user_profile
+from app.services.profile_loader import UserProfile, load_user_profile
 from app.services.subscriptions import get_active_pools
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 
-def _job_to_out(job: NormalizedJob) -> DashboardJobOut:
+def _h1b_sponsorship_for_job(
+    job: NormalizedJob,
+    h1b_lookup: H1bLookup | None,
+) -> H1BSponsorshipInfo | None:
+    if h1b_lookup is None:
+        return None
+    row = h1b_info_from_lookup(
+        job.company_id,
+        pool_family_from_roles(job.normalized_roles or []),
+        h1b_lookup,
+    )
+    if row is None:
+        return None
+    return H1BSponsorshipInfo(
+        pool_family=row.pool_family,
+        total_lca_3yr=row.total_lca_3yr,
+        approval_rate_3yr=row.approval_rate_3yr,
+        is_top_sponsor=row.is_top_sponsor,
+        years_covered=row.years_covered,
+    )
+
+
+def _job_to_out(
+    job: NormalizedJob,
+    *,
+    h1b_sponsorship: H1BSponsorshipInfo | None = None,
+    company_info: CompanyEnrichmentOut | None = None,
+) -> DashboardJobOut:
     return DashboardJobOut(
         id=job.id,
         title=job.title,
@@ -56,6 +85,47 @@ def _job_to_out(job: NormalizedJob) -> DashboardJobOut:
         tech_stack=job.tech_stack,
         skills=job.skills,
         seniority=job.seniority,
+        responsibilities=list(job.responsibilities or []),
+        required_qualifications=list(job.required_qualifications or []),
+        preferred_qualifications=list(job.preferred_qualifications or []),
+        benefits=list(job.benefits or []),
+        sponsorship_status=job.sponsorship_status,
+        sponsorship_confidence=job.sponsorship_confidence,
+        h1b_sponsorship=h1b_sponsorship,
+        company_info=company_info,
+    )
+
+
+def _needs_sponsorship_data(user_profile: UserProfile | None) -> bool:
+    if user_profile is None:
+        return False
+    return bool((user_profile.constraints or {}).get("sponsorship_required"))
+
+
+async def _load_job_enrichment_lookups(
+    db: AsyncSession,
+    jobs: list[NormalizedJob],
+    *,
+    needs_sponsorship: bool,
+) -> tuple[H1bLookup | None, dict[uuid.UUID, CompanyEnrichmentOut]]:
+    company_ids = {job.company_id for job in jobs}
+    h1b_lookup = await load_h1b_summary_lookup(db, company_ids) if needs_sponsorship else None
+    company_lookup = await load_company_enrichment_lookup(db, company_ids)
+    return h1b_lookup, company_lookup
+
+
+def _enriched_job_out(
+    job: NormalizedJob,
+    *,
+    h1b_lookup: H1bLookup | None,
+    company_lookup: dict[uuid.UUID, CompanyEnrichmentOut],
+    needs_sponsorship: bool,
+) -> DashboardJobOut:
+    h1b_info = _h1b_sponsorship_for_job(job, h1b_lookup) if needs_sponsorship else None
+    return _job_to_out(
+        job,
+        h1b_sponsorship=h1b_info,
+        company_info=company_lookup.get(job.company_id),
     )
 
 
@@ -108,7 +178,21 @@ async def get_dashboard_jobs(
         )
     )
     total = await db.scalar(count_stmt) or 0
-    return DashboardJobsResponse(jobs=[_job_to_out(job) for job in jobs], total=total)
+
+    needs_sponsorship = _needs_sponsorship_data(user_profile)
+    h1b_lookup, company_lookup = await _load_job_enrichment_lookups(
+        db, jobs, needs_sponsorship=needs_sponsorship
+    )
+    jobs_out = [
+        _enriched_job_out(
+            job,
+            h1b_lookup=h1b_lookup,
+            company_lookup=company_lookup,
+            needs_sponsorship=needs_sponsorship,
+        )
+        for job in jobs
+    ]
+    return DashboardJobsResponse(jobs=jobs_out, total=total)
 
 
 async def _fetch_all_pool_jobs(
@@ -153,12 +237,11 @@ async def get_recommended_jobs(
     cap = settings.notification_retrieval_limit
     all_jobs = await _fetch_all_pool_jobs(db, pools=pools, filters=filters, cap=cap)
 
-    needs_sponsorship = bool((user_profile.constraints or {}).get("sponsorship_required"))
-    h1b_lookup = None
-    if needs_sponsorship:
-        h1b_lookup = await load_h1b_summary_lookup(db, {job.company_id for job in all_jobs})
-
-    scoring_lookup = h1b_lookup if settings.sponsorship_score_enabled else None
+    needs_sponsorship = _needs_sponsorship_data(user_profile)
+    h1b_lookup, company_lookup = await _load_job_enrichment_lookups(
+        db, all_jobs, needs_sponsorship=needs_sponsorship
+    )
+    scoring_lookup = h1b_lookup if settings.sponsorship_score_enabled and needs_sponsorship else None
     ranked = deduplicate_ranked_jobs(
         rank_jobs(all_jobs, user_profile, settings, h1b_lookup=scoring_lookup)
     )
@@ -167,28 +250,17 @@ async def get_recommended_jobs(
 
     jobs_out: list[DashboardRecommendedJobOut] = []
     for job, score in page:
-        base = _job_to_out(job)
-        h1b_info = None
-        if needs_sponsorship and h1b_lookup is not None:
-            row = h1b_info_from_lookup(
-                job.company_id,
-                pool_family_from_roles(job.normalized_roles or []),
-                h1b_lookup,
-            )
-            if row:
-                h1b_info = H1BSponsorshipInfo(
-                    pool_family=row.pool_family,
-                    total_lca_3yr=row.total_lca_3yr,
-                    approval_rate_3yr=row.approval_rate_3yr,
-                    is_top_sponsor=row.is_top_sponsor,
-                    years_covered=row.years_covered,
-                )
+        base = _enriched_job_out(
+            job,
+            h1b_lookup=h1b_lookup,
+            company_lookup=company_lookup,
+            needs_sponsorship=needs_sponsorship,
+        )
         jobs_out.append(
             DashboardRecommendedJobOut(
                 **base.model_dump(),
                 personal_score=score,
                 match_reasons=generate_explanations(job, user_profile),
-                h1b_sponsorship=h1b_info,
             )
         )
     return DashboardRecommendedJobsResponse(jobs=jobs_out, total=total)
@@ -214,7 +286,18 @@ async def get_dashboard_job(
     )
     if job is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
-    return _job_to_out(job)
+
+    user_profile = await load_user_profile(db, candidate_id)
+    needs_sponsorship = _needs_sponsorship_data(user_profile)
+    h1b_lookup, company_lookup = await _load_job_enrichment_lookups(
+        db, [job], needs_sponsorship=needs_sponsorship
+    )
+    return _enriched_job_out(
+        job,
+        h1b_lookup=h1b_lookup,
+        company_lookup=company_lookup,
+        needs_sponsorship=needs_sponsorship,
+    )
 
 
 @router.post("/jobs/{job_id}/apply", response_model=UserApplicationOut)

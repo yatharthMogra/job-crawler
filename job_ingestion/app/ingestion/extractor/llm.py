@@ -168,6 +168,15 @@ ENRICHMENT_SYSTEM_PROMPT = (
     "- Examples: distributed systems, NLP, computer vision, CI/CD, data pipelines\n"
     "- Do not duplicate job_capabilities taxonomy labels here\n"
     "- Leave empty only when no technical themes are present\n\n"
+    "description section rules:\n"
+    "- Extract the job description into structured sections as lists of short bullet strings\n"
+    "- Rewrite into bullets even when the source is prose; do not copy long paragraphs verbatim\n"
+    "- Max 8 bullets per section\n"
+    "- responsibilities: day-to-day duties and what the person will do\n"
+    "- required_qualifications: must-have skills, experience, and education\n"
+    "- preferred_qualifications: explicitly optional or preferred items only\n"
+    "- benefits: perks, compensation extras, time off, equity, etc.\n"
+    "- Return an empty list for any section with no content in the source; do not guess\n\n"
     f"{DOMAIN_PROMPT_RULES}\n\n"
     f"{ROLE_INTENT_PROMPT_RULES}"
 )
@@ -248,6 +257,10 @@ class JobEnrichment(_DomainFieldsMixin):
     application_effort: ApplicationEffort = "MEDIUM"
     salary_min: Optional[int] = None
     salary_max: Optional[int] = None
+    responsibilities: list[str] = Field(default_factory=list)
+    required_qualifications: list[str] = Field(default_factory=list)
+    preferred_qualifications: list[str] = Field(default_factory=list)
+    benefits: list[str] = Field(default_factory=list)
 
     @field_validator("normalized_roles", mode="before")
     @classmethod
@@ -290,6 +303,10 @@ class BatchJobEnrichment(_DomainFieldsMixin):
     application_effort: ApplicationEffort = "MEDIUM"
     salary_min: Optional[int] = None
     salary_max: Optional[int] = None
+    responsibilities: list[str] = Field(default_factory=list)
+    required_qualifications: list[str] = Field(default_factory=list)
+    preferred_qualifications: list[str] = Field(default_factory=list)
+    benefits: list[str] = Field(default_factory=list)
 
     @field_validator("normalized_roles", mode="before")
     @classmethod
@@ -373,6 +390,10 @@ DEFAULT_ENRICHMENT = JobEnrichment(
     application_effort="MEDIUM",
     salary_min=None,
     salary_max=None,
+    responsibilities=[],
+    required_qualifications=[],
+    preferred_qualifications=[],
+    benefits=[],
     requires_clearance=False,
     role_intent="other",
 )

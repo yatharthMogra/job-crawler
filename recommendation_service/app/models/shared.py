@@ -100,6 +100,10 @@ class NormalizedJob(Base):
     salary_max: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     opportunity_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    responsibilities: Mapped[list[str]] = mapped_column(ARRAY(String(512)), nullable=False)
+    required_qualifications: Mapped[list[str]] = mapped_column(ARRAY(String(512)), nullable=False)
+    preferred_qualifications: Mapped[list[str]] = mapped_column(ARRAY(String(512)), nullable=False)
+    benefits: Mapped[list[str]] = mapped_column(ARRAY(String(512)), nullable=False)
 
 
 class Company(Base):
@@ -108,6 +112,19 @@ class Company(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     platform: Mapped[str] = mapped_column(String(64), nullable=False)
+
+
+class CompanyEnrichment(Base):
+    __tablename__ = "company_enrichments"
+
+    company_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    founded_year: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    headquarters: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    employee_count_range: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    one_line_description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    website: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+    linkedin_url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+    glassdoor_rating: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
 
 class JobArchive(Base):

@@ -38,6 +38,7 @@ from app.ingestion.extractor.llm import DEFAULT_ENRICHMENT
 from app.ingestion.extractor.text_cleaner import build_description_preview, clean_job_description
 from app.ingestion.fetcher import fetch_company_jobs
 from app.ingestion.job_freshness import FreshnessVerdict, classify_posted_at
+from app.ingestion.job_field_limits import clamp_deterministic_fields
 from app.ingestion.job_archive_sync import (
     upsert_job_archive_from_deterministic,
     upsert_job_archive_from_normalized,
@@ -329,6 +330,8 @@ async def process_company_raw_jobs(
                     fingerprint=deterministic_fields["dedup_fingerprint"],
                 )
             continue
+        deterministic_fields = clamp_deterministic_fields(deterministic_fields)
+        external_id = deterministic_fields["external_job_id"]
         raw_html = deterministic_fields.get("raw_html") or job.get("content") or ""
         description_text = _resolve_description_text(job, raw_html) or ""
         deterministic_fields["description_text"] = description_text or None
@@ -456,6 +459,26 @@ async def _process_single_company(
         except Exception as exc:  # noqa: BLE001
             outcome.status = "failed"
             outcome.error_message = str(exc)
+            await db.rollback()
+            company = await db.get(Company, company_id)
+            if company is None:
+                db.add(
+                    CompanyRunResult(
+                        pipeline_run_id=pipeline_run_id,
+                        company_id=company_id,
+                        status=outcome.status,
+                        jobs_fetched=outcome.jobs_fetched,
+                        jobs_new=outcome.jobs_new,
+                        jobs_updated=outcome.jobs_updated,
+                        jobs_unchanged=outcome.jobs_unchanged,
+                        jobs_removed=outcome.jobs_removed,
+                        error_message=outcome.error_message,
+                        started_at=company_started,
+                        completed_at=_utcnow(),
+                    )
+                )
+                await db.commit()
+                return outcome
             company.consecutive_fetch_failures += 1
             await write_event(
                 db,

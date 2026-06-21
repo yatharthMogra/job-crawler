@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.ingestion.constants import EventCategory, EventSeverity, EventType
 from app.ingestion.events import write_event
+from app.ingestion.company_enrichment.worker import enrich_company_by_id
 from app.models.company import Company
 from app.models.normalized_job import NormalizedJob
 from app.schemas.company import CompanyFlagIn, CompanyOut, CompanyPatchIn, CompanySyncOut
@@ -109,6 +110,35 @@ async def flag_company_for_review(
     await db.commit()
     await db.refresh(row)
     return _serialize_company(row)
+
+
+@router.post("/{company_id}/enrich")
+async def enrich_company_endpoint(company_id: str, db: AsyncSession = Depends(get_db)) -> dict:
+    try:
+        company_uuid = uuid.UUID(company_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid company id") from exc
+
+    row = await db.get(Company, company_uuid)
+    if row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found")
+
+    result = await enrich_company_by_id(db, company_uuid)
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Could not enrich company (missing website or about page content)",
+        )
+    return {
+        "company_id": company_id,
+        "founded_year": result.founded_year,
+        "headquarters": result.headquarters,
+        "employee_count_range": result.employee_count_range,
+        "one_line_description": result.one_line_description,
+        "website": result.website,
+        "linkedin_url": result.linkedin_url,
+        "glassdoor_rating": result.glassdoor_rating,
+    }
 
 
 def _serialize_company(row: Company, active_jobs_count: int | None = None) -> CompanyOut:
