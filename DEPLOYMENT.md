@@ -742,26 +742,58 @@ Use dashed service names in `gcloud run services describe`.
 
 ### Secret rotation and redeploy
 
-Rotating a secret in Supabase or Google AI Studio is not enough — update GCP Secret Manager, then **create a new Cloud Run revision**:
+Rotating a secret in Supabase or Google AI Studio is not enough — update GCP Secret Manager, then **create a new Cloud Run revision** that picks up the new secret version.
 
 ```bash
 echo -n "NEW_VALUE" | gcloud secrets versions add database-url --project=YOUR_PROJECT_ID --data-file=-
 ```
 
-Then redeploy (same image is fine):
+**Prefer the deploy script** so secrets, env vars (including CORS), and a fresh Docker image stay in sync:
 
 ```bash
+GCP_PROJECT=YOUR_PROJECT_ID GCP_REGION=us-central1 ./scripts/deploy-cloud-run.sh
+```
+
+The script rebuilds and pushes both service images, then deploys with `--set-secrets` and `--set-env-vars`. It hardcodes production CORS in `scripts/deploy-cloud-run.sh` (`CORS_ORIGINS="https://career-match-gcp.vercel.app"`). The same URL is also in the default allow list in `profile_service/app/config.py` and `recommendation_service/app/config.py`. If your Vercel URL changes, update all three before redeploying.
+
+Manual `gcloud run deploy` works for secret-only rotations (same image is fine), but **must still pass `CORS_ORIGINS`** — otherwise a redeploy can wipe the env var and the browser will only get localhost origins from an older image:
+
+```bash
+VERCEL_URL="https://career-match-gcp.vercel.app"
+
 gcloud run deploy profile-service --project YOUR_PROJECT_ID --region us-central1 \
   --image us-central1-docker.pkg.dev/YOUR_PROJECT_ID/job-crawler/profile_service:latest \
   --set-secrets "DATABASE_URL=database-url:latest,..." \
-  ...
+  --set-env-vars "RESUME_STORAGE_BACKEND=supabase,SUPABASE_STORAGE_BUCKET=resumes,CORS_ORIGINS=${VERCEL_URL}"
+
+gcloud run deploy recommendation-service --project YOUR_PROJECT_ID --region us-central1 \
+  --image us-central1-docker.pkg.dev/YOUR_PROJECT_ID/job-crawler/recommendation_service:latest \
+  --set-secrets "DATABASE_URL=database-url:latest,..." \
+  --set-env-vars "ENABLE_NOTIFICATION_SCHEDULER=false,CORS_ORIGINS=${VERCEL_URL}"
 ```
 
-Bare `gcloud run services update profile-service` with no flags errors with **"No configuration change requested"**. Either full `gcloud run deploy` or add a noop env bump:
+Bare `gcloud run services update profile-service` with no flags errors with **"No configuration change requested"**. Either full `gcloud run deploy` (or `./scripts/deploy-cloud-run.sh`) or add a noop env bump:
 
 ```bash
 gcloud run services update profile-service --region us-central1 --project=YOUR_PROJECT_ID \
   --update-env-vars="SECRET_ROTATED_AT=$(date +%s)"
+```
+
+**Verify CORS after redeploy** — a successful preflight returns **200** and includes `access-control-allow-origin` matching your Vercel URL. **400** with `vary: Origin` but no `access-control-allow-origin` means the origin is not allowed on the running revision (stale image and/or missing `CORS_ORIGINS`):
+
+```bash
+curl -sI -X OPTIONS \
+  "https://recommendation-service-XXXX.us-central1.run.app/dashboard/jobs/recommended" \
+  -H "Origin: https://career-match-gcp.vercel.app" \
+  -H "Access-Control-Request-Method: GET"
+```
+
+Confirm the env var on the new revision:
+
+```bash
+gcloud run services describe recommendation-service \
+  --project YOUR_PROJECT_ID --region us-central1 \
+  --format='yaml(spec.template.spec.containers[0].env)'
 ```
 
 Also update Vercel env vars and redeploy the frontend; restart home-machine processes after updating local `.env` files.

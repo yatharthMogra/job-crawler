@@ -1,4 +1,5 @@
 from app.models.company import Company
+from app.models.company_enrichment import CompanyEnrichment
 from app.models.h1b import (
     H1bCompanyPoolSummary,
     H1bEmployer,
@@ -22,6 +23,7 @@ from app.models.raw_job import RawJob
 
 __all__ = [
     "Company",
+    "CompanyEnrichment",
     "EnrichmentQueue",
     "EnrichmentBatch",
     "EnrichmentBatchItem",

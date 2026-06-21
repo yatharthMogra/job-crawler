@@ -1,3 +1,9 @@
+import type {
+  CompanyEnrichmentInfo,
+  H1BSponsorshipInfo,
+  SponsorshipStatus,
+} from "@/lib/recommendation/api"
+
 export type EmploymentType = "FULLTIME" | "PARTTIME" | "INTERNSHIP" | "CONTRACT"
 export type RemoteType = "remote" | "hybrid" | "onsite"
 export type SeniorityLevel =
@@ -28,6 +34,14 @@ export interface Job {
   match_reasons: string[]
   recommendation_reason: string
   skills: string[]
+  responsibilities: string[]
+  required_qualifications: string[]
+  preferred_qualifications: string[]
+  benefits: string[]
+  sponsorship_status: SponsorshipStatus
+  sponsorship_confidence: string
+  h1b_sponsorship: H1BSponsorshipInfo | null
+  company_info: CompanyEnrichmentInfo | null
   description_html: string
   is_saved: boolean
   is_applied: boolean
@@ -184,6 +198,20 @@ export const ALL_JOBS: Job[] = Array.from({ length: TOTAL }).map((_, i) => {
     match_reasons: role.reasons,
     recommendation_reason: REC_REASONS[Math.floor(rand() * REC_REASONS.length)],
     skills: role.skills,
+    responsibilities: [
+      "Design, build, and maintain scalable services and features.",
+      "Collaborate with cross-functional teams to ship products end to end.",
+    ],
+    required_qualifications: [
+      `Strong experience with ${role.skills.slice(0, 2).join(" and ")}.`,
+      "Excellent communication and collaboration skills.",
+    ],
+    preferred_qualifications: [`Familiarity with ${role.skills.slice(2).join(", ") || "modern tooling"}.`],
+    benefits: ["Competitive compensation", "Equity", "Flexible work environment"],
+    sponsorship_status: "unclear",
+    sponsorship_confidence: "low",
+    h1b_sponsorship: null,
+    company_info: null,
     description_html: descriptionHtml(role.title, company, role.skills),
     is_saved: false,
     is_applied: false,

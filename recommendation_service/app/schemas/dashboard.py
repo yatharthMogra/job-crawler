@@ -7,6 +7,24 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 
+class H1BSponsorshipInfo(BaseModel):
+    pool_family: str
+    total_lca_3yr: int
+    approval_rate_3yr: float | None
+    is_top_sponsor: bool
+    years_covered: list[int]
+
+
+class CompanyEnrichmentOut(BaseModel):
+    founded_year: int | None = None
+    headquarters: str | None = None
+    employee_count_range: str | None = None
+    one_line_description: str | None = None
+    website: str | None = None
+    linkedin_url: str | None = None
+    glassdoor_rating: float | None = None
+
+
 class DashboardJobOut(BaseModel):
     id: uuid.UUID
     title: str
@@ -27,20 +45,19 @@ class DashboardJobOut(BaseModel):
     tech_stack: list[str]
     skills: list[str]
     seniority: str
-
-
-class H1BSponsorshipInfo(BaseModel):
-    pool_family: str
-    total_lca_3yr: int
-    approval_rate_3yr: float | None
-    is_top_sponsor: bool
-    years_covered: list[int]
+    responsibilities: list[str] = Field(default_factory=list)
+    required_qualifications: list[str] = Field(default_factory=list)
+    preferred_qualifications: list[str] = Field(default_factory=list)
+    benefits: list[str] = Field(default_factory=list)
+    sponsorship_status: str = "unclear"
+    sponsorship_confidence: str = "low"
+    h1b_sponsorship: H1BSponsorshipInfo | None = None
+    company_info: CompanyEnrichmentOut | None = None
 
 
 class DashboardRecommendedJobOut(DashboardJobOut):
     personal_score: float
     match_reasons: list[str] = Field(default_factory=list)
-    h1b_sponsorship: H1BSponsorshipInfo | None = None
 
 
 class DashboardJobsResponse(BaseModel):

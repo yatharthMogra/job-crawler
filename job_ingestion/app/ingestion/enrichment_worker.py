@@ -510,6 +510,15 @@ def _allocate_tokens(total_tokens: int, estimates: list[int]) -> list[int]:
     return allocations
 
 
+def _jd_section_fields(enrichment: BatchJobEnrichment) -> dict[str, list[str]]:
+    return {
+        "responsibilities": list(enrichment.responsibilities),
+        "required_qualifications": list(enrichment.required_qualifications),
+        "preferred_qualifications": list(enrichment.preferred_qualifications),
+        "benefits": list(enrichment.benefits),
+    }
+
+
 def _apply_enrichment_to_job(
     normalized: NormalizedJob,
     enrichment: BatchJobEnrichment,
@@ -532,6 +541,11 @@ def _apply_enrichment_to_job(
     normalized.job_secondary_domain = enrichment.job_secondary_domain
     normalized.requires_clearance = enrichment.requires_clearance
     normalized.role_intent = enrichment.role_intent
+    sections = _jd_section_fields(enrichment)
+    normalized.responsibilities = sections["responsibilities"]
+    normalized.required_qualifications = sections["required_qualifications"]
+    normalized.preferred_qualifications = sections["preferred_qualifications"]
+    normalized.benefits = sections["benefits"]
     normalized.retrieval_pools = assign_validated_retrieval_pools(
         normalized.normalized_roles,
         normalized.is_internship,
@@ -722,6 +736,10 @@ async def _process_batch(
                         remote_type=DEFAULT_ENRICHMENT.remote_type,
                         tech_stack=DEFAULT_ENRICHMENT.tech_stack,
                         skills=DEFAULT_ENRICHMENT.skills,
+                        responsibilities=DEFAULT_ENRICHMENT.responsibilities,
+                        required_qualifications=DEFAULT_ENRICHMENT.required_qualifications,
+                        preferred_qualifications=DEFAULT_ENRICHMENT.preferred_qualifications,
+                        benefits=DEFAULT_ENRICHMENT.benefits,
                         input_tokens=input_tokens,
                         output_tokens=output_tokens,
                         latency_ms=result.latency_ms,
@@ -767,6 +785,7 @@ async def _process_batch(
                         remote_type=enrichment.remote_type,
                         tech_stack=enrichment.tech_stack,
                         skills=enrichment.skills,
+                        **_jd_section_fields(enrichment),
                         input_tokens=input_tokens,
                         output_tokens=output_tokens,
                         latency_ms=result.latency_ms,
@@ -812,6 +831,7 @@ async def _process_batch(
                     remote_type=enrichment.remote_type,
                     tech_stack=enrichment.tech_stack,
                     skills=enrichment.skills,
+                    **_jd_section_fields(enrichment),
                     **fields_for_job_enrichment_record(recommendation_fields),
                     input_tokens=input_tokens,
                     output_tokens=output_tokens,
@@ -915,6 +935,10 @@ async def _process_batch(
                     remote_type=DEFAULT_ENRICHMENT.remote_type,
                     tech_stack=DEFAULT_ENRICHMENT.tech_stack,
                     skills=DEFAULT_ENRICHMENT.skills,
+                    responsibilities=DEFAULT_ENRICHMENT.responsibilities,
+                    required_qualifications=DEFAULT_ENRICHMENT.required_qualifications,
+                    preferred_qualifications=DEFAULT_ENRICHMENT.preferred_qualifications,
+                    benefits=DEFAULT_ENRICHMENT.benefits,
                     input_tokens=0,
                     output_tokens=0,
                     latency_ms=0,

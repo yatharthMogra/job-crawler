@@ -219,6 +219,10 @@ async def reprocess_jobs(
                 remote_type=enrichment.remote_type,
                 tech_stack=enrichment.tech_stack,
                 skills=enrichment.skills,
+                responsibilities=enrichment.responsibilities,
+                required_qualifications=enrichment.required_qualifications,
+                preferred_qualifications=enrichment.preferred_qualifications,
+                benefits=enrichment.benefits,
                 **fields_for_job_enrichment_record(recommendation_fields),
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
@@ -253,6 +257,10 @@ async def reprocess_jobs(
             normalized.salary_max = recommendation_fields.get("salary_max")
             normalized.opportunity_score = recommendation_fields.get("opportunity_score")
             normalized.opportunity_score_computed_at = recommendation_fields.get("opportunity_score_computed_at")
+            normalized.responsibilities = list(enrichment.responsibilities)
+            normalized.required_qualifications = list(enrichment.required_qualifications)
+            normalized.preferred_qualifications = list(enrichment.preferred_qualifications)
+            normalized.benefits = list(enrichment.benefits)
             success_count += 1
         else:
             normalized.processing_state = ProcessingState.PARTIAL_SUCCESS

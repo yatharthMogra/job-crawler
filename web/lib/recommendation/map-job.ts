@@ -1,5 +1,6 @@
 import type { DashboardJobApi, RecommendedJobApi } from "@/lib/recommendation/api"
 import { descriptionTextToHtml } from "@/lib/recommendation/description-html"
+import { hasDescriptionSections } from "@/components/job-description-sections"
 import type { Effort, EmploymentType, Job, RemoteType } from "@/lib/jobs-data"
 import { mapApiSeniorityToUi } from "@/lib/profile/seniority"
 
@@ -17,6 +18,19 @@ function inferRoleCategory(normalizedRoles: string[]): string {
   if (normalizedRoles.includes("FULLSTACK_ENGINEER")) return "Full Stack"
   if (normalizedRoles.includes("SWE")) return "SWE"
   return normalizedRoles[0] ?? "SWE"
+}
+
+function mapDescriptionHtml(job: DashboardJobApi): string {
+  const sections = {
+    responsibilities: job.responsibilities ?? [],
+    required_qualifications: job.required_qualifications ?? [],
+    preferred_qualifications: job.preferred_qualifications ?? [],
+    benefits: job.benefits ?? [],
+  }
+  if (hasDescriptionSections(sections)) {
+    return ""
+  }
+  return descriptionTextToHtml(job.description_text)
 }
 
 export function mapApiJobToUi(
@@ -49,7 +63,15 @@ export function mapApiJobToUi(
         ? `Strong ${matchReasons[0].toLowerCase()} alignment.`
         : "Matches your profile preferences.",
     skills,
-    description_html: descriptionTextToHtml(job.description_text),
+    responsibilities: job.responsibilities ?? [],
+    required_qualifications: job.required_qualifications ?? [],
+    preferred_qualifications: job.preferred_qualifications ?? [],
+    benefits: job.benefits ?? [],
+    sponsorship_status: job.sponsorship_status ?? "unclear",
+    sponsorship_confidence: job.sponsorship_confidence ?? "low",
+    h1b_sponsorship: job.h1b_sponsorship ?? null,
+    company_info: job.company_info ?? null,
+    description_html: mapDescriptionHtml(job),
     is_saved: false,
     is_applied: false,
     roleCategory: inferRoleCategory(job.normalized_roles ?? []),

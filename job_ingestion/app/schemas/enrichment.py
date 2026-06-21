@@ -29,6 +29,10 @@ class JobEnrichmentOut(BaseModel):
     salary_max: Optional[int] = None
     opportunity_score: Optional[float] = None
     opportunity_score_computed_at: Optional[datetime] = None
+    responsibilities: list[str] = []
+    required_qualifications: list[str] = []
+    preferred_qualifications: list[str] = []
+    benefits: list[str] = []
     input_tokens: Optional[int]
     output_tokens: Optional[int]
     latency_ms: Optional[int]
