@@ -2,13 +2,26 @@ from __future__ import annotations
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+FetchBackpressureMode = Literal["skip_tiers", "halt_all"]
+
+PLATFORM_FAILURE_ALERT_THRESHOLDS: dict[str, int] = {
+    "rippling": 2,
+}
 
 
 class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/jobingestion"
     fetch_schedule_json: str = ""
+    fetch_backpressure_enabled: bool = True
+    fetch_backpressure_queue_threshold: int = 2000
+    fetch_backpressure_mode: FetchBackpressureMode = "skip_tiers"
+    fetch_backpressure_skip_tiers: str = "3"
+    fetch_backpressure_allow_waas: bool = True
     fetch_cadence_hours: int = 6  # deprecated: replaced by FETCH_SCHEDULE_JSON
     fetch_cadence_minutes: int | None = None  # deprecated: replaced by FETCH_SCHEDULE_JSON
     max_consecutive_failures_before_alert: int = 3
@@ -44,6 +57,10 @@ class Settings(BaseSettings):
     llm_output_token_cost_per_1k: float = 0.002
     enrichment_stop_on_daily_quota: bool = True
     job_max_age_days: int = 7
+    ashby_host_rate_per_second: float = 1.5
+    ashby_host_burst: int = 3
+    ashby_full_refresh_days: int = 7
+    shutdown_worker_timeout_seconds: int = 30
     log_level: str = "INFO"
     archive_retention_days: int = 100
     cleanup_batch_size: int = 500
@@ -59,6 +76,14 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         case_sensitive=False,
     )
+
+    @field_validator("fetch_backpressure_mode", mode="before")
+    @classmethod
+    def _validate_fetch_backpressure_mode(cls, value: object) -> str:
+        normalized = str(value).strip().lower()
+        if normalized not in {"skip_tiers", "halt_all"}:
+            raise ValueError("FETCH_BACKPRESSURE_MODE must be 'skip_tiers' or 'halt_all'")
+        return normalized
 
     @property
     def alerts_path(self) -> Path:
@@ -86,6 +111,9 @@ class Settings(BaseSettings):
         from app.ingestion.fetch_schedule_config import get_fetch_schedule
 
         return get_fetch_schedule(self.fetch_schedule_json)
+
+    def fetch_backpressure_skip_tiers_set(self) -> set[int]:
+        return {int(tier.strip()) for tier in self.fetch_backpressure_skip_tiers.split(",") if tier.strip()}
 
     def gemini_api_keys_list(self) -> list[str]:
         if self.gemini_api_keys.strip():

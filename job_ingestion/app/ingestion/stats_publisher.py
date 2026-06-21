@@ -30,6 +30,7 @@ def _stats_summary_for_log(stats: dict) -> dict:
         "enrichment_failed_1h": enrichment.get("failed_last_1h"),
         "queue_queued": enrichment.get("queue", {}).get("queued", 0),
         "queue_in_progress": enrichment.get("queue", {}).get("in_progress", 0),
+        "fetch_backpressure_active": stats.get("fetch_backpressure", {}).get("active", False),
         "workers": stats.get("enrichment_workers"),
     }
 

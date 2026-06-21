@@ -8,6 +8,7 @@ from app.api.candidates import router as candidates_router
 from app.api.profiles import router as profiles_router
 from app.auth import require_api_key
 from app.config import get_settings
+from app.openapi import configure_openapi
 from app.utils.logging import configure_logging
 
 
@@ -20,6 +21,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 settings = get_settings()
 app = FastAPI(title="Profile Service", lifespan=lifespan)
+configure_openapi(app)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_cors_origins,
@@ -32,11 +34,22 @@ app.include_router(candidates_router)
 app.include_router(profiles_router)
 
 
-@app.get("/health")
+@app.get("/", tags=["meta"])
+async def root() -> dict[str, str]:
+    return {
+        "service": "profile-service",
+        "docs": "/docs",
+        "redoc": "/redoc",
+        "openapi": "/openapi.json",
+        "health": "/health",
+    }
+
+
+@app.get("/health", tags=["meta"])
 async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.get("/protected-health", dependencies=[Depends(require_api_key)])
+@app.get("/protected-health", tags=["meta"], dependencies=[Depends(require_api_key)])
 async def protected_health() -> dict[str, str]:
     return {"status": "authenticated"}

@@ -1,9 +1,12 @@
-from fastapi import Header, HTTPException, status
+from fastapi import HTTPException, Security, status
+from fastapi.security import APIKeyHeader
 
 from app.config import get_settings
 
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
-async def require_api_key(x_api_key: str | None = Header(default=None, alias="X-API-Key")) -> None:
+
+async def require_api_key(x_api_key: str | None = Security(api_key_header)) -> None:
     settings = get_settings()
     if not x_api_key or x_api_key != settings.api_key:
         raise HTTPException(

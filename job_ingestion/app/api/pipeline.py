@@ -16,9 +16,46 @@ router = APIRouter(prefix="/pipeline", tags=["pipeline"])
 @router.post("/trigger", response_model=TriggerPipelineOut)
 async def trigger_pipeline(
     scope: str = Query(default="batch", pattern="^(batch|full)$"),
+    company_id: str | None = Query(default=None),
+    force: bool = Query(default=False),
     db: AsyncSession = Depends(get_db),
 ) -> TriggerPipelineOut:
-    if scope == "full":
+    if company_id is not None:
+        if scope == "full":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Use either company_id or scope=full, not both",
+            )
+        try:
+            company_uuid = uuid.UUID(company_id)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid company_id",
+            ) from exc
+
+        company = await db.get(Company, company_uuid)
+        if company is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found")
+        if not company.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Company is not active",
+            )
+
+        snapshot = await run_pipeline(
+            db=db,
+            run_type="manual",
+            company_ids=[company.id],
+            schedule_metadata={
+                "scope": "single",
+                "company_id": str(company.id),
+                "company_name": company.name,
+                "companies_selected": 1,
+            },
+            force=force,
+        )
+    elif scope == "full":
         companies = (
             await db.scalars(select(Company).where(Company.is_active.is_(True)))
         ).all()
@@ -27,9 +64,10 @@ async def trigger_pipeline(
             run_type="manual",
             company_ids=[company.id for company in companies],
             schedule_metadata={"scope": "full", "companies_selected": len(companies)},
+            force=force,
         )
     else:
-        snapshot = await run_pipeline(db=db, run_type="manual")
+        snapshot = await run_pipeline(db=db, run_type="manual", force=force)
     return TriggerPipelineOut(**snapshot.__dict__)
 
 

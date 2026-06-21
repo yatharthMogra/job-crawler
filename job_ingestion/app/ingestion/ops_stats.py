@@ -7,6 +7,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import Settings
+from app.ingestion.fetch_backpressure import evaluate_backpressure, get_pending_queue_depth
 
 
 def _utcnow() -> datetime:
@@ -148,10 +149,22 @@ async def collect_ops_stats(
     keys = settings.gemini_api_keys_list()
     worker_count = settings.resolved_enrichment_worker_count() if keys else 0
 
+    pending_depth = await get_pending_queue_depth(db)
+    backpressure_decision = evaluate_backpressure(pending_depth, settings=settings)
+
     return {
         "generated_at": now.isoformat(),
         "trigger": trigger,
         "enrichment_workers": worker_count,
+        "fetch_backpressure": {
+            "enabled": backpressure_decision.enabled,
+            "active": backpressure_decision.active,
+            "depth": backpressure_decision.depth,
+            "threshold": backpressure_decision.threshold,
+            "mode": backpressure_decision.mode,
+            "skip_tiers": sorted(backpressure_decision.skip_tiers),
+            "allow_waas": backpressure_decision.allow_waas,
+        },
         "jobs": {
             "active": int(jobs.active or 0),
             "enriched": int(jobs.enriched or 0),

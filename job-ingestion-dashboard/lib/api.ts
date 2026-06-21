@@ -466,7 +466,7 @@ export async function getJobs(filters?: {
     location: job.location || 'Unknown',
     department: job.department || 'Unknown',
     employmentType: 'Unknown',
-    postedAt: parseDate(job.extracted_at) || new Date(),
+    postedAt: parseDate(job.posted_at) || parseDate(job.last_seen_at) || new Date(),
     processingState: job.processing_state,
     failureReason: job.failure_reason || undefined,
     lastSeen: parseDate(job.last_seen_at) || new Date(),

@@ -14,6 +14,8 @@ from app.ingestion.events import write_event
 from app.ingestion.extractor.deterministic import extract_deterministic_fields
 from app.ingestion.extractor.llm import DEFAULT_ENRICHMENT, enrich_job_text
 from app.ingestion.extractor.text_cleaner import clean_job_description
+from app.ingestion.job_freshness import FreshnessVerdict, classify_posted_at
+from app.ingestion.job_purge import PurgeTarget, purge_normalized_jobs
 from app.ingestion.recommendation_fields import (
     assign_validated_retrieval_pools,
     compute_opportunity_score,
@@ -109,6 +111,34 @@ async def reprocess_jobs(
                 company_id=company.id,
                 normalized_job_id=normalized.id,
             )
+            continue
+
+        if classify_posted_at(normalized.posted_at, settings=settings) == FreshnessVerdict.STALE:
+            await write_event(
+                db,
+                event_type=EventType.JOB_REJECTED_STALE,
+                category=EventCategory.ENRICHMENT,
+                severity=EventSeverity.INFO,
+                platform=company.platform,
+                company_id=company.id,
+                normalized_job_id=normalized.id,
+                metadata={
+                    "stage": "reprocessing",
+                    "external_job_id": normalized.external_job_id,
+                    "posted_at": normalized.posted_at.isoformat() if normalized.posted_at else None,
+                },
+            )
+            await purge_normalized_jobs(
+                db,
+                [
+                    PurgeTarget(
+                        id=normalized.id,
+                        raw_job_id=normalized.raw_job_id,
+                        job_archive_id=normalized.job_archive_id,
+                    )
+                ],
+            )
+            failed_count += 1
             continue
 
         clean_text = clean_job_description(html)

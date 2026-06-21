@@ -23,6 +23,7 @@ class FailureReason:
     UNSUPPORTED_PLATFORM = "unsupported_platform"
     EXTRACTION_EXCEPTION = "extraction_exception"
     EMPTY_SKILL_EXTRACTION = "empty_skill_extraction"
+    STALE_POSTING = "stale_posting"
 
 
 class EventType:
@@ -43,6 +44,7 @@ class EventType:
     JOB_MARKED_REQUIRES_REVIEW = "job_marked_requires_review"
     SCHEDULER_STARTED = "scheduler_started"
     SCHEDULER_STOPPED = "scheduler_stopped"
+    JOB_REJECTED_STALE = "job_rejected_stale"
 
 
 class EventCategory:

@@ -1755,5 +1755,570 @@
     },
     "is_active": true,
     "fetch_tier": 1
+  },
+  {
+    "company": "Affirm",
+    "platform": "greenhouse",
+    "board_token": "affirm",
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "Akuna Capital University",
+    "platform": "greenhouse",
+    "board_token": "akunacapital",
+    "is_active": true,
+    "fetch_tier": 2,
+    "platform_config": {
+      "careers_url": "https://www.akunacapital.com/careers/job/7863348/"
+    }
+  },
+  {
+    "company": "Alation",
+    "platform": "workday",
+    "board_token": "alation-externalsite",
+    "is_active": true,
+    "fetch_tier": 3,
+    "platform_config": {
+      "tenant": "alation",
+      "instance": "wd503",
+      "career_site": "ExternalSite",
+      "public_path_prefix": "ExternalSite"
+    }
+  },
+  {
+    "company": "Axon",
+    "platform": "greenhouse",
+    "board_token": "axon",
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "Brain Corp",
+    "platform": "greenhouse",
+    "board_token": "braincorporation",
+    "is_active": true,
+    "fetch_tier": 2,
+    "platform_config": {
+      "careers_url": "https://braincorp.com/open-positions"
+    }
+  },
+  {
+    "company": "Clinical Architecture",
+    "platform": "greenhouse",
+    "board_token": "clinicalarchitecture",
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "Collective",
+    "platform": "ashby",
+    "board_token": "collective",
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "D2L",
+    "platform": "greenhouse",
+    "board_token": "d2l",
+    "is_active": true,
+    "fetch_tier": 2,
+    "platform_config": {
+      "careers_url": "https://www.d2l.com/careers/jobs/"
+    }
+  },
+  {
+    "company": "D3",
+    "platform": "greenhouse",
+    "board_token": "d3",
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "Daikin Applied",
+    "platform": "workday",
+    "board_token": "daikinapplied-daikin-careers",
+    "is_active": true,
+    "fetch_tier": 3,
+    "platform_config": {
+      "tenant": "daikinapplied",
+      "instance": "wd1",
+      "career_site": "Daikin-Careers",
+      "public_path_prefix": "Daikin-Careers"
+    }
+  },
+  {
+    "company": "Datalab USA",
+    "platform": "lever",
+    "board_token": "datalabusa",
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "EXL",
+    "platform": "oracle_hcm",
+    "board_token": "fa-ewjt-saasfaprod1",
+    "is_active": true,
+    "fetch_tier": 3,
+    "platform_config": {
+      "datacenter": "ocs",
+      "site_number": "CX_2"
+    }
+  },
+  {
+    "company": "General Dynamics Information Technology",
+    "platform": "workday",
+    "board_token": "gdit-external-career-site",
+    "is_active": true,
+    "fetch_tier": 3,
+    "platform_config": {
+      "tenant": "gdit",
+      "instance": "wd5",
+      "career_site": "external_career_site",
+      "public_path_prefix": "external_career_site"
+    }
+  },
+  {
+    "company": "Hadrian",
+    "platform": "ashby",
+    "board_token": "hadrian-automation",
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "Hudson River Trading",
+    "platform": "greenhouse",
+    "board_token": "hrttalentcommunity",
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "IXL Learning",
+    "platform": "greenhouse",
+    "board_token": "ixllearning",
+    "is_active": true,
+    "fetch_tier": 2,
+    "platform_config": {
+      "careers_url": "https://www.ixl.com/company/jobs/"
+    }
+  },
+  {
+    "company": "Jamf",
+    "platform": "greenhouse",
+    "board_token": "jamf",
+    "is_active": true,
+    "fetch_tier": 2,
+    "platform_config": {
+      "careers_url": "https://www.jamf.com/about/careers/jobs/"
+    }
+  },
+  {
+    "company": "Konrad Group",
+    "platform": "greenhouse",
+    "board_token": "konradgroup",
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "MedImpact",
+    "platform": "workday",
+    "board_token": "medimpact-medimpact",
+    "is_active": true,
+    "fetch_tier": 3,
+    "platform_config": {
+      "tenant": "medimpact",
+      "instance": "wd5",
+      "career_site": "medimpact",
+      "public_path_prefix": "medimpact"
+    }
+  },
+  {
+    "company": "Nightwing Intelligence Solutions",
+    "platform": "workday",
+    "board_token": "nwis-nw",
+    "is_active": true,
+    "fetch_tier": 3,
+    "platform_config": {
+      "tenant": "nwis",
+      "instance": "wd12",
+      "career_site": "NW",
+      "public_path_prefix": "NW"
+    }
+  },
+  {
+    "company": "Nuro",
+    "platform": "greenhouse",
+    "board_token": "nuro",
+    "is_active": true,
+    "fetch_tier": 2,
+    "platform_config": {
+      "careers_url": "https://nuro.ai/careersitem"
+    }
+  },
+  {
+    "company": "Nymbus",
+    "platform": "greenhouse",
+    "board_token": "nymbusinc",
+    "is_active": true,
+    "fetch_tier": 2,
+    "platform_config": {
+      "careers_url": "https://nymbus.com/careers"
+    }
+  },
+  {
+    "company": "Oklahoma State Government",
+    "platform": "workday",
+    "board_token": "okgov-okgovjobs",
+    "is_active": true,
+    "fetch_tier": 3,
+    "platform_config": {
+      "tenant": "okgov",
+      "instance": "wd1",
+      "career_site": "okgovjobs",
+      "public_path_prefix": "okgovjobs"
+    }
+  },
+  {
+    "company": "Oscar Health",
+    "platform": "greenhouse",
+    "board_token": "oscar",
+    "is_active": true,
+    "fetch_tier": 2,
+    "platform_config": {
+      "careers_url": "https://www.hioscar.com/careers/"
+    }
+  },
+  {
+    "company": "Ping Identity",
+    "platform": "greenhouse",
+    "board_token": "pingidentity",
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "Robert Half",
+    "platform": "workday",
+    "board_token": "roberthalf-roberthalfcareers",
+    "is_active": true,
+    "fetch_tier": 3,
+    "platform_config": {
+      "tenant": "roberthalf",
+      "instance": "wd1",
+      "career_site": "roberthalfcareers",
+      "public_path_prefix": "roberthalfcareers"
+    }
+  },
+  {
+    "company": "SeatGeek",
+    "platform": "greenhouse",
+    "board_token": "seatgeek",
+    "is_active": true,
+    "fetch_tier": 2,
+    "platform_config": {
+      "careers_url": "https://seatgeek.com/jobs/7858968"
+    }
+  },
+  {
+    "company": "State Street",
+    "platform": "workday",
+    "board_token": "statestreet-global",
+    "is_active": true,
+    "fetch_tier": 3,
+    "platform_config": {
+      "tenant": "statestreet",
+      "instance": "wd1",
+      "career_site": "Global",
+      "public_path_prefix": "Global"
+    }
+  },
+  {
+    "company": "Steel Point Solutions",
+    "platform": "greenhouse",
+    "board_token": "steelpointsolutions",
+    "is_active": true,
+    "fetch_tier": 2,
+    "platform_config": {
+      "careers_url": "https://steelpoint-llc.com/government-it-consultant-careers/"
+    }
+  },
+  {
+    "company": "Synchrony Financial",
+    "platform": "workday",
+    "board_token": "synchronyfinancial",
+    "is_active": true,
+    "fetch_tier": 3,
+    "platform_config": {
+      "tenant": "synchronyfinancial",
+      "instance": "wd5",
+      "career_site": "careers",
+      "public_path_prefix": "careers"
+    }
+  },
+  {
+    "company": "Teamworks",
+    "platform": "ashby",
+    "board_token": "teamworks",
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "Texas Instruments",
+    "platform": "oracle_hcm",
+    "board_token": "edbz",
+    "is_active": true,
+    "fetch_tier": 3,
+    "platform_config": {
+      "datacenter": "us2",
+      "site_number": "CX"
+    }
+  },
+  {
+    "company": "The Walt Disney Company",
+    "platform": "workday",
+    "board_token": "disney-disneycareer",
+    "is_active": true,
+    "fetch_tier": 3,
+    "platform_config": {
+      "tenant": "disney",
+      "instance": "wd5",
+      "career_site": "disneycareer",
+      "public_path_prefix": "disneycareer"
+    }
+  },
+  {
+    "company": "Toyota",
+    "platform": "workday",
+    "board_token": "toyota-tmna",
+    "is_active": true,
+    "fetch_tier": 3,
+    "platform_config": {
+      "tenant": "toyota",
+      "instance": "wd503",
+      "career_site": "tmna",
+      "public_path_prefix": "tmna"
+    }
+  },
+  {
+    "company": "Trustpilot",
+    "platform": "greenhouse",
+    "board_token": "trustpilot",
+    "is_active": true,
+    "fetch_tier": 2,
+    "platform_config": {
+      "careers_url": "https://corporate.trustpilot.com/careers/"
+    }
+  },
+  {
+    "company": "WebFX",
+    "platform": "lever",
+    "board_token": "webfx",
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "ZOLL Medical Corporation",
+    "platform": "workday",
+    "board_token": "zoll-zollmedicalcorp",
+    "is_active": true,
+    "fetch_tier": 3,
+    "platform_config": {
+      "tenant": "zoll",
+      "instance": "wd5",
+      "career_site": "ZOLLMedicalCorp",
+      "public_path_prefix": "en-US/ZOLLMedicalCorp"
+    }
+  },
+  {
+    "company": "Snowflake",
+    "platform": "ashby",
+    "board_token": "snowflake",
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "Stripe",
+    "platform": "greenhouse",
+    "board_token": "stripe",
+    "is_active": true,
+    "fetch_tier": 2,
+    "platform_config": {
+      "careers_url": "https://stripe.com/jobs/search"
+    }
+  },
+  {
+    "company": "Waymo",
+    "platform": "greenhouse",
+    "board_token": "waymo",
+    "is_active": true,
+    "fetch_tier": 2,
+    "platform_config": {
+      "careers_url": "https://careers.withwaymo.com/jobs"
+    }
+  },
+  {
+    "company": "AbbVie",
+    "platform": "smartrecruiters",
+    "board_token": "abbvie",
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "Sandisk",
+    "platform": "smartrecruiters",
+    "board_token": "sandisk",
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "Insilico Logix",
+    "platform": "smartrecruiters",
+    "board_token": "insilicologix",
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "KRG Technologies",
+    "platform": "smartrecruiters",
+    "board_token": "krgtechnologyinc",
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "North Star Staffing Solutions",
+    "platform": "smartrecruiters",
+    "board_token": "northstarstaffingsolutions1",
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "Software Quality Experts",
+    "platform": "smartrecruiters",
+    "board_token": "sqexpetsllc",
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "General Dynamics UK",
+    "platform": "smartrecruiters",
+    "board_token": "gdmsi",
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "Fullbay",
+    "platform": "bamboohr",
+    "board_token": "fullbay",
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "Lexical Intelligence",
+    "platform": "bamboohr",
+    "board_token": "lexical",
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "Concept Plus",
+    "platform": "rippling",
+    "board_token": "conceptplus",
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "Enludio",
+    "platform": "rippling",
+    "board_token": "enludio-careers",
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "FlexAI",
+    "platform": "rippling",
+    "board_token": "flexai",
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "McDonald's",
+    "platform": "successfactors",
+    "board_token": "mcdonalds",
+    "platform_config": {
+      "career_site_url": "https://jobs.mcdonalds.com",
+      "locale": "en_US",
+      "search_page_size": 10
+    },
+    "is_active": true,
+    "fetch_tier": 3
+  },
+  {
+    "company": "Westinghouse Electric Company",
+    "platform": "successfactors",
+    "board_token": "westinghouse-nuclear",
+    "platform_config": {
+      "career_site_url": "https://careers.westinghousenuclear.com",
+      "locale": "en_US",
+      "search_page_size": 25,
+      "search_default_params": {
+        "searchby": "location",
+        "d": "10"
+      }
+    },
+    "is_active": true,
+    "fetch_tier": 3
+  },
+  {
+    "company": "DAT Freight & Analytics",
+    "platform": "greenhouse",
+    "board_token": "datsolutions",
+    "platform_config": {
+      "careers_url": "https://careers.dat.com/jobs/"
+    },
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "Unity",
+    "platform": "greenhouse",
+    "board_token": "unity3d",
+    "platform_config": {
+      "careers_url": "https://unity.com/careers"
+    },
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "Google",
+    "platform": "google_careers",
+    "board_token": "google",
+    "platform_config": {},
+    "is_active": true,
+    "fetch_tier": 1
+  },
+  {
+    "company": "Amazon",
+    "platform": "amazon_jobs",
+    "board_token": "amazon",
+    "platform_config": {
+      "locale": "en",
+      "job_categories": [
+        "software-development",
+        "data-science",
+        "research-science",
+        "project-program-product-management-technical",
+        "hardware-development",
+        "solutions-architect"
+      ],
+      "exclude_job_categories": [
+        "Fulfillment & Operations Management",
+        "Medical, Health, & Safety"
+      ],
+      "exclude_job_families": [
+        "Fulfillment Center",
+        "Fulfillment Associates"
+      ]
+    },
+    "is_active": true,
+    "fetch_tier": 1
   }
 ]

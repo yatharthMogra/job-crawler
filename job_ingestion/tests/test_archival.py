@@ -96,22 +96,15 @@ async def test_active_cleanup_deletes_expired_in_batches() -> None:
     batch2 = [SimpleNamespace(id=uuid4(), raw_job_id=uuid4(), job_archive_id=archive_id)]
     execute_results = [
         MagicMock(all=lambda: batch1),
-        MagicMock(),
-        MagicMock(),
-        MagicMock(),
-        MagicMock(),
         MagicMock(all=lambda: batch2),
-        MagicMock(),
-        MagicMock(),
-        MagicMock(),
-        MagicMock(),
         MagicMock(all=lambda: []),
     ]
     db = AsyncMock()
     db.execute = AsyncMock(side_effect=execute_results)
 
     with patch.object(active_cleanup, "get_settings", return_value=settings):
-        stats = await active_cleanup.run_active_cleanup(db)
+        with patch.object(active_cleanup, "purge_normalized_jobs", new=AsyncMock(side_effect=[2, 1])):
+            stats = await active_cleanup.run_active_cleanup(db)
 
     assert stats["deleted"] == 3
     assert db.commit.await_count == 2

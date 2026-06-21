@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import uuid
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Any, Optional
 
 import httpx
@@ -16,6 +16,7 @@ except ImportError:  # pragma: no cover
 from app.config import get_settings
 from app.exceptions import ConnectorFetchError, ParseError
 from app.ingestion.connectors.base import BaseConnector
+from app.ingestion.job_freshness import FreshnessVerdict, classify_job
 from app.models.company import Company
 
 logger = structlog.get_logger(__name__) if structlog else logging.getLogger(__name__)
@@ -74,44 +75,18 @@ class OracleHCMConnector(BaseConnector):
     def _max_posted_age_days(self, company: Company) -> int:  # noqa: ARG002
         return max(1, get_settings().job_max_age_days)
 
-    @staticmethod
-    def _parse_posted_date(value: object) -> Optional[date]:
-        if not value or not isinstance(value, str):
-            return None
-        try:
-            return datetime.strptime(value.strip(), "%Y-%m-%d").date()
-        except ValueError:
-            return None
-
     @classmethod
-    def _listing_within_posted_window(
-        cls,
-        listing: dict[str, Any],
-        reference_date: date,
-        max_age_days: int,
-    ) -> Optional[bool]:
-        posted = cls._parse_posted_date(listing.get("PostedDate"))
-        if posted is None:
-            return None
-        return (reference_date - posted) <= timedelta(days=max_age_days)
-
-    @classmethod
-    def _job_within_posted_window(
-        cls,
-        job: dict[str, Any],
-        reference_date: date,
-        max_age_days: int,
-    ) -> bool:
-        posted = cls._parse_posted_date(job.get("PostedDate"))
-        if posted is None:
-            return False
-        return (reference_date - posted) <= timedelta(days=max_age_days)
+    def _job_is_stale(cls, job: dict[str, Any], reference: datetime, max_age_days: int) -> bool:
+        return (
+            classify_job(job, "oracle_hcm", reference=reference, max_age_days=max_age_days)
+            == FreshnessVerdict.STALE
+        )
 
     async def fetch_jobs(self, company: Company) -> list[dict[str, Any]]:
         base_url = self._base_url(company)
         site_number = self._site_number(company)
         max_posted_age_days = self._max_posted_age_days(company)
-        reference_date = datetime.now(timezone.utc).date()
+        reference = datetime.now(timezone.utc)
         listings = await self._fetch_all_pages(base_url, site_number)
         if not listings:
             return []
@@ -123,10 +98,10 @@ class OracleHCMConnector(BaseConnector):
                 if not job_id:
                     continue
 
-                list_recency = self._listing_within_posted_window(
-                    listing, reference_date, max_posted_age_days
+                list_recency = classify_job(
+                    listing, "oracle_hcm", reference=reference, max_age_days=max_posted_age_days
                 )
-                if list_recency is False:
+                if list_recency == FreshnessVerdict.STALE:
                     continue
 
                 try:
@@ -165,9 +140,7 @@ class OracleHCMConnector(BaseConnector):
                     continue
 
                 merged = {**listing, **detail}
-                if not self._job_within_posted_window(
-                    merged, reference_date, max_posted_age_days
-                ):
+                if self._job_is_stale(merged, reference, max_posted_age_days):
                     continue
 
                 merged["id"] = str(job_id)

@@ -54,7 +54,7 @@ This spreads load across time, reduces ATS rate-limit risk, and keeps tier-1 boa
 |----------|-------|
 | `greenhouse` | Single API call per board (`content=true`) |
 | `lever` | Single public postings API call |
-| `ashby` | List + per-job detail (rate-limited) |
+| `ashby` | List + per-job detail (global host rate limit + incremental cache) |
 | `workday` | List + incremental detail fetch |
 | `oracle_hcm` | Paginated list + detail |
 | `icims` | Sitemap + detail |
@@ -130,7 +130,7 @@ Single JSON object in `.env`. When unset, built-in defaults apply (10-minute tic
   "throttles": {
     "default_concurrency": 8,
     "platforms": {
-      "ashby": {"concurrency": 2, "inter_company_seconds": 3},
+      "ashby": {"concurrency": 1, "inter_company_seconds": 3},
       "workday": {"concurrency": 3, "inter_company_seconds": 1},
       "oracle_hcm": {"concurrency": 2},
       "icims": {"concurrency": 1}
@@ -149,17 +149,38 @@ Single JSON object in `.env`. When unset, built-in defaults apply (10-minute tic
 
 Shard count is derived: `ceil(interval / tick_minutes)`.
 
+### Fetch backpressure
+
+When pending enrichment work (`queued` + `cooldown` + `in_progress`) reaches the threshold, fetch ingress is throttled so enrichment can catch up.
+
+| Variable | Default | Meaning |
+|----------|---------|---------|
+| `FETCH_BACKPRESSURE_ENABLED` | `true` | Master switch |
+| `FETCH_BACKPRESSURE_QUEUE_THRESHOLD` | `2000` | Activate when pending depth >= this |
+| `FETCH_BACKPRESSURE_MODE` | `skip_tiers` | `skip_tiers` or `halt_all` |
+| `FETCH_BACKPRESSURE_SKIP_TIERS` | `3` | Tiers excluded in `skip_tiers` mode |
+| `FETCH_BACKPRESSURE_ALLOW_WAAS` | `true` | Keep WAAS dedicated job under `halt_all` |
+
+In `skip_tiers` mode (default), tier-3 companies are dropped from the batch while tier 1/2 continue. In `halt_all` mode, scheduled fetch ticks run no companies unless they are WorkAtStartup and `ALLOW_WAAS` is true.
+
+`GET /stats` includes `fetch_backpressure.active` and current queue depth. Pipeline runs record backpressure details in `schedule_metadata`.
+
+Manual backfills that must ignore backpressure: `POST /pipeline/trigger?scope=full&force=true`.
+
 ### `JOB_MAX_AGE_DAYS`
 
 Single freshness window for the active job corpus (default `7`). Must match `JOB_MAX_AGE_DAYS` in `recommendation_service/.env`.
 
-| Layer | Effect |
-|-------|--------|
-| Workday / Oracle fetch | Skip jobs posted more than N days ago |
-| Nightly active cleanup | Delete active jobs with `posted_at` older than N days |
-| Recommendation emails | Only jobs posted within N days (recommendation service) |
+| Stage | Layer | Effect |
+|-------|-------|--------|
+| 1 | Fetch (all connectors) | Skip jobs with verifiably stale `posted_at` before pipeline |
+| 2a | Pipeline | Skip DB write / enrichment queue for stale jobs that slip through fetch |
+| 2b | Pre-enrichment | Purge stale jobs before Gemini calls |
+| 3 | Post-enrichment | Purge if posting date becomes verifiably stale after enrichment |
+| 4 | Nightly cleanup (2 AM) | Delete any remaining jobs with `posted_at` older than N days (active or inactive) |
+| — | Recommendation emails | Only jobs posted within N days (recommendation service) |
 
-Greenhouse, Ashby, Lever, and other connectors do not filter by age at fetch time; cleanup enforces the window for those jobs.
+Jobs with unknown posting dates pass stages 1–3 and are not removed by cleanup (v1).
 
 ### Enrichment (N-worker pool)
 
@@ -174,16 +195,20 @@ Enrichment runs in-process as a pool of workers, each with its own Gemini API ke
 
 Other tuning: `ENRICHMENT_MAX_JOBS_PER_WINDOW`, `ENRICHMENT_MICRO_BATCH_SIZE`, etc. See [`.env.example`](.env.example).
 
+Ashby fetch tuning: `ASHBY_HOST_RATE_PER_SECOND`, `ASHBY_HOST_BURST`, `ASHBY_FULL_REFRESH_DAYS`.
+
 Reset stuck queue rows: `POST /maintenance/enrichment/reset-stuck`
 
-Monitor `enrichment_queue` depth to tune fetch batch sizes or tier assignments if enrichment falls behind.
+Monitor `enrichment_queue` depth via `GET /stats` (`fetch_backpressure.active`). Tune `FETCH_BACKPRESSURE_QUEUE_THRESHOLD` or tier assignments if enrichment falls behind.
 
 ## API surface
 
 | Method | Path | Description |
 |--------|------|-------------|
 | `POST` | `/pipeline/trigger` | Run due batch (default) |
+| `POST` | `/pipeline/trigger?company_id={uuid}` | Fetch one company by ID |
 | `POST` | `/pipeline/trigger?scope=full` | Fetch all active companies (backfill) |
+| `POST` | `/pipeline/trigger?scope=full&force=true` | Full fetch ignoring enrichment backpressure |
 | `GET` | `/pipeline/runs` | List pipeline runs |
 | `GET` | `/pipeline/runs/{id}` | Run detail + per-company results |
 | `POST` | `/companies/seed` | Sync from companies.json |
@@ -203,6 +228,9 @@ Swagger UI: `http://localhost:8000/docs`
 ```bash
 # Due companies only (same as scheduled tick)
 curl -X POST http://localhost:8000/pipeline/trigger
+
+# One company (lookup id via GET /companies)
+curl -X POST 'http://localhost:8000/pipeline/trigger?company_id=61d1676b-c381-499c-bebd-61813b76e571&force=true'
 
 # All active companies
 curl -X POST 'http://localhost:8000/pipeline/trigger?scope=full'

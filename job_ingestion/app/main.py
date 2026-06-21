@@ -17,9 +17,28 @@ from app.api.pipeline import router as pipeline_router
 from app.api.reprocessing import router as reprocessing_router
 from app.api.stats import router as stats_router
 from app.config import get_settings
+from app.openapi import configure_openapi
 from app.utils.logging import configure_logging
 
 logger = logging.getLogger(__name__)
+
+
+async def _shutdown_workers(worker_tasks: list[asyncio.Task], *, timeout_seconds: float) -> None:
+    if not worker_tasks:
+        return
+    done, pending = await asyncio.wait(worker_tasks, timeout=timeout_seconds)
+    if done:
+        await asyncio.gather(*done, return_exceptions=True)
+    if not pending:
+        return
+    logger.warning(
+        "Cancelling %s enrichment worker task(s) after %.1fs shutdown timeout",
+        len(pending),
+        timeout_seconds,
+    )
+    for task in pending:
+        task.cancel()
+    await asyncio.gather(*pending, return_exceptions=True)
 
 
 @asynccontextmanager
@@ -52,14 +71,26 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         await publish_ops_stats_standalone(settings=settings, trigger="startup")
         yield
     finally:
-        pool.stop()
-        if worker_tasks:
-            await asyncio.gather(*worker_tasks, return_exceptions=True)
+        logger.info("Stopping scheduler (no new jobs)")
         scheduler.shutdown(wait=False)
-        await emit_scheduler_event(EventType.SCHEDULER_STOPPED)
+        pool.stop()
+        logger.info(
+            "Waiting up to %ss for %s enrichment worker(s) to stop",
+            settings.shutdown_worker_timeout_seconds,
+            len(worker_tasks),
+        )
+        await _shutdown_workers(
+            worker_tasks,
+            timeout_seconds=float(settings.shutdown_worker_timeout_seconds),
+        )
+        try:
+            await emit_scheduler_event(EventType.SCHEDULER_STOPPED)
+        except Exception:
+            logger.exception("Failed to emit scheduler stopped event")
 
 
 app = FastAPI(title="Job Ingestion", lifespan=lifespan)
+configure_openapi(app)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
@@ -77,3 +108,20 @@ app.include_router(enrichment_router)
 app.include_router(enrichments_router)
 app.include_router(maintenance_router)
 app.include_router(stats_router)
+
+
+@app.get("/", tags=["meta"])
+async def root() -> dict[str, str]:
+    return {
+        "service": "job-ingestion",
+        "docs": "/docs",
+        "redoc": "/redoc",
+        "openapi": "/openapi.json",
+        "health": "/health",
+        "stats": "/stats",
+    }
+
+
+@app.get("/health", tags=["meta"])
+async def health() -> dict[str, str]:
+    return {"status": "ok"}
