@@ -46,7 +46,7 @@ export function JobDrawer({ showMatch = false }: { showMatch?: boolean }) {
   const open = job != null
 
   const profileSkillNames = useMemo(
-    () => profileHome?.skills.flatMap((group) => group.names) ?? [],
+    () => profileHome?.profile.skills?.flatMap((group) => group.names) ?? [],
     [profileHome],
   )
 
