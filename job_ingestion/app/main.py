@@ -13,6 +13,7 @@ from app.api.enrichment import router as enrichment_router
 from app.api.events import router as events_router
 from app.api.jobs import router as jobs_router
 from app.api.maintenance import router as maintenance_router
+from app.api.manual_ingest import router as manual_ingest_router
 from app.api.pipeline import router as pipeline_router
 from app.api.reprocessing import router as reprocessing_router
 from app.api.stats import router as stats_router
@@ -108,6 +109,7 @@ app.include_router(enrichment_router)
 app.include_router(enrichments_router)
 app.include_router(maintenance_router)
 app.include_router(stats_router)
+app.include_router(manual_ingest_router)
 
 
 @app.get("/", tags=["meta"])

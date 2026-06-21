@@ -1,0 +1,109 @@
+{
+  "lookup": {
+    "regions": {
+      "5": "North America"
+    },
+    "sites": {
+      "US": "United States of America",
+      "DE": "Germany"
+    },
+    "locations": {
+      "401022": "Palo Alto, California",
+      "10759": "Austin, Texas"
+    },
+    "departments": {
+      "5": "Tesla AI",
+      "1": "Manufacturing"
+    },
+    "types": {
+      "1": "fulltime",
+      "2": "parttime",
+      "3": "intern",
+      "4": "seasonal"
+    }
+  },
+  "geo": [
+    {
+      "id": "5",
+      "sites": [
+        {
+          "id": "US",
+          "states": [
+            {
+              "id": "CA",
+              "cities": {
+                "Palo Alto, California": [
+                  "401022"
+                ],
+                "Fremont, California": [
+                  "11099"
+                ]
+              }
+            },
+            {
+              "id": "TX",
+              "cities": {
+                "Austin, Texas": [
+                  "10759",
+                  "11175",
+                  "11180",
+                  "11241"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "sites": [
+        {
+          "id": "DE",
+          "states": [
+            {
+              "id": "BY",
+              "cities": {
+                "Munich, Bavaria": [
+                  "999001"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "listings": [
+    {
+      "id": "224501",
+      "t": "AI Engineer, Manipulation, Optimus",
+      "dp": "5",
+      "f": "74",
+      "l": "401022",
+      "y": 1,
+      "sp": 1,
+      "pu": null
+    },
+    {
+      "id": "221945",
+      "t": "Reinforcement Learning Engineer, Self-Driving",
+      "dp": "5",
+      "f": "74",
+      "l": "401022",
+      "y": 1,
+      "sp": 3,
+      "pu": null
+    },
+    {
+      "id": "999999",
+      "t": "Manufacturing Technician",
+      "dp": "1",
+      "f": "10",
+      "l": "999001",
+      "y": 1,
+      "sp": 1,
+      "pu": null
+    }
+  ]
+}

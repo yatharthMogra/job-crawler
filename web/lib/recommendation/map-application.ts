@@ -1,4 +1,5 @@
 import type { UserApplicationApi } from "@/lib/recommendation/api"
+import { descriptionTextToHtml } from "@/lib/recommendation/description-html"
 import type { Effort, EmploymentType, Job, RemoteType } from "@/lib/jobs-data"
 import { mapApiSeniorityToUi } from "@/lib/profile/seniority"
 
@@ -26,7 +27,7 @@ export function mapApplicationToUi(application: UserApplicationApi): Job & { rol
     match_reasons: [],
     recommendation_reason: "You applied to this role.",
     skills,
-    description_html: application.description_text ?? "",
+    description_html: descriptionTextToHtml(application.description_text),
     is_saved: false,
     is_applied: true,
     roleCategory: "Applied",

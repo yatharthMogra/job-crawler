@@ -13,6 +13,8 @@ class DashboardJobOut(BaseModel):
     company_name: str
     location: Optional[str]
     posting_url: Optional[str]
+    description_text: Optional[str] = None
+    description_preview: Optional[str] = None
     posted_at: Optional[datetime]
     remote_type: str
     application_effort: Optional[str]

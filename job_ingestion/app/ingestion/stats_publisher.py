@@ -49,6 +49,9 @@ async def publish_ops_stats(
     trigger: str = "manual",
 ) -> dict:
     settings = settings or get_settings()
+    from app.ingestion.push_staleness import check_push_staleness
+
+    await check_push_staleness(db, settings)
     stats = await collect_ops_stats(db, settings=settings, trigger=trigger)
     write_stats_file(stats, settings.ingestion_stats_path)
     logger.info("ingestion_stats %s", json.dumps(_stats_summary_for_log(stats), default=str))

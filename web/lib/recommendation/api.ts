@@ -6,6 +6,8 @@ export interface DashboardJobApi {
   company_name: string
   location: string | null
   posting_url: string | null
+  description_text: string | null
+  description_preview: string | null
   posted_at: string | null
   remote_type: string
   application_effort: string | null
