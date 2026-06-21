@@ -721,6 +721,22 @@ def _extract_google_careers(job: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _extract_tesla_careers(job: dict[str, Any]) -> dict[str, Any]:
+    from app.ingestion.connectors.tesla_careers import build_tesla_careers_html
+
+    department = job.get("department")
+    return {
+        "external_job_id": str(job["id"]),
+        "title": job.get("title") or "",
+        "location": job.get("location") or "",
+        "department": department if isinstance(department, str) else None,
+        "posting_url": job.get("externalLink"),
+        "posted_at": None,
+        "employment_type": job.get("timeType"),
+        "raw_html": job.get("raw_html") or build_tesla_careers_html(job),
+    }
+
+
 def _extract_ashby(job: dict[str, Any]) -> dict[str, Any]:
     secondary_names = job.get("secondaryLocationNames")
     if isinstance(secondary_names, list):
@@ -757,6 +773,7 @@ FIELD_EXTRACTORS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "rippling": _extract_rippling,
     "google_careers": _extract_google_careers,
     "amazon_jobs": _extract_amazon_jobs,
+    "tesla_careers": _extract_tesla_careers,
 }
 
 

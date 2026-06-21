@@ -15,6 +15,7 @@ from app.ingestion.connectors.rippling import RipplingConnector
 from app.ingestion.connectors.smartrecruiters import SmartRecruitersConnector
 from app.ingestion.connectors.google_careers import GoogleCareersConnector
 from app.ingestion.connectors.amazon_jobs import AmazonJobsConnector
+from app.ingestion.connectors.tesla_careers import TeslaCareersConnector, is_manual_push_company
 from app.ingestion.connectors.successfactors import SuccessFactorsConnector
 from app.ingestion.connectors.workday import WorkdayConnector
 from app.ingestion.job_freshness import filter_fetched_jobs
@@ -36,6 +37,7 @@ CONNECTORS: dict[str, type[BaseConnector]] = {
     "successfactors": SuccessFactorsConnector,
     "google_careers": GoogleCareersConnector,
     "amazon_jobs": AmazonJobsConnector,
+    "tesla_careers": TeslaCareersConnector,
 }
 
 
@@ -52,6 +54,13 @@ async def fetch_company_jobs(
     known_raw_by_id: dict[str, dict[str, Any]] | None = None,
     known_raw_fetched_at: dict[str, datetime] | None = None,
 ) -> tuple[list[dict[str, Any]], int]:
+    if is_manual_push_company(company):
+        from app.exceptions import ConnectorFetchError
+
+        raise ConnectorFetchError(
+            f"{company.name} uses manual_push ingestion; use the browser bridge instead",
+            None,
+        )
     connector = get_connector(company.platform)
     if company.platform in ("workday", "ashby"):
         jobs = await connector.fetch_jobs(

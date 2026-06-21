@@ -1,4 +1,5 @@
 import type { DashboardJobApi, RecommendedJobApi } from "@/lib/recommendation/api"
+import { descriptionTextToHtml } from "@/lib/recommendation/description-html"
 import type { Effort, EmploymentType, Job, RemoteType } from "@/lib/jobs-data"
 import { mapApiSeniorityToUi } from "@/lib/profile/seniority"
 
@@ -48,7 +49,7 @@ export function mapApiJobToUi(
         ? `Strong ${matchReasons[0].toLowerCase()} alignment.`
         : "Matches your profile preferences.",
     skills,
-    description_html: "",
+    description_html: descriptionTextToHtml(job.description_text),
     is_saved: false,
     is_applied: false,
     roleCategory: inferRoleCategory(job.normalized_roles ?? []),

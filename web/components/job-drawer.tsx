@@ -107,10 +107,12 @@ export function JobDrawer({ showMatch = false }: { showMatch?: boolean }) {
                 </section>
               )}
 
-              <section className="mb-6">
-                <h3 className="mb-2 text-sm font-semibold text-foreground">About the role</h3>
-                <div className="job-description" dangerouslySetInnerHTML={{ __html: job.description_html }} />
-              </section>
+              {job.description_html ? (
+                <section className="mb-6">
+                  <h3 className="mb-2 text-sm font-semibold text-foreground">About the role</h3>
+                  <div className="job-description" dangerouslySetInnerHTML={{ __html: job.description_html }} />
+                </section>
+              ) : null}
 
               <section>
                 <h3 className="mb-2 text-sm font-semibold text-foreground">Skills &amp; Requirements</h3>

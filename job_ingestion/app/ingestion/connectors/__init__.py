@@ -3,6 +3,7 @@ from app.ingestion.connectors.bamboohr import BambooHRConnector
 from app.ingestion.connectors.base import BaseConnector
 from app.ingestion.connectors.google_careers import GoogleCareersConnector
 from app.ingestion.connectors.amazon_jobs import AmazonJobsConnector
+from app.ingestion.connectors.tesla_careers import TeslaCareersConnector
 from app.ingestion.connectors.greenhouse import GreenhouseConnector
 from app.ingestion.connectors.icims import ICIMSConnector
 from app.ingestion.connectors.lever import LeverConnector
@@ -30,4 +31,5 @@ __all__ = [
     "SuccessFactorsConnector",
     "GoogleCareersConnector",
     "AmazonJobsConnector",
+    "TeslaCareersConnector",
 ]

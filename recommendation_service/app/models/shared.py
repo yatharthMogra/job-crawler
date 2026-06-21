@@ -75,6 +75,8 @@ class NormalizedJob(Base):
     location: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     job_country: Mapped[Optional[str]] = mapped_column(String(2), nullable=True)
     posting_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    description_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    description_preview: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     posted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False)
     processing_state: Mapped[str] = mapped_column(String(32), nullable=False)

@@ -131,6 +131,22 @@ def test_select_due_companies_excludes_workatastartup_when_configured() -> None:
     assert result.company_ids == []
 
 
+def test_select_due_companies_excludes_manual_push_companies() -> None:
+    schedule = FetchScheduleConfig(tick_minutes=10, batch_cap=50)
+    company = _company(board_token="tesla")
+    company.platform = "tesla_careers"
+    company.platform_config = {"ingestion_mode": "manual_push", "sites": ["US"]}
+    now = datetime(2026, 1, 1, 12, 0, tzinfo=timezone.utc)
+
+    result = select_due_companies_from_rows(
+        [company],
+        schedule,
+        now=now,
+        tick=0,
+    )
+    assert result.company_ids == []
+
+
 def test_select_due_companies_orders_oldest_fetch_first_and_caps_batch() -> None:
     schedule = FetchScheduleConfig(tick_minutes=1, batch_cap=1, intervals={"greenhouse": {"1": 1}})
     now = datetime(2026, 1, 1, 12, 0, tzinfo=timezone.utc)

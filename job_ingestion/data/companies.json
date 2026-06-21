@@ -2320,5 +2320,19 @@
     },
     "is_active": true,
     "fetch_tier": 1
+  },
+  {
+    "company": "Tesla",
+    "platform": "tesla_careers",
+    "board_token": "tesla",
+    "platform_config": {
+      "sites": [
+        "US"
+      ],
+      "ingestion_mode": "manual_push",
+      "expected_push_interval_hours": 4
+    },
+    "is_active": true,
+    "fetch_tier": 3
   }
 ]

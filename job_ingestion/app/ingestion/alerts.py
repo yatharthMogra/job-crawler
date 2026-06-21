@@ -23,3 +23,26 @@ def write_failure_alert(
     with alerts_path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(record, ensure_ascii=True))
         handle.write("\n")
+
+
+def write_push_staleness_alert(
+    alerts_path: Path,
+    company: Company,
+    *,
+    hours_since_last_push: float,
+    expected_interval_hours: int,
+) -> dict:
+    alerts_path.parent.mkdir(parents=True, exist_ok=True)
+    record = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "event": "PUSH_BASED_SOURCE_STALE",
+        "company_id": str(company.id),
+        "company_name": company.name,
+        "board_token": company.board_token,
+        "hours_since_last_push": round(hours_since_last_push, 2),
+        "expected_interval_hours": expected_interval_hours,
+    }
+    with alerts_path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(record, ensure_ascii=True))
+        handle.write("\n")
+    return record

@@ -42,6 +42,8 @@ def _job_to_out(job: NormalizedJob) -> DashboardJobOut:
         company_name=job.company_name,
         location=job.location,
         posting_url=job.posting_url,
+        description_text=job.description_text,
+        description_preview=job.description_preview,
         posted_at=job.posted_at,
         remote_type=job.remote_type,
         application_effort=job.application_effort,

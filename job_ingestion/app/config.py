@@ -65,6 +65,7 @@ class Settings(BaseSettings):
     archive_retention_days: int = 100
     cleanup_batch_size: int = 500
     archive_dir: str = "data/archives"
+    tesla_ingest_token: str = ""
 
     yc_crawler_email: str = ""
     yc_crawler_password: str = ""

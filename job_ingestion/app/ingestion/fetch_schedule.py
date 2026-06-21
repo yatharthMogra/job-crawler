@@ -71,6 +71,9 @@ def select_due_companies_from_rows(
     for company in companies:
         if not company.is_active:
             continue
+        platform_config = company.platform_config if isinstance(company.platform_config, dict) else {}
+        if platform_config.get("ingestion_mode") == "manual_push":
+            continue
         if company.platform in exclude:
             continue
 
