@@ -737,6 +737,67 @@ def _extract_tesla_careers(job: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _extract_talentbrew(job: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "external_job_id": str(job["id"]),
+        "title": job.get("title") or "",
+        "location": job.get("location"),
+        "department": None,
+        "posting_url": job.get("externalLink"),
+        "posted_at": None,
+        "employment_type": None,
+        "raw_html": job.get("raw_html") or "",
+    }
+
+
+def _extract_apple_careers(job: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "external_job_id": str(job["id"]),
+        "title": job.get("title") or "",
+        "location": job.get("location"),
+        "department": None,
+        "posting_url": job.get("externalLink"),
+        "posted_at": None,
+        "employment_type": None,
+        "raw_html": job.get("raw_html") or "",
+    }
+
+
+def _parse_eightfold_epoch(value: Any) -> Optional[datetime]:
+    if value is None:
+        return None
+    try:
+        return datetime.fromtimestamp(int(value), tz=timezone.utc)
+    except (TypeError, ValueError, OSError):
+        return None
+
+
+def _format_eightfold_location(job: dict[str, Any]) -> str | None:
+    locations = job.get("locations")
+    if isinstance(locations, list):
+        names = [str(loc) for loc in locations if loc]
+        if names:
+            return " | ".join(names)
+    location = job.get("location")
+    return str(location) if location else None
+
+
+def _extract_eightfold(job: dict[str, Any]) -> dict[str, Any]:
+    posted_at = _parse_eightfold_epoch(job.get("t_create")) or _parse_eightfold_epoch(
+        job.get("t_update")
+    )
+    return {
+        "external_job_id": str(job.get("id")),
+        "title": job.get("name") or job.get("posting_name") or "",
+        "location": _format_eightfold_location(job),
+        "department": job.get("department"),
+        "posting_url": job.get("externalLink"),
+        "posted_at": posted_at,
+        "employment_type": job.get("work_location_option"),
+        "raw_html": job.get("job_description") or "",
+    }
+
+
 def _extract_ashby(job: dict[str, Any]) -> dict[str, Any]:
     secondary_names = job.get("secondaryLocationNames")
     if isinstance(secondary_names, list):
@@ -774,6 +835,9 @@ FIELD_EXTRACTORS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "google_careers": _extract_google_careers,
     "amazon_jobs": _extract_amazon_jobs,
     "tesla_careers": _extract_tesla_careers,
+    "talentbrew": _extract_talentbrew,
+    "apple_careers": _extract_apple_careers,
+    "eightfold": _extract_eightfold,
 }
 
 
