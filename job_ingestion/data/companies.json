@@ -2334,5 +2334,82 @@
     },
     "is_active": true,
     "fetch_tier": 3
+  },
+  {
+    "company": "Cisco",
+    "platform": "workday",
+    "board_token": "cisco",
+    "platform_config": {
+      "tenant": "cisco",
+      "instance": "wd5",
+      "career_site": "Cisco_Careers",
+      "public_path_prefix": "Cisco_Careers"
+    },
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "BlackRock",
+    "platform": "talentbrew",
+    "board_token": "blackrock",
+    "platform_config": {
+      "base_url": "https://careers.blackrock.com",
+      "company_id": "45831"
+    },
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "Goldman Sachs",
+    "platform": "oracle_hcm",
+    "board_token": "hdpc",
+    "platform_config": {
+      "datacenter": "us2",
+      "site_number": "LateralHiring",
+      "public_url_base": "https://higher.gs.com/roles"
+    },
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "Apple",
+    "platform": "apple_careers",
+    "board_token": "apple",
+    "platform_config": {
+      "locale": "en-us",
+      "location": "united-states-USA",
+      "teams": [
+        "apps-and-frameworks-SFTWR-AF",
+        "software-quality-automation-and-tools-SFTWR-SQAT",
+        "cloud-and-infrastructure-SFTWR-CLD"
+      ]
+    },
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "Millennium Management",
+    "platform": "eightfold",
+    "board_token": "millennium-experienced",
+    "platform_config": {
+      "api_host": "career.mlp.com",
+      "domain": "mlp.com"
+    },
+    "is_active": true,
+    "fetch_tier": 2
+  },
+  {
+    "company": "Millennium Management (Campus)",
+    "platform": "eightfold",
+    "board_token": "millennium-campus",
+    "platform_config": {
+      "api_host": "campusjobs.mlp.com",
+      "domain": "mlp.com",
+      "extra_params": {
+        "microsite": "campus-site"
+      }
+    },
+    "is_active": true,
+    "fetch_tier": 2
   }
 ]

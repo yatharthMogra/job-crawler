@@ -64,6 +64,9 @@ class OracleHCMConnector(BaseConnector):
 
     def _public_posting_url(self, company: Company, job_id: str) -> str:
         config = self._platform_config(company)
+        public_url_base = config.get("public_url_base")
+        if public_url_base:
+            return f"{str(public_url_base).rstrip('/')}/{job_id}"
         datacenter = config.get("datacenter", "us2")
         site_number = self._site_number(company)
         return (

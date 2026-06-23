@@ -14,6 +14,9 @@ from app.ingestion.connectors.rippling import RipplingConnector
 from app.ingestion.connectors.smartrecruiters import SmartRecruitersConnector
 from app.ingestion.connectors.successfactors import SuccessFactorsConnector
 from app.ingestion.connectors.workday import WorkdayConnector
+from app.ingestion.connectors.talentbrew import TalentBrewConnector
+from app.ingestion.connectors.apple_careers import AppleCareersConnector
+from app.ingestion.connectors.eightfold import EightfoldConnector
 
 __all__ = [
     "BaseConnector",
@@ -32,4 +35,7 @@ __all__ = [
     "GoogleCareersConnector",
     "AmazonJobsConnector",
     "TeslaCareersConnector",
+    "TalentBrewConnector",
+    "AppleCareersConnector",
+    "EightfoldConnector",
 ]

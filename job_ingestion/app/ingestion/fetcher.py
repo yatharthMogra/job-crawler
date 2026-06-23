@@ -18,6 +18,9 @@ from app.ingestion.connectors.amazon_jobs import AmazonJobsConnector
 from app.ingestion.connectors.tesla_careers import TeslaCareersConnector, is_manual_push_company
 from app.ingestion.connectors.successfactors import SuccessFactorsConnector
 from app.ingestion.connectors.workday import WorkdayConnector
+from app.ingestion.connectors.talentbrew import TalentBrewConnector
+from app.ingestion.connectors.apple_careers import AppleCareersConnector
+from app.ingestion.connectors.eightfold import EightfoldConnector
 from app.ingestion.job_freshness import filter_fetched_jobs
 from app.models.company import Company
 
@@ -38,6 +41,9 @@ CONNECTORS: dict[str, type[BaseConnector]] = {
     "google_careers": GoogleCareersConnector,
     "amazon_jobs": AmazonJobsConnector,
     "tesla_careers": TeslaCareersConnector,
+    "talentbrew": TalentBrewConnector,
+    "apple_careers": AppleCareersConnector,
+    "eightfold": EightfoldConnector,
 }
 
 
