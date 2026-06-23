@@ -7,6 +7,7 @@ from typing import Optional
 from app.config import Settings, get_settings
 
 _ashby_bucket: Optional["HostTokenBucket"] = None
+_eightfold_buckets: dict[str, HostTokenBucket] = {}
 
 
 def parse_retry_after(header_value: str | None) -> float | None:
@@ -59,3 +60,30 @@ def get_ashby_bucket(settings: Settings | None = None) -> HostTokenBucket:
 def reset_ashby_bucket_for_tests() -> None:
     global _ashby_bucket
     _ashby_bucket = None
+
+
+def _normalize_api_host(api_host: str) -> str:
+    return (
+        str(api_host)
+        .rstrip("/")
+        .removeprefix("https://")
+        .removeprefix("http://")
+        .lower()
+    )
+
+
+def get_eightfold_bucket(api_host: str, settings: Settings | None = None) -> HostTokenBucket:
+    host_key = _normalize_api_host(api_host)
+    bucket = _eightfold_buckets.get(host_key)
+    if bucket is None:
+        settings = settings or get_settings()
+        bucket = HostTokenBucket(
+            rate_per_second=settings.eightfold_host_rate_per_second,
+            burst=settings.eightfold_host_burst,
+        )
+        _eightfold_buckets[host_key] = bucket
+    return bucket
+
+
+def reset_eightfold_buckets_for_tests() -> None:
+    _eightfold_buckets.clear()

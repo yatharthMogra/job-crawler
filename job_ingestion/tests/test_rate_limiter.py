@@ -4,14 +4,22 @@ import asyncio
 
 import pytest
 
-from app.ingestion.rate_limiter import HostTokenBucket, parse_retry_after, reset_ashby_bucket_for_tests
+from app.ingestion.rate_limiter import (
+    HostTokenBucket,
+    get_eightfold_bucket,
+    parse_retry_after,
+    reset_ashby_bucket_for_tests,
+    reset_eightfold_buckets_for_tests,
+)
 
 
 @pytest.fixture(autouse=True)
-def _reset_bucket() -> None:
+def _reset_buckets() -> None:
     reset_ashby_bucket_for_tests()
+    reset_eightfold_buckets_for_tests()
     yield
     reset_ashby_bucket_for_tests()
+    reset_eightfold_buckets_for_tests()
 
 
 def test_parse_retry_after_parses_integer_seconds() -> None:
@@ -69,3 +77,15 @@ async def test_host_token_bucket_allows_burst_without_sleep(monkeypatch) -> None
     await bucket.acquire()
 
     assert sleeps == []
+
+
+def test_get_eightfold_bucket_returns_same_instance_for_host() -> None:
+    first = get_eightfold_bucket("explore.jobs.netflix.net")
+    second = get_eightfold_bucket("explore.jobs.netflix.net")
+    assert first is second
+
+
+def test_get_eightfold_bucket_separate_instances_per_host() -> None:
+    netflix = get_eightfold_bucket("explore.jobs.netflix.net")
+    symetra = get_eightfold_bucket("symetra.eightfold.ai")
+    assert netflix is not symetra

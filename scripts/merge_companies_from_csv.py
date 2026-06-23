@@ -416,7 +416,13 @@ def merge_csv_into_json(
 
     for row in csv.DictReader(csv_path.open(encoding="utf-8")):
         name = (row.get("Company") or row.get("company") or "").strip()
-        url = (row.get("Job Link") or row.get("job link") or row.get("url") or "").strip()
+        url = (
+            row.get("Job Link")
+            or row.get("job link")
+            or row.get("apply_link")
+            or row.get("url")
+            or ""
+        ).strip()
         if not name or not url:
             continue
 

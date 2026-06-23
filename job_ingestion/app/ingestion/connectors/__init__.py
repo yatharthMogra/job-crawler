@@ -4,6 +4,8 @@ from app.ingestion.connectors.base import BaseConnector
 from app.ingestion.connectors.google_careers import GoogleCareersConnector
 from app.ingestion.connectors.amazon_jobs import AmazonJobsConnector
 from app.ingestion.connectors.tesla_careers import TeslaCareersConnector
+from app.ingestion.connectors.uber_careers import UberCareersConnector
+from app.ingestion.connectors.eightfold import EightfoldConnector
 from app.ingestion.connectors.greenhouse import GreenhouseConnector
 from app.ingestion.connectors.icims import ICIMSConnector
 from app.ingestion.connectors.lever import LeverConnector
@@ -16,7 +18,6 @@ from app.ingestion.connectors.successfactors import SuccessFactorsConnector
 from app.ingestion.connectors.workday import WorkdayConnector
 from app.ingestion.connectors.talentbrew import TalentBrewConnector
 from app.ingestion.connectors.apple_careers import AppleCareersConnector
-from app.ingestion.connectors.eightfold import EightfoldConnector
 
 __all__ = [
     "BaseConnector",
@@ -35,6 +36,7 @@ __all__ = [
     "GoogleCareersConnector",
     "AmazonJobsConnector",
     "TeslaCareersConnector",
+    "UberCareersConnector",
     "TalentBrewConnector",
     "AppleCareersConnector",
     "EightfoldConnector",

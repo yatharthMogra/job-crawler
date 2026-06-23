@@ -25,6 +25,8 @@ DEFAULT_FETCH_SCHEDULE: dict[str, Any] = {
         "bamboohr": {"1": 45, "2": 180, "3": 720},
         "google_careers": {"1": 360, "2": 720, "3": 1440},
         "amazon_jobs": {"1": 360, "2": 720, "3": 1440},
+        "uber_careers": {"1": 360, "2": 720, "3": 1440},
+        "eightfold": {"1": 45, "2": 180, "3": 720},
     },
     "throttles": {
         "default_concurrency": 8,
@@ -38,6 +40,8 @@ DEFAULT_FETCH_SCHEDULE: dict[str, Any] = {
             "bamboohr": {"concurrency": 3},
             "google_careers": {"concurrency": 1},
             "amazon_jobs": {"concurrency": 1},
+            "uber_careers": {"concurrency": 1},
+            "eightfold": {"concurrency": 3},
         },
     },
 }

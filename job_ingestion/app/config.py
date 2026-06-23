@@ -62,6 +62,8 @@ class Settings(BaseSettings):
     ashby_host_rate_per_second: float = 1.5
     ashby_host_burst: int = 3
     ashby_full_refresh_days: int = 7
+    eightfold_host_rate_per_second: float = 1.0
+    eightfold_host_burst: int = 2
     shutdown_worker_timeout_seconds: int = 30
     log_level: str = "INFO"
     archive_retention_days: int = 100

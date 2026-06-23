@@ -1,0 +1,58 @@
+{
+  "domain": "netflix.com",
+  "count": 15,
+  "positions": [
+    {
+      "id": 790298014263,
+      "name": "AI Engineer 6 - AI Foundation & Tooling, Ads Platform",
+      "posting_name": "AI Engineer 6 - AI Foundation & Tooling, Ads Platform",
+      "location": "USA - Remote",
+      "locations": [
+        "USA - Remote"
+      ],
+      "hot": 1,
+      "department": "Data & Insights",
+      "business_unit": "Streaming",
+      "t_update": 1779148800,
+      "t_create": 1721692800,
+      "ats_job_id": "AJRT30201",
+      "display_job_id": "AJRT30201",
+      "type": "ATS",
+      "id_locale": "AJRT30201-en-US",
+      "job_description": "",
+      "locale": "en-US",
+      "stars": 0,
+      "medallionProgram": null,
+      "location_flexibility": null,
+      "work_location_option": "onsite",
+      "canonicalPositionUrl": "https://explore.jobs.netflix.net/careers/job/790298014263",
+      "isPrivate": false
+    },
+    {
+      "id": 790316506591,
+      "name": "Manager, Creative Innovation",
+      "posting_name": "Manager, Creative Innovation",
+      "location": "Los Angeles,California,United States of America",
+      "locations": [
+        "Los Angeles,California,United States of America"
+      ],
+      "hot": 0,
+      "department": "Content Production Operations",
+      "business_unit": "Streaming",
+      "t_update": 1781827200,
+      "t_create": 1781827200,
+      "ats_job_id": "JR41256",
+      "display_job_id": "JR41256",
+      "type": "ATS",
+      "id_locale": "JR41256-en-US",
+      "job_description": "",
+      "locale": "en-US",
+      "stars": 0,
+      "medallionProgram": null,
+      "location_flexibility": null,
+      "work_location_option": "onsite",
+      "canonicalPositionUrl": "https://explore.jobs.netflix.net/careers/job/790316506591",
+      "isPrivate": false
+    }
+  ]
+}

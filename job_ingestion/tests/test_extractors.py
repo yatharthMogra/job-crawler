@@ -573,3 +573,59 @@ def test_extract_successfactors_westinghouse_lastmod_fallback() -> None:
     assert fields["posted_at"] is not None
     assert fields["posted_at"].year == 2026
 
+
+def test_extract_eightfold_fields() -> None:
+    raw_job = {
+        "id": "790298014263",
+        "name": "AI Engineer 6 - AI Foundation & Tooling, Ads Platform",
+        "location": "USA - Remote",
+        "locations": ["USA - Remote"],
+        "department": "Data & Insights",
+        "type": "ATS",
+        "t_create": 1721692800,
+        "canonicalPositionUrl": "https://explore.jobs.netflix.net/careers/job/790298014263",
+        "job_description": "<p>Build AI platforms.</p>",
+    }
+    fields = extract_deterministic_fields(raw_job, platform="eightfold")
+    assert fields["external_job_id"] == "790298014263"
+    assert fields["title"] == "AI Engineer 6 - AI Foundation & Tooling, Ads Platform"
+    assert fields["location"] == "USA - Remote"
+    assert fields["department"] == "Data & Insights"
+    assert fields["employment_type"] == "ATS"
+    assert fields["posting_url"] == "https://explore.jobs.netflix.net/careers/job/790298014263"
+    assert fields["posted_at"] == datetime(2024, 7, 23, 0, 0, tzinfo=timezone.utc)
+    assert fields["raw_html"] == "<p>Build AI platforms.</p>"
+
+
+def test_extract_eightfold_locations_fallback() -> None:
+    raw_job = {
+        "id": "790316506591",
+        "name": "Manager, Creative Innovation",
+        "locations": [
+            "Los Angeles,California,United States of America",
+            "New York,New York,United States of America",
+        ],
+        "job_description": "<p>Lead innovation.</p>",
+    }
+    fields = extract_deterministic_fields(raw_job, platform="eightfold")
+    assert (
+        fields["location"]
+        == "Los Angeles,California,United States of America | New York,New York,United States of America"
+    )
+
+
+def test_extract_eightfold_missing_optional_fields() -> None:
+    raw_job = {
+        "id": "123",
+        "name": "Engineer",
+        "job_description": "",
+    }
+    fields = extract_deterministic_fields(raw_job, platform="eightfold")
+    assert fields["external_job_id"] == "123"
+    assert fields["title"] == "Engineer"
+    assert fields["location"] is None
+    assert fields["department"] is None
+    assert fields["employment_type"] is None
+    assert fields["posted_at"] is None
+    assert fields["posting_url"] is None
+

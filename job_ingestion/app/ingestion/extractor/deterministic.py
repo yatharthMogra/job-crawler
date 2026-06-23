@@ -155,6 +155,15 @@ def _parse_epoch_ms(value: Any) -> Optional[datetime]:
         return None
 
 
+def _parse_epoch_seconds(value: Any) -> Optional[datetime]:
+    if value in (None, ""):
+        return None
+    try:
+        return datetime.fromtimestamp(float(value), tz=timezone.utc)
+    except (TypeError, ValueError, OSError):
+        return None
+
+
 _RELATIVE_POSTED_DAYS = re.compile(r"posted\s+(\d+)\s+days?\s+ago", re.IGNORECASE)
 _RELATIVE_POSTED_DAYS_PLUS = re.compile(r"posted\s+(\d+)\+\s+days?\s+ago", re.IGNORECASE)
 
@@ -558,6 +567,32 @@ def _extract_smartrecruiters(job: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _extract_eightfold_location(job: dict[str, Any]) -> str | None:
+    location = job.get("location")
+    if location:
+        return str(location)
+    locations = job.get("locations")
+    if isinstance(locations, list):
+        names = [str(item) for item in locations if item]
+        if names:
+            return " | ".join(names)
+    return None
+
+
+def _extract_eightfold(job: dict[str, Any]) -> dict[str, Any]:
+    employment_type = job.get("type")
+    return {
+        "external_job_id": str(job.get("id")),
+        "title": job.get("name") or "",
+        "location": _extract_eightfold_location(job),
+        "department": job.get("department"),
+        "posting_url": job.get("canonicalPositionUrl"),
+        "posted_at": _parse_epoch_seconds(job.get("t_create")),
+        "employment_type": str(employment_type) if employment_type else None,
+        "raw_html": job.get("job_description") or "",
+    }
+
+
 def _format_bamboohr_location(job: dict[str, Any]) -> str | None:
     ats = job.get("atsLocation")
     if isinstance(ats, dict):
@@ -791,10 +826,26 @@ def _extract_eightfold(job: dict[str, Any]) -> dict[str, Any]:
         "title": job.get("name") or job.get("posting_name") or "",
         "location": _format_eightfold_location(job),
         "department": job.get("department"),
-        "posting_url": job.get("externalLink"),
+        "posting_url": job.get("externalLink") or job.get("canonicalPositionUrl"),
         "posted_at": posted_at,
-        "employment_type": job.get("work_location_option"),
+        "employment_type": job.get("work_location_option") or job.get("type"),
         "raw_html": job.get("job_description") or "",
+    }
+
+
+def _extract_uber_careers(job: dict[str, Any]) -> dict[str, Any]:
+    from app.ingestion.connectors.uber_careers import build_uber_careers_html
+
+    department = job.get("department") or job.get("team")
+    return {
+        "external_job_id": str(job["id"]),
+        "title": job.get("title") or "",
+        "location": job.get("location") or None,
+        "department": department if isinstance(department, str) else None,
+        "posting_url": job.get("externalLink"),
+        "posted_at": _parse_iso_datetime(job.get("creationDate") or job.get("updatedDate")),
+        "employment_type": job.get("timeType"),
+        "raw_html": job.get("raw_html") or build_uber_careers_html(job),
     }
 
 
@@ -835,6 +886,7 @@ FIELD_EXTRACTORS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "google_careers": _extract_google_careers,
     "amazon_jobs": _extract_amazon_jobs,
     "tesla_careers": _extract_tesla_careers,
+    "uber_careers": _extract_uber_careers,
     "talentbrew": _extract_talentbrew,
     "apple_careers": _extract_apple_careers,
     "eightfold": _extract_eightfold,

@@ -7,6 +7,7 @@ from app.ingestion.connectors.talentbrew import (
     parse_talentbrew_list_page,
 )
 from app.ingestion.connectors.apple_careers import (
+    SITE_ROOT,
     parse_apple_careers_detail_html,
     parse_apple_careers_list_page,
 )

@@ -1,0 +1,74 @@
+{
+  "id": 790298014263,
+  "name": "AI Engineer 6 - AI Foundation & Tooling, Ads Platform",
+  "posting_name": "AI Engineer 6 - AI Foundation & Tooling, Ads Platform",
+  "location": "USA - Remote",
+  "locations": [
+    "USA - Remote"
+  ],
+  "hot": 1,
+  "department": "Data & Insights",
+  "business_unit": "Streaming",
+  "t_update": 1779148800,
+  "t_create": 1721692800,
+  "ats_job_id": "AJRT30201",
+  "display_job_id": "AJRT30201",
+  "type": "ATS",
+  "job_description": "<p>At Netflix, our mission is to entertain the world. Together, we are writing the next episode - pushing the boundaries of storytelling, global fandom and making the unimaginable a reality. We are a dream team obsessed with the uncomfortable excitement of discovering what happens when you merge creativity, intuition and cutting-edge technology. Come be a part of what\u2019s next.</p><p><a href=\"https://deadline.com/2022/11/netflix-ads-launch-what-to-know-1235162223/\" target=\"_blank\">We launched a ne...",
+  "id_locale": "AJRT30201-en-US",
+  "locale": "en-US",
+  "stars": 0,
+  "medallionProgram": null,
+  "location_flexibility": null,
+  "work_location_option": null,
+  "canonicalPositionUrl": "https://explore.jobs.netflix.net/careers/job/790298014263?microsite=netflix.com",
+  "isPrivate": false,
+  "urls": {
+    "links": {
+      "blogs": [],
+      "videos": []
+    }
+  },
+  "preApplyInfoBanner": {},
+  "custom_JD": {
+    "data_fields": {
+      "job_req_id": [
+        "AJRT30201"
+      ],
+      "posting_date": [
+        "05-19-2026"
+      ],
+      "team": [
+        "Data & Insights"
+      ],
+      "work_type": [
+        "Remote"
+      ],
+      "requisition_type": []
+    },
+    "display": [
+      {
+        "label": "Job Posting Date",
+        "value": "posting_date"
+      },
+      {
+        "label": "Job Requisition ID",
+        "value": "job_req_id"
+      },
+      {
+        "label": "Teams",
+        "value": "team"
+      },
+      {
+        "label": "Work Type",
+        "value": "work_type"
+      },
+      {
+        "label": "Requisition Type",
+        "value": "requisition_type"
+      }
+    ],
+    "enable": true
+  },
+  "hideUploadResumeOption": false
+}

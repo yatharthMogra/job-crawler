@@ -1,0 +1,917 @@
+Fetch progress: who’s been touched? => 
+[
+  {
+    "active_companies": 7267,
+    "never_fetched": 3651,
+    "fetched_at_least_once": 3616,
+    "with_failures": 43,
+    "likely_broken": 24,
+    "companies_with_jobs": 1530,
+    "companies_without_jobs": 5737
+  }
+]
+
+By platform =>
+
+[
+  {
+    "platform": "greenhouse",
+    "active": 2370,
+    "never_fetched": 1016,
+    "failing": 0,
+    "with_jobs": 635,
+    "total_active_jobs": 4151
+  },
+  {
+    "platform": "rippling",
+    "active": 1235,
+    "never_fetched": 518,
+    "failing": 42,
+    "with_jobs": 163,
+    "total_active_jobs": 380
+  },
+  {
+    "platform": "workday",
+    "active": 989,
+    "never_fetched": 824,
+    "failing": 0,
+    "with_jobs": 136,
+    "total_active_jobs": 4056
+  },
+  {
+    "platform": "smartrecruiters",
+    "active": 967,
+    "never_fetched": 331,
+    "failing": 0,
+    "with_jobs": 332,
+    "total_active_jobs": 17077
+  },
+  {
+    "platform": "workable",
+    "active": 601,
+    "never_fetched": 259,
+    "failing": 0,
+    "with_jobs": 74,
+    "total_active_jobs": 338
+  },
+  {
+    "platform": "icims",
+    "active": 543,
+    "never_fetched": 483,
+    "failing": 0,
+    "with_jobs": 48,
+    "total_active_jobs": 1381
+  },
+  {
+    "platform": "ashby",
+    "active": 345,
+    "never_fetched": 73,
+    "failing": 0,
+    "with_jobs": 89,
+    "total_active_jobs": 334
+  },
+  {
+    "platform": "oracle_hcm",
+    "active": 173,
+    "never_fetched": 143,
+    "failing": 0,
+    "with_jobs": 27,
+    "total_active_jobs": 2215
+  },
+  {
+    "platform": "lever",
+    "active": 29,
+    "never_fetched": 0,
+    "failing": 0,
+    "with_jobs": 15,
+    "total_active_jobs": 45
+  },
+  {
+    "platform": "successfactors",
+    "active": 7,
+    "never_fetched": 4,
+    "failing": 1,
+    "with_jobs": 3,
+    "total_active_jobs": 513
+  },
+  {
+    "platform": "bamboohr",
+    "active": 2,
+    "never_fetched": 0,
+    "failing": 0,
+    "with_jobs": 1,
+    "total_active_jobs": 4
+  },
+  {
+    "platform": "uber_careers",
+    "active": 1,
+    "never_fetched": 0,
+    "failing": 0,
+    "with_jobs": 1,
+    "total_active_jobs": 9
+  },
+  {
+    "platform": "eightfold",
+    "active": 1,
+    "never_fetched": 0,
+    "failing": 0,
+    "with_jobs": 1,
+    "total_active_jobs": 15
+  },
+  {
+    "platform": "workatastartup",
+    "active": 1,
+    "never_fetched": 0,
+    "failing": 0,
+    "with_jobs": 1,
+    "total_active_jobs": 49
+  },
+  {
+    "platform": "tesla_careers",
+    "active": 1,
+    "never_fetched": 0,
+    "failing": 0,
+    "with_jobs": 1,
+    "total_active_jobs": 3967
+  },
+  {
+    "platform": "google_careers",
+    "active": 1,
+    "never_fetched": 0,
+    "failing": 0,
+    "with_jobs": 1,
+    "total_active_jobs": 3158
+  },
+  {
+    "platform": "amazon_jobs",
+    "active": 1,
+    "never_fetched": 0,
+    "failing": 0,
+    "with_jobs": 1,
+    "total_active_jobs": 285
+  }
+]
+
+Broken boards (likely CC junk)
+[
+  {
+    "name": "514 Careers",
+    "platform": "rippling",
+    "board_token": "514-careers",
+    "consecutive_fetch_failures": 6,
+    "last_failure_at": null,
+    "last_successful_fetch_at": null
+  },
+  {
+    "name": "Ampleo Careers Page",
+    "platform": "rippling",
+    "board_token": "ampleo-careers-page",
+    "consecutive_fetch_failures": 6,
+    "last_failure_at": null,
+    "last_successful_fetch_at": null
+  },
+  {
+    "name": "Einc",
+    "platform": "rippling",
+    "board_token": "einc",
+    "consecutive_fetch_failures": 5,
+    "last_failure_at": null,
+    "last_successful_fetch_at": null
+  },
+  {
+    "name": "En Ca",
+    "platform": "rippling",
+    "board_token": "en-ca",
+    "consecutive_fetch_failures": 5,
+    "last_failure_at": null,
+    "last_successful_fetch_at": null
+  },
+  {
+    "name": "Cullen Jewellery",
+    "platform": "rippling",
+    "board_token": "cullen-jewellery",
+    "consecutive_fetch_failures": 5,
+    "last_failure_at": null,
+    "last_successful_fetch_at": null
+  },
+  {
+    "name": "Halborn",
+    "platform": "rippling",
+    "board_token": "halborn",
+    "consecutive_fetch_failures": 4,
+    "last_failure_at": null,
+    "last_successful_fetch_at": null
+  },
+  {
+    "name": "Buildpass",
+    "platform": "rippling",
+    "board_token": "buildpass",
+    "consecutive_fetch_failures": 4,
+    "last_failure_at": null,
+    "last_successful_fetch_at": null
+  },
+  {
+    "name": "Husted Communications Inc Hci",
+    "platform": "rippling",
+    "board_token": "husted-communications-inc-hci",
+    "consecutive_fetch_failures": 4,
+    "last_failure_at": null,
+    "last_successful_fetch_at": null
+  },
+  {
+    "name": "Hearth Careers",
+    "platform": "rippling",
+    "board_token": "hearth-careers",
+    "consecutive_fetch_failures": 4,
+    "last_failure_at": null,
+    "last_successful_fetch_at": null
+  },
+  {
+    "name": "Hoyack",
+    "platform": "rippling",
+    "board_token": "hoyack",
+    "consecutive_fetch_failures": 4,
+    "last_failure_at": null,
+    "last_successful_fetch_at": null
+  },
+  {
+    "name": "Icp",
+    "platform": "rippling",
+    "board_token": "icp",
+    "consecutive_fetch_failures": 4,
+    "last_failure_at": null,
+    "last_successful_fetch_at": null
+  },
+  {
+    "name": "Allied Sports",
+    "platform": "rippling",
+    "board_token": "allied-sports",
+    "consecutive_fetch_failures": 3,
+    "last_failure_at": null,
+    "last_successful_fetch_at": null
+  },
+  {
+    "name": "Alger",
+    "platform": "rippling",
+    "board_token": "alger",
+    "consecutive_fetch_failures": 3,
+    "last_failure_at": null,
+    "last_successful_fetch_at": null
+  },
+  {
+    "name": "Novacapexprimez",
+    "platform": "rippling",
+    "board_token": "novacapexprimez",
+    "consecutive_fetch_failures": 3,
+    "last_failure_at": null,
+    "last_successful_fetch_at": null
+  },
+  {
+    "name": "Allied Global Marketing",
+    "platform": "rippling",
+    "board_token": "allied-global-marketing",
+    "consecutive_fetch_failures": 3,
+    "last_failure_at": null,
+    "last_successful_fetch_at": null
+  },
+  {
+    "name": "Aura Genetics",
+    "platform": "rippling",
+    "board_token": "aura-genetics",
+    "consecutive_fetch_failures": 3,
+    "last_failure_at": null,
+    "last_successful_fetch_at": null
+  },
+  {
+    "name": "Blackrockneurotech",
+    "platform": "rippling",
+    "board_token": "blackrockneurotech",
+    "consecutive_fetch_failures": 3,
+    "last_failure_at": null,
+    "last_successful_fetch_at": null
+  },
+  {
+    "name": "Careers Tendit Group",
+    "platform": "rippling",
+    "board_token": "careers-tendit-group",
+    "consecutive_fetch_failures": 3,
+    "last_failure_at": null,
+    "last_successful_fetch_at": null
+  },
+  {
+    "name": "Chemistry Careers",
+    "platform": "rippling",
+    "board_token": "chemistry-careers",
+    "consecutive_fetch_failures": 3,
+    "last_failure_at": null,
+    "last_successful_fetch_at": null
+  },
+  {
+    "name": "De De",
+    "platform": "rippling",
+    "board_token": "de-de",
+    "consecutive_fetch_failures": 3,
+    "last_failure_at": null,
+    "last_successful_fetch_at": null
+  },
+  {
+    "name": "Cognaize Careers",
+    "platform": "rippling",
+    "board_token": "cognaize-careers",
+    "consecutive_fetch_failures": 3,
+    "last_failure_at": null,
+    "last_successful_fetch_at": null
+  },
+  {
+    "name": "Anaconda",
+    "platform": "rippling",
+    "board_token": "anaconda",
+    "consecutive_fetch_failures": 3,
+    "last_failure_at": null,
+    "last_successful_fetch_at": null
+  },
+  {
+    "name": "Barn At Gibbet Hill",
+    "platform": "rippling",
+    "board_token": "barn-at-gibbet-hill",
+    "consecutive_fetch_failures": 3,
+    "last_failure_at": null,
+    "last_successful_fetch_at": null
+  },
+  {
+    "name": "Nativo",
+    "platform": "rippling",
+    "board_token": "nativo",
+    "consecutive_fetch_failures": 3,
+    "last_failure_at": null,
+    "last_successful_fetch_at": null
+  }
+]
+
+Fetched today (since ~5am — adjust timestamp)
+[
+  {
+    "companies_fetched_today": 3381
+  }
+]
+
+Job domains, pools, locations (enriched jobs only)
+--domains
+[
+  {
+    "job_domain": "Business",
+    "jobs": 10150
+  },
+  {
+    "job_domain": "Management",
+    "jobs": 6143
+  },
+  {
+    "job_domain": "Software",
+    "jobs": 3509
+  },
+  {
+    "job_domain": "Other",
+    "jobs": 3389
+  },
+  {
+    "job_domain": "Hardware_Electrical",
+    "jobs": 2527
+  },
+  {
+    "job_domain": "Data_Analytics",
+    "jobs": 522
+  },
+  {
+    "job_domain": "Mechanical",
+    "jobs": 483
+  },
+  {
+    "job_domain": "Aerospace_Defense",
+    "jobs": 474
+  },
+  {
+    "job_domain": "Research_Science",
+    "jobs": 419
+  },
+  {
+    "job_domain": "Industrial_Automation",
+    "jobs": 401
+  },
+  {
+    "job_domain": "Design",
+    "jobs": 215
+  }
+]
+
+--retrival pools
+[
+  {
+    "pool": "OTHER_FULLTIME",
+    "jobs": 9538
+  },
+  {
+    "pool": "OPERATIONS_FULLTIME",
+    "jobs": 4740
+  },
+  {
+    "pool": "HARDWARE_ENGINEER_FULLTIME",
+    "jobs": 2365
+  },
+  {
+    "pool": "SALES_FULLTIME",
+    "jobs": 2152
+  },
+  {
+    "pool": "BACKEND_ENGINEER_FULLTIME",
+    "jobs": 1614
+  },
+  {
+    "pool": "SWE_FULLTIME",
+    "jobs": 1599
+  },
+  {
+    "pool": "TECHNICAL_PROGRAM_MANAGER_FULLTIME",
+    "jobs": 1181
+  },
+  {
+    "pool": "SUPPORT_ENGINEER_FULLTIME",
+    "jobs": 868
+  },
+  {
+    "pool": "DEVOPS_ENGINEER_FULLTIME",
+    "jobs": 514
+  },
+  {
+    "pool": "SYSTEMS_ENGINEER_FULLTIME",
+    "jobs": 509
+  },
+  {
+    "pool": "ML_ENGINEER_FULLTIME",
+    "jobs": 499
+  },
+  {
+    "pool": "FINANCE_FULLTIME",
+    "jobs": 454
+  },
+  {
+    "pool": "DATA_ANALYST_FULLTIME",
+    "jobs": 452
+  },
+  {
+    "pool": "MARKETING_FULLTIME",
+    "jobs": 422
+  },
+  {
+    "pool": "SOLUTIONS_ENGINEER_FULLTIME",
+    "jobs": 359
+  },
+  {
+    "pool": "PRODUCT_MANAGER_FULLTIME",
+    "jobs": 354
+  },
+  {
+    "pool": "OTHER_INTERNSHIP",
+    "jobs": 312
+  },
+  {
+    "pool": "SECURITY_ENGINEER_FULLTIME",
+    "jobs": 293
+  },
+  {
+    "pool": "CUSTOMER_SUCCESS_FULLTIME",
+    "jobs": 279
+  },
+  {
+    "pool": "FULLSTACK_ENGINEER_FULLTIME",
+    "jobs": 269
+  },
+  {
+    "pool": "FIELD_SERVICE_ENGINEER_FULLTIME",
+    "jobs": 245
+  },
+  {
+    "pool": "DATA_ENGINEER_FULLTIME",
+    "jobs": 239
+  },
+  {
+    "pool": "RESEARCH_SCIENTIST_FULLTIME",
+    "jobs": 237
+  },
+  {
+    "pool": "SOLUTIONS_CONSULTANT_FULLTIME",
+    "jobs": 223
+  },
+  {
+    "pool": "LEGAL_FULLTIME",
+    "jobs": 199
+  },
+  {
+    "pool": "CONTROLS_ENGINEER_FULLTIME",
+    "jobs": 190
+  },
+  {
+    "pool": "RECRUITING_FULLTIME",
+    "jobs": 164
+  },
+  {
+    "pool": "PRODUCT_DESIGNER_FULLTIME",
+    "jobs": 130
+  },
+  {
+    "pool": "SWE_INTERNSHIP",
+    "jobs": 129
+  },
+  {
+    "pool": "FRONTEND_ENGINEER_FULLTIME",
+    "jobs": 129
+  },
+  {
+    "pool": "DATA_SCIENTIST_FULLTIME",
+    "jobs": 126
+  },
+  {
+    "pool": "OPERATIONS_INTERNSHIP",
+    "jobs": 122
+  },
+  {
+    "pool": "PARTNERSHIPS_FULLTIME",
+    "jobs": 122
+  },
+  {
+    "pool": "HARDWARE_ENGINEER_INTERNSHIP",
+    "jobs": 100
+  },
+  {
+    "pool": "MOBILE_ENGINEER_FULLTIME",
+    "jobs": 94
+  },
+  {
+    "pool": "BACKEND_ENGINEER_INTERNSHIP",
+    "jobs": 93
+  },
+  {
+    "pool": "DATA_ANALYST_INTERNSHIP",
+    "jobs": 69
+  },
+  {
+    "pool": "SUPPORT_ENGINEER_INTERNSHIP",
+    "jobs": 51
+  },
+  {
+    "pool": "OTHER_NEW_GRAD",
+    "jobs": 50
+  },
+  {
+    "pool": "ML_ENGINEER_INTERNSHIP",
+    "jobs": 41
+  },
+  {
+    "pool": "MARKETING_INTERNSHIP",
+    "jobs": 36
+  },
+  {
+    "pool": "RESEARCH_SCIENTIST_INTERNSHIP",
+    "jobs": 35
+  },
+  {
+    "pool": "RECRUITING_INTERNSHIP",
+    "jobs": 33
+  },
+  {
+    "pool": "SWE_NEW_GRAD",
+    "jobs": 32
+  },
+  {
+    "pool": "FINANCE_INTERNSHIP",
+    "jobs": 29
+  },
+  {
+    "pool": "SALES_INTERNSHIP",
+    "jobs": 26
+  },
+  {
+    "pool": "DEVOPS_ENGINEER_INTERNSHIP",
+    "jobs": 25
+  },
+  {
+    "pool": "HARDWARE_ENGINEER_NEW_GRAD",
+    "jobs": 24
+  },
+  {
+    "pool": "TECHNICAL_PROGRAM_MANAGER_INTERNSHIP",
+    "jobs": 19
+  },
+  {
+    "pool": "OPERATIONS_NEW_GRAD",
+    "jobs": 19
+  },
+  {
+    "pool": "LIFE_SCIENTIST_FULLTIME",
+    "jobs": 17
+  },
+  {
+    "pool": "BACKEND_ENGINEER_NEW_GRAD",
+    "jobs": 17
+  },
+  {
+    "pool": "DATA_SCIENTIST_INTERNSHIP",
+    "jobs": 16
+  },
+  {
+    "pool": "MARKETING_NEW_GRAD",
+    "jobs": 16
+  },
+  {
+    "pool": "LEGAL_INTERNSHIP",
+    "jobs": 15
+  },
+  {
+    "pool": "SALES_NEW_GRAD",
+    "jobs": 14
+  },
+  {
+    "pool": "FULLSTACK_ENGINEER_INTERNSHIP",
+    "jobs": 12
+  },
+  {
+    "pool": "DATA_ENGINEER_INTERNSHIP",
+    "jobs": 12
+  },
+  {
+    "pool": "FRONTEND_ENGINEER_INTERNSHIP",
+    "jobs": 12
+  },
+  {
+    "pool": "SECURITY_ENGINEER_INTERNSHIP",
+    "jobs": 10
+  },
+  {
+    "pool": "TECHNICAL_PROGRAM_MANAGER_NEW_GRAD",
+    "jobs": 10
+  },
+  {
+    "pool": "PRODUCT_DESIGNER_INTERNSHIP",
+    "jobs": 9
+  },
+  {
+    "pool": "PRODUCT_MANAGER_INTERNSHIP",
+    "jobs": 9
+  },
+  {
+    "pool": "SYSTEMS_ENGINEER_INTERNSHIP",
+    "jobs": 8
+  },
+  {
+    "pool": "SUPPORT_ENGINEER_NEW_GRAD",
+    "jobs": 7
+  },
+  {
+    "pool": "FINANCE_NEW_GRAD",
+    "jobs": 7
+  },
+  {
+    "pool": "CONTROLS_ENGINEER_INTERNSHIP",
+    "jobs": 7
+  },
+  {
+    "pool": "ML_ENGINEER_NEW_GRAD",
+    "jobs": 7
+  },
+  {
+    "pool": "DEVOPS_ENGINEER_NEW_GRAD",
+    "jobs": 6
+  },
+  {
+    "pool": "AEROSPACE_ENGINEER_FULLTIME",
+    "jobs": 6
+  },
+  {
+    "pool": "SYSTEMS_ENGINEER_NEW_GRAD",
+    "jobs": 6
+  },
+  {
+    "pool": "DATA_ANALYST_NEW_GRAD",
+    "jobs": 6
+  },
+  {
+    "pool": "MOBILE_ENGINEER_INTERNSHIP",
+    "jobs": 5
+  },
+  {
+    "pool": "SOLUTIONS_CONSULTANT_NEW_GRAD",
+    "jobs": 5
+  },
+  {
+    "pool": "FULLSTACK_ENGINEER_NEW_GRAD",
+    "jobs": 5
+  },
+  {
+    "pool": "FRONTEND_ENGINEER_NEW_GRAD",
+    "jobs": 4
+  },
+  {
+    "pool": "LIFE_SCIENTIST_INTERNSHIP",
+    "jobs": 4
+  },
+  {
+    "pool": "PRODUCT_MANAGER_NEW_GRAD",
+    "jobs": 3
+  },
+  {
+    "pool": "SOLUTIONS_ENGINEER_INTERNSHIP",
+    "jobs": 3
+  },
+  {
+    "pool": "DATA_ENGINEER_NEW_GRAD",
+    "jobs": 3
+  },
+  {
+    "pool": "SOLUTIONS_ENGINEER_NEW_GRAD",
+    "jobs": 3
+  },
+  {
+    "pool": "SECURITY_ENGINEER_NEW_GRAD",
+    "jobs": 2
+  },
+  {
+    "pool": "LEGAL_NEW_GRAD",
+    "jobs": 2
+  },
+  {
+    "pool": "CONTROLS_ENGINEER_NEW_GRAD",
+    "jobs": 2
+  },
+  {
+    "pool": "FIELD_SERVICE_ENGINEER_NEW_GRAD",
+    "jobs": 2
+  },
+  {
+    "pool": "RESEARCH_SCIENTIST_NEW_GRAD",
+    "jobs": 1
+  },
+  {
+    "pool": "SOLUTIONS_CONSULTANT_INTERNSHIP",
+    "jobs": 1
+  },
+  {
+    "pool": "CUSTOMER_SUCCESS_INTERNSHIP",
+    "jobs": 1
+  },
+  {
+    "pool": "FIELD_SERVICE_ENGINEER_INTERNSHIP",
+    "jobs": 1
+  }
+]
+
+--countries
+[
+  {
+    "job_country": "US",
+    "jobs": 13961
+  },
+  {
+    "job_country": null,
+    "jobs": 10024
+  },
+  {
+    "job_country": "IN",
+    "jobs": 1056
+  },
+  {
+    "job_country": "GB",
+    "jobs": 619
+  },
+  {
+    "job_country": "CA",
+    "jobs": 454
+  },
+  {
+    "job_country": "SG",
+    "jobs": 296
+  },
+  {
+    "job_country": "DE",
+    "jobs": 231
+  },
+  {
+    "job_country": "FR",
+    "jobs": 195
+  },
+  {
+    "job_country": "AU",
+    "jobs": 191
+  },
+  {
+    "job_country": "IE",
+    "jobs": 156
+  },
+  {
+    "job_country": "TW",
+    "jobs": 151
+  },
+  {
+    "job_country": "BR",
+    "jobs": 121
+  },
+  {
+    "job_country": "MX",
+    "jobs": 117
+  },
+  {
+    "job_country": "PL",
+    "jobs": 107
+  },
+  {
+    "job_country": "CN",
+    "jobs": 105
+  },
+  {
+    "job_country": "JP",
+    "jobs": 96
+  },
+  {
+    "job_country": "NL",
+    "jobs": 93
+  },
+  {
+    "job_country": "IL",
+    "jobs": 81
+  },
+  {
+    "job_country": "MY",
+    "jobs": 57
+  },
+  {
+    "job_country": "PH",
+    "jobs": 55
+  },
+  {
+    "job_country": "CH",
+    "jobs": 41
+  },
+  {
+    "job_country": "TH",
+    "jobs": 38
+  },
+  {
+    "job_country": "KR",
+    "jobs": 37
+  },
+  {
+    "job_country": "VN",
+    "jobs": 35
+  },
+  {
+    "job_country": "ID",
+    "jobs": 26
+  },
+  {
+    "job_country": "HK",
+    "jobs": 18
+  }
+]
+
+-- early career signals
+[
+  {
+    "new_grad": 204,
+    "internship": 1028,
+    "has_role_intent": 28492
+  }
+]
+
+-- enrichment pipeline lag
+[
+  {
+    "processing_state": "pending",
+    "count": 6812
+  },
+  {
+    "processing_state": "success",
+    "count": 28730
+  },
+  {
+    "processing_state": "partial_success",
+    "count": 2411
+  }
+]
+
+[
+  {
+    "status": "completed",
+    "count": 29569
+  },
+  {
+    "status": "cooldown",
+    "count": 343
+  },
+  {
+    "status": "failed",
+    "count": 985
+  },
+  {
+    "status": "queued",
+    "count": 7822
+  }
+]
