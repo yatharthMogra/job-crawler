@@ -43,6 +43,10 @@ from app.ingestion.job_archive_sync import (
     upsert_job_archive_from_deterministic,
     upsert_job_archive_from_normalized,
 )
+from app.ingestion.job_identity_ledger import (
+    load_ledger_hashes,
+    upsert_ledger_entry,
+)
 from app.models.company import Company
 from app.models.normalized_job import NormalizedJob
 from app.models.pipeline_run import CompanyRunResult, PipelineRun
@@ -88,6 +92,7 @@ class CompanyRunOutcome:
     jobs_unchanged: int = 0
     jobs_removed: int = 0
     jobs_deduped: int = 0
+    jobs_ledger_skipped: int = 0
     jobs_rejected_stale_fetch: int = 0
     jobs_rejected_stale_pipeline: int = 0
     error_message: Optional[str] = None
@@ -286,7 +291,9 @@ async def process_company_raw_jobs(
 ) -> CompanyRunOutcome:
     outcome = CompanyRunOutcome(company_id=company.id, status="success")
     outcome.jobs_fetched = len(raw_jobs)
-    previous_hashes = await _latest_hashes_for_company(db, company.id)
+    ledger_hashes = await load_ledger_hashes(db, company.id)
+    raw_hashes = await _latest_hashes_for_company(db, company.id)
+    previous_hashes = {**raw_hashes, **ledger_hashes}
     normalized_by_external_id = await _normalized_map_for_company(db, company.id)
     active_ids = {job_id for job_id, row in normalized_by_external_id.items() if row.is_active}
     classified = classify_jobs(raw_jobs, previous_hashes, active_ids)
@@ -294,8 +301,11 @@ async def process_company_raw_jobs(
     outcome.jobs_updated = len(classified.updated)
     outcome.jobs_unchanged = len(classified.unchanged)
 
+    new_external_ids = {str(job.get("id")) for job in classified.new}
     changed_jobs = classified.new + classified.updated
+    now = _utcnow()
     for job in changed_jobs:
+        content_hash = compute_content_hash(job)
         deterministic_fields = extract_deterministic_fields(job, platform=company.platform)
         if (
             classify_posted_at(deterministic_fields.get("posted_at"), settings=settings)
@@ -332,6 +342,27 @@ async def process_company_raw_jobs(
             continue
         deterministic_fields = clamp_deterministic_fields(deterministic_fields)
         external_id = deterministic_fields["external_job_id"]
+        ledger_hash = ledger_hashes.get(external_id)
+        if ledger_hash is not None and ledger_hash == content_hash:
+            outcome.jobs_ledger_skipped += 1
+            if external_id in new_external_ids:
+                outcome.jobs_new -= 1
+            else:
+                outcome.jobs_updated -= 1
+            await upsert_ledger_entry(
+                db,
+                company.id,
+                external_id,
+                content_hash,
+                seen_at=now,
+            )
+            if structlog:
+                logger.info(
+                    "job_ledger_skipped",
+                    company_id=str(company.id),
+                    external_job_id=external_id,
+                )
+            continue
         raw_html = deterministic_fields.get("raw_html") or job.get("content") or ""
         description_text = _resolve_description_text(job, raw_html) or ""
         deterministic_fields["description_text"] = description_text or None
@@ -342,8 +373,8 @@ async def process_company_raw_jobs(
             platform=company.platform,
             raw_api_response=job,
             raw_html=raw_html,
-            content_hash=compute_content_hash(job),
-            fetch_timestamp=_utcnow(),
+            content_hash=content_hash,
+            fetch_timestamp=now,
         )
         db.add(raw_row)
         await db.flush()
@@ -373,10 +404,24 @@ async def process_company_raw_jobs(
             source=enrichment_source,
             priority=0,
         )
+        await upsert_ledger_entry(
+            db,
+            company.id,
+            external_id,
+            content_hash,
+            seen_at=now,
+        )
+        ledger_hashes[external_id] = content_hash
 
-    now = _utcnow()
     for unchanged in classified.unchanged:
         external_id = str(unchanged.get("id"))
+        await upsert_ledger_entry(
+            db,
+            company.id,
+            external_id,
+            compute_content_hash(unchanged),
+            seen_at=now,
+        )
         existing = normalized_by_external_id.get(external_id)
         if existing:
             existing.last_seen_at = now
@@ -455,6 +500,7 @@ async def _process_single_company(
             outcome.jobs_unchanged = processed.jobs_unchanged
             outcome.jobs_removed = processed.jobs_removed
             outcome.jobs_deduped = processed.jobs_deduped
+            outcome.jobs_ledger_skipped = processed.jobs_ledger_skipped
             outcome.jobs_rejected_stale_pipeline = processed.jobs_rejected_stale_pipeline
         except Exception as exc:  # noqa: BLE001
             outcome.status = "failed"

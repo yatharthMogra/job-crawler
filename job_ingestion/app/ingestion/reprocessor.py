@@ -212,6 +212,7 @@ async def reprocess_jobs(
                 llm_model=settings.gemini_model if settings.llm_provider == "gemini" else None,
                 extraction_version=target_version,
                 seniority=enrichment.seniority,
+                experience_tier=enrichment.experience_tier,
                 is_internship=enrichment.is_internship,
                 is_new_grad=enrichment.is_new_grad,
                 sponsorship_status=enrichment.sponsorship_status,
@@ -238,6 +239,7 @@ async def reprocess_jobs(
             normalized.failure_reason = None
             normalized.last_failure_at = None
             normalized.seniority = enrichment.seniority
+            normalized.experience_tier = enrichment.experience_tier
             normalized.is_internship = enrichment.is_internship
             normalized.is_new_grad = enrichment.is_new_grad
             normalized.sponsorship_status = enrichment.sponsorship_status

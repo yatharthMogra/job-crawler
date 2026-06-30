@@ -42,6 +42,7 @@ class NormalizedJob(Base):
     consecutive_misses: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
     seniority: Mapped[str] = mapped_column(String(64), nullable=False, default="unclear")
+    experience_tier: Mapped[str] = mapped_column(String(32), nullable=False, default="UNKNOWN")
     is_internship: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_new_grad: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     sponsorship_status: Mapped[str] = mapped_column(String(32), nullable=False, default="unclear")

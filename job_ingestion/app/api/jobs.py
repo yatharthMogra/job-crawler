@@ -218,6 +218,7 @@ async def _get_job_enrichments(row: NormalizedJob, db: AsyncSession) -> list[Job
             llm_model=e.llm_model,
             extraction_version=e.extraction_version,
             seniority=e.seniority,
+            experience_tier=e.experience_tier,
             is_internship=e.is_internship,
             is_new_grad=e.is_new_grad,
             sponsorship_status=e.sponsorship_status,

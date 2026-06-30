@@ -13,6 +13,7 @@ from app.config import Settings, get_settings
 from app.database import AsyncSessionLocal
 from app.ingestion.constants import EventCategory, EventSeverity, EventType, FailureReason, ProcessingState
 from app.ingestion.events import write_event
+from app.ingestion.notification_events import enqueue_notification_job_events
 from app.ingestion.extractor.llm import (
     BatchJobEnrichment,
     DEFAULT_ENRICHMENT,
@@ -525,6 +526,7 @@ def _apply_enrichment_to_job(
     settings: Settings,
 ) -> None:
     normalized.seniority = enrichment.seniority
+    normalized.experience_tier = enrichment.experience_tier
     normalized.is_internship = enrichment.is_internship
     normalized.is_new_grad = enrichment.is_new_grad
     normalized.sponsorship_status = enrichment.sponsorship_status
@@ -646,6 +648,7 @@ async def _process_batch(
     on_daily_quota_exhausted: Callable[[str], None] | None = None,
 ) -> None:
     started = _utcnow()
+    enriched_for_notifications: list[tuple[UUID, UUID]] = []
     batch = EnrichmentBatch(
         pipeline_run_id=batch_items[0].queue_row.pipeline_run_id if batch_items else None,
         source=source,
@@ -729,6 +732,7 @@ async def _process_batch(
                         llm_model=settings.gemini_model if settings.llm_provider == "gemini" else None,
                         extraction_version=settings.extraction_version,
                         seniority=DEFAULT_ENRICHMENT.seniority,
+                        experience_tier=DEFAULT_ENRICHMENT.experience_tier,
                         is_internship=DEFAULT_ENRICHMENT.is_internship,
                         is_new_grad=DEFAULT_ENRICHMENT.is_new_grad,
                         sponsorship_status=DEFAULT_ENRICHMENT.sponsorship_status,
@@ -778,6 +782,7 @@ async def _process_batch(
                         llm_model=settings.gemini_model if settings.llm_provider == "gemini" else None,
                         extraction_version=settings.extraction_version,
                         seniority=enrichment.seniority,
+                        experience_tier=enrichment.experience_tier,
                         is_internship=enrichment.is_internship,
                         is_new_grad=enrichment.is_new_grad,
                         sponsorship_status=enrichment.sponsorship_status,
@@ -802,6 +807,7 @@ async def _process_batch(
                     db,
                     row.normalized.job_archive_id,
                     seniority=enrichment.seniority,
+                    experience_tier=enrichment.experience_tier,
                     normalized_roles=list(enrichment.normalized_roles),
                     job_capabilities=list(enrichment.job_capabilities),
                     skills=list(enrichment.skills),
@@ -824,6 +830,7 @@ async def _process_batch(
                     llm_model=settings.gemini_model if settings.llm_provider == "gemini" else None,
                     extraction_version=settings.extraction_version,
                     seniority=enrichment.seniority,
+                    experience_tier=enrichment.experience_tier,
                     is_internship=enrichment.is_internship,
                     is_new_grad=enrichment.is_new_grad,
                     sponsorship_status=enrichment.sponsorship_status,
@@ -859,6 +866,8 @@ async def _process_batch(
                 item.status = "success"
                 item.actual_input_tokens = input_tokens
                 item.actual_output_tokens = output_tokens
+            if row.normalized.processing_state == ProcessingState.SUCCESS:
+                enriched_for_notifications.append((row.normalized.id, row.normalized.company_id))
 
         batch.status = "completed"
     except Exception as exc:
@@ -928,6 +937,7 @@ async def _process_batch(
                     llm_model=settings.gemini_model if settings.llm_provider == "gemini" else None,
                     extraction_version=settings.extraction_version,
                     seniority=DEFAULT_ENRICHMENT.seniority,
+                    experience_tier=DEFAULT_ENRICHMENT.experience_tier,
                     is_internship=DEFAULT_ENRICHMENT.is_internship,
                     is_new_grad=DEFAULT_ENRICHMENT.is_new_grad,
                     sponsorship_status=DEFAULT_ENRICHMENT.sponsorship_status,
@@ -960,6 +970,9 @@ async def _process_batch(
 
     batch.completed_at = _utcnow()
     batch.latency_ms = int((batch.completed_at - started).total_seconds() * 1000)
+
+    if batch.status == "completed" and settings.company_watch_events_enabled:
+        await enqueue_notification_job_events(db, enriched_for_notifications)
 
 
 async def cleanup_orphan_enrichment_queue(db: AsyncSession) -> dict[str, int]:

@@ -18,6 +18,11 @@ from app.ingestion.constants_taxonomy import (
 _VALID_NORMALIZED_ROLES = frozenset(NORMALIZED_ROLES)
 _VALID_CAPABILITIES = frozenset(CAPABILITY_TAXONOMY)
 
+from app.ingestion.extractor.experience_tier import (
+    EXPERIENCE_TIER_PROMPT_RULES,
+    apply_experience_tier_consistency,
+    normalize_experience_tier,
+)
 from app.ingestion.extractor.seniority import (
     SENIORITY_PROMPT_RULES,
     apply_seniority_consistency,
@@ -128,12 +133,22 @@ SeniorityLevel = Literal[
     "MANAGEMENT",
     "UNKNOWN",
 ]
+ExperienceTierLevel = Literal[
+    "INTERN",
+    "NEW_GRAD",
+    "JUNIOR",
+    "MID",
+    "SENIOR",
+    "ABOVE_SENIOR",
+    "UNKNOWN",
+]
 
 ENRICHMENT_SYSTEM_PROMPT = (
     "You extract structured hiring attributes from job descriptions. "
     "For each input job, return one output item with the same job_id. "
     "Use factual values from text only.\n\n"
     f"{SENIORITY_PROMPT_RULES}\n"
+    f"{EXPERIENCE_TIER_PROMPT_RULES}\n"
     "normalized_roles rules:\n"
     "- Assign ALL applicable roles from the taxonomy, not just the primary one\n"
     "- A 'ML Infrastructure Engineer' gets both ML_ENGINEER and BACKEND_ENGINEER\n"
@@ -245,6 +260,7 @@ def enrichment_missing_skill_fields(
 
 class JobEnrichment(_DomainFieldsMixin):
     seniority: SeniorityLevel = "UNKNOWN"
+    experience_tier: ExperienceTierLevel = "UNKNOWN"
     is_internship: bool
     is_new_grad: bool
     sponsorship_status: Literal["yes", "no", "unclear"]
@@ -272,6 +288,11 @@ class JobEnrichment(_DomainFieldsMixin):
     def _normalize_seniority(cls, value: object) -> str:
         return normalize_seniority(str(value) if value is not None else None)
 
+    @field_validator("experience_tier", mode="before")
+    @classmethod
+    def _normalize_experience_tier(cls, value: object) -> str:
+        return normalize_experience_tier(str(value) if value is not None else None)
+
     @field_validator("application_effort", mode="before")
     @classmethod
     def _default_application_effort(cls, value: object) -> object:
@@ -291,6 +312,7 @@ class JobEnrichment(_DomainFieldsMixin):
 class BatchJobEnrichment(_DomainFieldsMixin):
     job_id: str
     seniority: SeniorityLevel = "UNKNOWN"
+    experience_tier: ExperienceTierLevel = "UNKNOWN"
     is_internship: bool = False
     is_new_grad: bool = False
     sponsorship_status: Literal["yes", "no", "unclear"] = "unclear"
@@ -315,12 +337,17 @@ class BatchJobEnrichment(_DomainFieldsMixin):
 
     @field_validator("seniority", mode="before")
     @classmethod
-    def _normalize_seniority(cls, value: object) -> str:
+    def _normalize_seniority_batch(cls, value: object) -> str:
         return normalize_seniority(str(value) if value is not None else None)
+
+    @field_validator("experience_tier", mode="before")
+    @classmethod
+    def _normalize_experience_tier_batch(cls, value: object) -> str:
+        return normalize_experience_tier(str(value) if value is not None else None)
 
     @field_validator("application_effort", mode="before")
     @classmethod
-    def _default_application_effort(cls, value: object) -> object:
+    def _default_application_effort_batch(cls, value: object) -> object:
         return "MEDIUM" if value is None else value
 
     @field_validator("salary_min", "salary_max", mode="before")
@@ -378,6 +405,7 @@ def parse_batch_enrichment_response(text: str) -> BatchJobEnrichmentResponse:
 
 DEFAULT_ENRICHMENT = JobEnrichment(
     seniority="UNKNOWN",
+    experience_tier="UNKNOWN",
     is_internship=False,
     is_new_grad=False,
     sponsorship_status="unclear",
@@ -415,8 +443,14 @@ def finalize_enrichment(
         title=title,
         employment_type=employment_type,
     )
+    experience_tier = apply_experience_tier_consistency(
+        enrichment.experience_tier,
+        is_internship,
+        is_new_grad,
+    )
     updates = {
         "seniority": seniority,
+        "experience_tier": experience_tier,
         "is_internship": is_internship,
         "is_new_grad": is_new_grad,
     }

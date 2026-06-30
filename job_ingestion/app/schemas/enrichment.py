@@ -14,6 +14,7 @@ class JobEnrichmentOut(BaseModel):
     llm_model: Optional[str]
     extraction_version: Optional[str]
     seniority: Optional[str]
+    experience_tier: Optional[str] = None
     is_internship: Optional[bool]
     is_new_grad: Optional[bool]
     sponsorship_status: Optional[str]

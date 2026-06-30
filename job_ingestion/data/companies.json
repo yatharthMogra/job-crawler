@@ -65,6 +65,19 @@
     "fetch_tier": 3
   },
   {
+    "company": "Zoom",
+    "platform": "workday",
+    "board_token": "zoom",
+    "platform_config": {
+      "tenant": "zoom",
+      "instance": "wd5",
+      "career_site": "Zoom",
+      "public_path_prefix": "Zoom"
+    },
+    "is_active": true,
+    "fetch_tier": 3
+  },
+  {
     "company": "RTX",
     "platform": "workday",
     "board_token": "globalhr",

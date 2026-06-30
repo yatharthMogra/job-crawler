@@ -16,6 +16,7 @@ from app.models.enrichment_queue import EnrichmentQueue
 from app.models.ingestion_event import IngestionEvent
 from app.models.job_archive import JobArchive
 from app.models.job_enrichment import JobEnrichment
+from app.models.job_identity_ledger import JobIdentityLedger
 from app.models.normalized_job import NormalizedJob
 from app.models.user_application import UserApplication
 from app.models.pipeline_run import CompanyRunResult, PipelineRun
@@ -32,6 +33,7 @@ __all__ = [
     "PipelineRun",
     "CompanyRunResult",
     "JobEnrichment",
+    "JobIdentityLedger",
     "JobArchive",
     "UserApplication",
     "IngestionEvent",

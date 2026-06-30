@@ -44,6 +44,10 @@ class ConstraintsUpdate(BaseModel):
     exclude_security_clearance: bool | None = None
     exclude_us_citizen_only: bool | None = None
     target_seniority: list[str] | None = None
+    current_experience_tier: str | None = None
+    full_time_experience_years: float | None = None
+    is_currently_enrolled: bool | None = None
+    expected_graduation_date: str | None = None
     eeo: dict[str, Any] | None = None
 
 

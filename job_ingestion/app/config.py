@@ -31,8 +31,8 @@ class Settings(BaseSettings):
     gemini_api_keys: str = ""
     enrichment_worker_count: int = 0
     gemini_model: str = "gemini-3.1-flash-lite"
-    extraction_version: str = "v7"
-    default_extraction_version: str = "v7"
+    extraction_version: str = "v8"
+    default_extraction_version: str = "v8"
     company_enrichment_refresh_days: int = 30
     company_enrichment_batch_size: int = 10
     opportunity_score_freshness_decay: float = 0.01
@@ -70,6 +70,7 @@ class Settings(BaseSettings):
     cleanup_batch_size: int = 500
     archive_dir: str = "data/archives"
     tesla_ingest_token: str = ""
+    company_watch_events_enabled: bool = True
 
     yc_crawler_email: str = ""
     yc_crawler_password: str = ""

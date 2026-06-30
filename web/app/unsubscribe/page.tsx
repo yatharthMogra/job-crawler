@@ -3,11 +3,16 @@
 import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { fetchSubscriptions, patchSubscriptions } from "@/lib/recommendation/api"
+import {
+  fetchSubscriptions,
+  patchSubscriptions,
+  updateNotificationPreferences,
+} from "@/lib/recommendation/api"
 
 function UnsubscribeContent() {
   const searchParams = useSearchParams()
   const candidateId = searchParams.get("candidate_id")
+  const channel = searchParams.get("channel") ?? "all"
   const [status, setStatus] = useState<"loading" | "done" | "error" | "invalid">("loading")
   const [message, setMessage] = useState("")
 
@@ -19,26 +24,33 @@ function UnsubscribeContent() {
 
     void (async () => {
       try {
-        const { subscriptions } = await fetchSubscriptions(candidateId)
-        const poolNames = subscriptions.map((s) => s.pool_name)
-        if (poolNames.length === 0) {
-          setMessage("You are not subscribed to job alerts.")
-          setStatus("done")
-          return
+        if (channel === "digest" || channel === "all") {
+          await updateNotificationPreferences(candidateId, { digest_enabled: false })
         }
-        if (!subscriptions.some((s) => s.is_active)) {
-          setMessage("You are already unsubscribed from daily job briefing emails.")
-          setStatus("done")
-          return
+        if (channel === "company_watch" || channel === "all") {
+          await updateNotificationPreferences(candidateId, { company_watch_enabled: false })
         }
-        await patchSubscriptions(candidateId, poolNames, false)
-        setMessage("You have been unsubscribed from daily job briefing emails.")
+        if (channel === "all") {
+          const { subscriptions } = await fetchSubscriptions(candidateId)
+          const poolNames = subscriptions.map((s) => s.pool_name)
+          if (poolNames.length > 0) {
+            await patchSubscriptions(candidateId, poolNames, false)
+          }
+        }
+
+        if (channel === "digest") {
+          setMessage("You have been unsubscribed from Personalized Digest emails.")
+        } else if (channel === "company_watch") {
+          setMessage("You have been unsubscribed from Company Watch emails.")
+        } else {
+          setMessage("You have been unsubscribed from all job alert emails.")
+        }
         setStatus("done")
       } catch {
         setStatus("error")
       }
     })()
-  }, [candidateId])
+  }, [candidateId, channel])
 
   return (
     <div className="flow-page-bg flex min-h-screen items-center justify-center px-6">

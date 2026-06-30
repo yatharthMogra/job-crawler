@@ -148,6 +148,83 @@ export function createSubscriptions(candidateId: string, poolNames: string[]) {
   })
 }
 
+export interface NotificationPreferencesApi {
+  candidate_id: string
+  digest_enabled: boolean
+  company_watch_enabled: boolean
+  cadence_hours: number
+  top_k: number
+  digest_filters: Record<string, unknown> | null
+  last_digest_sent_at: string | null
+  next_digest_due_at: string | null
+}
+
+export interface CompanyWatchItemApi {
+  company_id: string
+  company_name: string
+  platform: string
+  is_active: boolean
+}
+
+export interface CompanyWatchListApi {
+  candidate_id: string
+  companies: CompanyWatchItemApi[]
+}
+
+export interface CompanySearchResult {
+  id: string
+  name: string
+  platform: string
+  is_active: boolean
+}
+
+export type DigestCadenceHours = 3 | 6 | 12 | 24 | 72 | 168
+
+export const DIGEST_CADENCE_OPTIONS: { label: string; hours: DigestCadenceHours }[] = [
+  { label: "Every 3 hours", hours: 3 },
+  { label: "Every 6 hours", hours: 6 },
+  { label: "Every 12 hours", hours: 12 },
+  { label: "Daily (24 hours)", hours: 24 },
+  { label: "Every 3 days", hours: 72 },
+  { label: "Weekly (7 days)", hours: 168 },
+]
+
+export function fetchNotificationPreferences(candidateId: string) {
+  return request<NotificationPreferencesApi>(`/notification-preferences/${candidateId}`)
+}
+
+export function updateNotificationPreferences(
+  candidateId: string,
+  payload: Partial<{
+    digest_enabled: boolean
+    company_watch_enabled: boolean
+    cadence_hours: number
+    top_k: number
+  }>,
+) {
+  return request<NotificationPreferencesApi>(`/notification-preferences/${candidateId}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  })
+}
+
+export function fetchCompanyWatch(candidateId: string) {
+  return request<CompanyWatchListApi>(`/company-watch/${candidateId}`)
+}
+
+export function updateCompanyWatch(candidateId: string, companyIds: string[]) {
+  return request<CompanyWatchListApi>(`/company-watch/${candidateId}`, {
+    method: "PUT",
+    body: JSON.stringify({ company_ids: companyIds }),
+  })
+}
+
+export function searchCompanies(q = "", limit = 20) {
+  const query = new URLSearchParams({ limit: String(limit) })
+  if (q.trim()) query.set("q", q.trim())
+  return request<CompanySearchResult[]>(`/companies/search?${query}`)
+}
+
 export interface UserApplicationApi {
   id: string
   candidate_id: string

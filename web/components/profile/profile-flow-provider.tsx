@@ -44,6 +44,7 @@ import {
 } from "@/lib/profile/map-patch"
 import {
   emptyJobIntent,
+  experienceYearsFromReviewExperiences,
   jobIntentToApiPayload,
   needsJobIntent,
   profileToJobIntent,
@@ -209,7 +210,13 @@ export function ProfileFlowProvider({
       const profile = await getProfile(candidateId)
       setRawProfile(profile)
       setHasExistingProfile(true)
-      setJobIntent(profileToJobIntent(profile))
+      const intent = profileToJobIntent(profile)
+      const derivedYears = experienceYearsFromReviewExperiences(reviewState.experiences)
+      setJobIntent({
+        ...intent,
+        fullTimeExperienceYears:
+          intent.fullTimeExperienceYears ?? derivedYears,
+      })
       router.push("/profile/job-intent")
     } finally {
       setSaving(false)

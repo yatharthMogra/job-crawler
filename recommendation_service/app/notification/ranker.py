@@ -66,7 +66,7 @@ def _rank_sort_key(item: tuple[NormalizedJob, float]) -> tuple[float, float, flo
         posted_ts = posted_at.timestamp()
     else:
         posted_ts = 0.0
-    return (score, posted_ts, job.opportunity_score or 0.0)
+    return (score, job.opportunity_score or 0.0, posted_ts)
 
 
 def rank_jobs(

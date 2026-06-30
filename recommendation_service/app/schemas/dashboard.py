@@ -45,6 +45,7 @@ class DashboardJobOut(BaseModel):
     tech_stack: list[str]
     skills: list[str]
     seniority: str
+    experience_tier: str = "UNKNOWN"
     responsibilities: list[str] = Field(default_factory=list)
     required_qualifications: list[str] = Field(default_factory=list)
     preferred_qualifications: list[str] = Field(default_factory=list)

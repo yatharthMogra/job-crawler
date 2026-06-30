@@ -28,6 +28,7 @@ class JobEnrichment(Base):
     llm_model: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     extraction_version: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     seniority: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    experience_tier: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     is_internship: Mapped[Optional[bool]] = mapped_column(nullable=True)
     is_new_grad: Mapped[Optional[bool]] = mapped_column(nullable=True)
     sponsorship_status: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)

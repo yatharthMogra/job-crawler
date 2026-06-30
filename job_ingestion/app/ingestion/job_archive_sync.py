@@ -98,6 +98,7 @@ async def upsert_job_archive_from_normalized(
     values.update(
         {
             "seniority": normalized.seniority,
+            "experience_tier": normalized.experience_tier,
             "normalized_roles": normalized.normalized_roles or None,
             "job_capabilities": normalized.job_capabilities or None,
             "skills": normalized.skills or None,
@@ -115,6 +116,7 @@ async def upsert_job_archive_from_normalized(
     conflict_update.update(
         {
             "seniority": normalized.seniority,
+            "experience_tier": normalized.experience_tier,
             "normalized_roles": normalized.normalized_roles or None,
             "job_capabilities": normalized.job_capabilities or None,
             "skills": normalized.skills or None,
@@ -146,6 +148,7 @@ async def update_job_archive_after_enrichment(
     job_archive_id: UUID,
     *,
     seniority: str,
+    experience_tier: str,
     normalized_roles: list[str],
     job_capabilities: list[str],
     skills: list[str],
@@ -163,6 +166,7 @@ async def update_job_archive_after_enrichment(
         .where(JobArchive.id == job_archive_id)
         .values(
             seniority=seniority,
+            experience_tier=experience_tier,
             normalized_roles=normalized_roles or None,
             job_capabilities=job_capabilities or None,
             skills=skills or None,
@@ -187,6 +191,7 @@ async def update_job_archive_from_normalized_fields(
         db,
         job_archive_id,
         seniority=normalized.seniority,
+        experience_tier=normalized.experience_tier,
         normalized_roles=list(normalized.normalized_roles),
         job_capabilities=list(normalized.job_capabilities),
         skills=list(normalized.skills),

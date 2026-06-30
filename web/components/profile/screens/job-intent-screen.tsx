@@ -132,6 +132,66 @@ export function JobIntentScreen({ state, onChange, onSubmit, saving }: JobIntent
           </Card>
 
           <Card className="card-elevated border-0 p-5">
+            <h2 className="text-base font-semibold text-foreground">Your experience level</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              We use this to match you with realistic roles — not job titles you pick yourself.
+            </p>
+            <div className="mt-4 space-y-4">
+              <label className="block text-sm">
+                <span className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                  Full-time professional experience (years)
+                </span>
+                <Input
+                  type="number"
+                  min={0}
+                  step={0.5}
+                  value={state.fullTimeExperienceYears ?? ""}
+                  onChange={(e) =>
+                    update(
+                      "fullTimeExperienceYears",
+                      e.target.value === "" ? null : Number(e.target.value),
+                    )
+                  }
+                  placeholder="e.g. 2.5"
+                />
+              </label>
+              <label className="block text-sm">
+                <span className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                  Currently completing a degree?
+                </span>
+                <select
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                  value={
+                    state.isCurrentlyEnrolled === null
+                      ? ""
+                      : state.isCurrentlyEnrolled
+                        ? "true"
+                        : "false"
+                  }
+                  onChange={(e) =>
+                    update(
+                      "isCurrentlyEnrolled",
+                      e.target.value === "" ? null : e.target.value === "true",
+                    )
+                  }
+                >
+                  <option value="">Select</option>
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              </label>
+              {state.isCurrentlyEnrolled ? (
+                <Field
+                  label="Expected graduation (YYYY-MM)"
+                  value={state.expectedGraduationDate}
+                  onChange={(v) => update("expectedGraduationDate", v)}
+                  placeholder="2027-05"
+                />
+              ) : null}
+            </div>
+          </Card>
+
+          <Card className="card-elevated border-0 p-5">
             <h2 className="text-base font-semibold text-foreground">Location preferences</h2>
             <p className="mt-1 text-sm text-muted-foreground">Where and how you prefer to work.</p>
             <div className="mt-4 space-y-4">

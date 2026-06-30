@@ -9,9 +9,14 @@ from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.dashboard import router as dashboard_router
+from app.api.notifications import router as notifications_router
 from app.api.subscriptions import router as subscriptions_router
 from app.config import get_settings
-from app.notification.pipeline import run_notification_pipeline
+from app.notification.pipeline import (
+    run_company_watch_pipeline,
+    run_digest_pipeline,
+    run_notification_pipeline,
+)
 from app.openapi import configure_openapi
 from app.scheduler import create_scheduler
 
@@ -44,6 +49,7 @@ app.add_middleware(
 
 app.include_router(dashboard_router)
 app.include_router(subscriptions_router)
+app.include_router(notifications_router)
 
 
 @app.get("/", tags=["meta"])
@@ -63,11 +69,18 @@ async def health() -> dict[str, str]:
 
 
 @app.post("/notifications/run", tags=["meta"])
-async def trigger_notification_pipeline() -> dict[str, str]:
+async def trigger_notification_pipeline(
+    channel: str | None = None,
+) -> dict[str, str]:
     if not get_settings().enable_notification_scheduler:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Notification pipeline is disabled on this deployment",
         )
-    asyncio.create_task(run_notification_pipeline())
-    return {"status": "started"}
+    if channel == "digest":
+        asyncio.create_task(run_digest_pipeline())
+    elif channel == "company_watch":
+        asyncio.create_task(run_company_watch_pipeline())
+    else:
+        asyncio.create_task(run_notification_pipeline())
+    return {"status": "started", "channel": channel or "all"}

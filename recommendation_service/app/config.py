@@ -12,7 +12,12 @@ class Settings(BaseSettings):
     notification_jobs_per_email: int = 4
     notification_max_jobs_per_company: int = 1
     job_max_age_days: int = 7
-    notification_min_jobs_to_send: int = 3
+    notification_min_jobs_to_send: int = 1
+    digest_scheduler_poll_minutes: int = 15
+    company_watch_poll_minutes: int = 3
+    company_watch_batch_size: int = 50
+    default_digest_cadence_hours: int = 24
+    default_digest_top_k: int = 4
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 587
     smtp_use_tls: bool = True
@@ -35,6 +40,14 @@ class Settings(BaseSettings):
     score_skill_weight_with_sponsorship: float = 0.22
     score_location_weight_with_sponsorship: float = 0.18
     score_compensation_weight_with_sponsorship: float = 0.13
+    experience_tier_visibility_enabled: bool = False
+    experience_tier_visibility_ceiling: str = "SENIOR"
+    experience_tier_score_enabled: bool = False
+    score_experience_tier_weight: float = 0.15
+    score_capability_weight_with_tier: float = 0.34
+    score_skill_weight_with_tier: float = 0.21
+    score_location_weight_with_tier: float = 0.17
+    score_compensation_weight_with_tier: float = 0.13
 
     model_config = SettingsConfigDict(
         env_file=".env",

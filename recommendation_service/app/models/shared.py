@@ -81,6 +81,7 @@ class NormalizedJob(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False)
     processing_state: Mapped[str] = mapped_column(String(32), nullable=False)
     seniority: Mapped[str] = mapped_column(String(64), nullable=False)
+    experience_tier: Mapped[str] = mapped_column(String(32), nullable=False, default="UNKNOWN")
     is_internship: Mapped[bool] = mapped_column(Boolean, nullable=False)
     is_new_grad: Mapped[bool] = mapped_column(Boolean, nullable=False)
     sponsorship_status: Mapped[str] = mapped_column(String(32), nullable=False)
@@ -112,6 +113,8 @@ class Company(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     platform: Mapped[str] = mapped_column(String(64), nullable=False)
+    board_token: Mapped[str] = mapped_column(String(255), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
 
 class CompanyEnrichment(Base):

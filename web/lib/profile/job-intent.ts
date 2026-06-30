@@ -14,6 +14,9 @@ export interface JobIntentState {
   preferredLocations: string[]
   remotePreference: string
   preferredIndustries: string[]
+  fullTimeExperienceYears: number | null
+  isCurrentlyEnrolled: boolean | null
+  expectedGraduationDate: string
   eeo: EeoState
 }
 
@@ -30,6 +33,9 @@ export function emptyJobIntent(): JobIntentState {
     preferredLocations: [],
     remotePreference: "",
     preferredIndustries: [],
+    fullTimeExperienceYears: null,
+    isCurrentlyEnrolled: null,
+    expectedGraduationDate: "",
     eeo: emptyEeo(),
   }
 }
@@ -50,6 +56,15 @@ export function profileToJobIntent(profile: ProfileResponse): JobIntentState {
     preferredLocations: (preferences.preferred_locations as string[]) ?? [],
     remotePreference: String(preferences.remote_preference ?? ""),
     preferredIndustries: (preferences.preferred_industries as string[]) ?? [],
+    fullTimeExperienceYears:
+      constraints.full_time_experience_years != null
+        ? Number(constraints.full_time_experience_years)
+        : null,
+    isCurrentlyEnrolled:
+      constraints.is_currently_enrolled != null
+        ? Boolean(constraints.is_currently_enrolled)
+        : null,
+    expectedGraduationDate: String(constraints.expected_graduation_date ?? ""),
     eeo: eeoFromApiPayload(constraints.eeo as Record<string, unknown> | undefined),
   }
 }
@@ -66,6 +81,9 @@ export function jobIntentToApiPayload(state: JobIntentState): {
       internship_only: state.internshipOnly,
       fulltime_only: state.fulltimeOnly,
       minimum_hourly_rate: state.minimumHourlyRate ? Number(state.minimumHourlyRate) : null,
+      full_time_experience_years: state.fullTimeExperienceYears,
+      is_currently_enrolled: state.isCurrentlyEnrolled,
+      expected_graduation_date: state.expectedGraduationDate || null,
       eeo: eeoToApiPayload(state.eeo),
     },
     preferences: {
@@ -85,4 +103,14 @@ export function jobIntentToApiPayload(state: JobIntentState): {
 export function needsJobIntent(profile: ProfileResponse): boolean {
   const roles = profile.preferences?.primary_roles
   return !Array.isArray(roles) || roles.length === 0
+}
+
+export function experienceYearsFromReviewExperiences(
+  experiences: Array<{ durationMonths: number }>,
+): number | null {
+  const months = experiences.reduce((sum, item) => sum + (item.durationMonths || 0), 0)
+  if (months <= 0) {
+    return null
+  }
+  return Math.round((months / 12) * 10) / 10
 }

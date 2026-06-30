@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, exists, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 try:
@@ -15,6 +15,7 @@ except ImportError:  # pragma: no cover
 from app.archival.writer import get_archive_filepath, write_archive_batch
 from app.config import get_settings
 from app.models.job_archive import JobArchive
+from app.models.normalized_job import NormalizedJob
 
 log = structlog.get_logger() if structlog else logging.getLogger(__name__)
 
@@ -61,9 +62,15 @@ async def run_archive_cleanup(db: AsyncSession) -> dict:
     log.info("archive_cleanup_started", cutoff=cutoff.isoformat(), file=str(filepath))
 
     while True:
+        referenced_by_normalized = (
+            select(NormalizedJob.id)
+            .where(NormalizedJob.job_archive_id == JobArchive.id)
+            .correlate(JobArchive)
+        )
         result = await db.execute(
             select(JobArchive)
             .where(JobArchive.original_posted_at < cutoff)
+            .where(~exists(referenced_by_normalized))
             .limit(batch_size)
         )
         rows = result.scalars().all()

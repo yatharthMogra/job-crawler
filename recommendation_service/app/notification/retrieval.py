@@ -12,6 +12,7 @@ from app.services.role_intent_preferences import effective_role_intents
 from app.domain import build_domain_filters, candidate_domains_from_profile
 from app.models.notification import NotificationJobHistory
 from app.models.shared import NormalizedJob
+from app.scoring.experience_tier import tiers_above_ceiling
 from app.scoring.seniority import (
     seniority_hard_block_values,
     seniority_retrieval_values,
@@ -46,10 +47,12 @@ async def fetch_new_jobs_in_pools(
     limit: int,
     extra_filters: list[Any] | None = None,
     settings: Settings | None = None,
+    channel: str = "digest",
 ) -> list[NormalizedJob]:
     settings = settings or get_settings()
     sent_job_ids = select(NotificationJobHistory.job_id).where(
-        NotificationJobHistory.candidate_id == candidate_id
+        NotificationJobHistory.candidate_id == candidate_id,
+        NotificationJobHistory.channel == channel,
     )
     conditions = [
         NormalizedJob.retrieval_pools.overlap(pools),
@@ -113,19 +116,30 @@ def build_constraint_filters(
             (NormalizedJob.salary_max.is_(None)) | (NormalizedJob.salary_max >= minimum_salary)
         )
 
-    target_seniority = get_target_seniority(constraints)
-    allowed_values = seniority_retrieval_values(target_seniority)
-    if allowed_values:
-        filters.append(NormalizedJob.seniority.in_(list(allowed_values)))
-
-    blocked_values = seniority_hard_block_values(target_seniority)
-    if blocked_values:
-        filters.append(
-            or_(
-                NormalizedJob.seniority.is_(None),
-                NormalizedJob.seniority.notin_(list(blocked_values)),
+    if settings.experience_tier_visibility_enabled:
+        hidden_tiers = tiers_above_ceiling(settings.experience_tier_visibility_ceiling)
+        if hidden_tiers:
+            filters.append(
+                or_(
+                    NormalizedJob.experience_tier.is_(None),
+                    NormalizedJob.experience_tier == "UNKNOWN",
+                    NormalizedJob.experience_tier.notin_(list(hidden_tiers)),
+                )
             )
-        )
+    else:
+        target_seniority = get_target_seniority(constraints)
+        allowed_values = seniority_retrieval_values(target_seniority)
+        if allowed_values:
+            filters.append(NormalizedJob.seniority.in_(list(allowed_values)))
+
+        blocked_values = seniority_hard_block_values(target_seniority)
+        if blocked_values:
+            filters.append(
+                or_(
+                    NormalizedJob.seniority.is_(None),
+                    NormalizedJob.seniority.notin_(list(blocked_values)),
+                )
+            )
 
     return filters
 

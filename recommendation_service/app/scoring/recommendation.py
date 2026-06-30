@@ -6,6 +6,10 @@ import structlog
 
 from app.config import Settings
 from app.models.shared import NormalizedJob
+from app.scoring.experience_tier import (
+    experience_tier_distance_score,
+    tiers_above_ceiling,
+)
 from app.scoring.location import location_alignment_score
 from app.scoring.seniority import seniority_score_multiplier
 from app.scoring.sponsorship import compute_sponsorship_score
@@ -34,9 +38,19 @@ def score_job(
         job_title=job.title,
     )
     comp_score = _compensation_alignment(job.salary_min, job.salary_max, user_profile.constraints)
-    seniority_multiplier = seniority_score_multiplier(job.seniority, user_profile.constraints)
 
     constraints = user_profile.constraints or {}
+    use_tier_scoring = settings.experience_tier_score_enabled
+    tier_score = 0.0
+    if use_tier_scoring:
+        tier_score = experience_tier_distance_score(
+            job.experience_tier,
+            constraints.get("current_experience_tier"),
+        )
+    seniority_multiplier = 1.0 if use_tier_scoring else seniority_score_multiplier(
+        job.seniority, constraints
+    )
+
     needs_sponsorship = bool(constraints.get("sponsorship_required"))
     use_sponsorship = settings.sponsorship_score_enabled and needs_sponsorship
 
@@ -54,6 +68,15 @@ def score_job(
             + settings.score_location_weight_with_sponsorship * loc_score
             + settings.score_compensation_weight_with_sponsorship * comp_score
             + settings.score_sponsorship_weight * sponsorship_score
+            + (settings.score_experience_tier_weight * tier_score if use_tier_scoring else 0.0)
+        )
+    elif use_tier_scoring:
+        base_score = (
+            settings.score_capability_weight_with_tier * cap_score
+            + settings.score_skill_weight_with_tier * skill_score
+            + settings.score_location_weight_with_tier * loc_score
+            + settings.score_compensation_weight_with_tier * comp_score
+            + settings.score_experience_tier_weight * tier_score
         )
     else:
         base_score = (

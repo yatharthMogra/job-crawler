@@ -27,6 +27,7 @@ class NotificationBatch(Base):
     jobs_ranked: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     jobs_sent: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     skip_reason: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    channel: Mapped[str] = mapped_column(String(32), nullable=False, default="digest")
     email_delivered: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
@@ -36,7 +37,12 @@ class NotificationBatch(Base):
 class NotificationJobHistory(Base):
     __tablename__ = "notification_job_history"
     __table_args__ = (
-        UniqueConstraint("candidate_id", "job_id", name="uq_notification_job_history_candidate_job"),
+        UniqueConstraint(
+            "candidate_id",
+            "job_id",
+            "channel",
+            name="uq_notification_job_history_candidate_job_channel",
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -51,6 +57,7 @@ class NotificationJobHistory(Base):
     )
     rank_in_batch: Mapped[int] = mapped_column(Integer, nullable=False)
     recommendation_score: Mapped[float] = mapped_column(Float, nullable=False)
+    channel: Mapped[str] = mapped_column(String(32), nullable=False, default="digest")
     explanation: Mapped[list[str]] = mapped_column(ARRAY(String(256)), nullable=False, default=list)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

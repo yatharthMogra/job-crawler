@@ -185,6 +185,7 @@ async def test_update_job_archive_after_enrichment_executes_update() -> None:
         db,
         archive_id,
         seniority="senior",
+        experience_tier="SENIOR",
         normalized_roles=["backend"],
         job_capabilities=["api"],
         skills=["python"],

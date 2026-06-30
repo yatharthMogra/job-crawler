@@ -31,7 +31,24 @@ def render_daily_briefing(
     briefing_date: datetime | None = None,
     app_base_url: str | None = None,
 ) -> str:
-    template = _env.get_template("daily_briefing.html")
+    return render_personalized_digest(
+        jobs_with_explanations=jobs_with_explanations,
+        user_profile=user_profile,
+        total_scanned=total_scanned,
+        briefing_date=briefing_date,
+        app_base_url=app_base_url,
+    )
+
+
+def render_personalized_digest(
+    *,
+    jobs_with_explanations: list[tuple[NormalizedJob, list[str], float]],
+    user_profile: UserProfile,
+    total_scanned: int,
+    briefing_date: datetime | None = None,
+    app_base_url: str | None = None,
+) -> str:
+    template = _env.get_template("personalized_digest.html")
     jobs_sent = len(jobs_with_explanations)
     base_url = (app_base_url or _DEFAULT_APP_BASE_URL).rstrip("/")
     candidate_id = str(user_profile.candidate_id)
@@ -49,7 +66,29 @@ def render_daily_briefing(
         total_scanned=total_scanned,
         time_saved_minutes=estimate_time_saved_minutes(total_scanned, jobs_sent),
         total_review_minutes=estimate_total_review_minutes(total_scanned),
-        manage_prefs_url=f"{base_url}/filters?candidate_id={candidate_id}",
+        manage_prefs_url=f"{base_url}/settings?candidate_id={candidate_id}",
         dashboard_url=f"{base_url}/jobs/recommended?candidate_id={candidate_id}",
-        unsubscribe_url=f"{base_url}/unsubscribe?candidate_id={candidate_id}",
+        unsubscribe_url=f"{base_url}/unsubscribe?candidate_id={candidate_id}&channel=digest",
+    )
+
+
+def render_company_watch(
+    *,
+    job: NormalizedJob,
+    explanations: list[str],
+    user_profile: UserProfile,
+    company_name: str,
+    app_base_url: str | None = None,
+) -> str:
+    template = _env.get_template("company_watch.html")
+    base_url = (app_base_url or _DEFAULT_APP_BASE_URL).rstrip("/")
+    candidate_id = str(user_profile.candidate_id)
+    job_card = build_job_card(job, explanations, score=0.0, rank=1, total_jobs=1)
+
+    return template.render(
+        user_name=user_profile.name,
+        company_name=company_name,
+        job=job_card,
+        manage_prefs_url=f"{base_url}/settings?candidate_id={candidate_id}",
+        unsubscribe_url=f"{base_url}/unsubscribe?candidate_id={candidate_id}&channel=company_watch",
     )

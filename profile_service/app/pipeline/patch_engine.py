@@ -15,6 +15,7 @@ from app.models.patch import CandidatePatch
 from app.models.profile import CandidateProfile
 from app.models.resume import CandidateResume
 from app.pipeline.capability_engine import recompute_capabilities
+from app.experience_tier_sync import refresh_experience_tier_constraints
 from app.pipeline.diff_engine import compute_proposed_operations
 from app.pipeline.extractor import extract_text
 from app.pipeline.llm_parser import extract_resume_evidence
@@ -317,6 +318,13 @@ async def commit_patch(
             if evidence:
                 evidence.is_active = False
 
+    constraints = await refresh_experience_tier_constraints(
+        db,
+        candidate_id=candidate_id,
+        constraints=constraints,
+        education=education,
+    )
+
     if current_profile:
         await db.execute(
             update(CandidateProfile)
@@ -410,6 +418,13 @@ async def write_profile_section(
             education.update(new_values)
     else:
         raise ValueError(f"Unknown section: {section}")
+
+    constraints = await refresh_experience_tier_constraints(
+        db,
+        candidate_id=candidate_id,
+        constraints=constraints,
+        education=education,
+    )
 
     if current_profile:
         await db.execute(

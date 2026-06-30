@@ -33,6 +33,7 @@ class JobArchive(Base):
     salary_max: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     original_posted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     seniority: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    experience_tier: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     normalized_roles: Mapped[Optional[list[str]]] = mapped_column(ARRAY(String(64)), nullable=True)
     job_capabilities: Mapped[Optional[list[str]]] = mapped_column(ARRAY(String(128)), nullable=True)
     skills: Mapped[Optional[list[str]]] = mapped_column(ARRAY(String(128)), nullable=True)

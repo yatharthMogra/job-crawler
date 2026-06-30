@@ -85,6 +85,7 @@ def _job_to_out(
         tech_stack=job.tech_stack,
         skills=job.skills,
         seniority=job.seniority,
+        experience_tier=job.experience_tier,
         responsibilities=list(job.responsibilities or []),
         required_qualifications=list(job.required_qualifications or []),
         preferred_qualifications=list(job.preferred_qualifications or []),
@@ -287,7 +288,17 @@ async def get_dashboard_job(
     if job is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
 
+    settings = get_settings()
     user_profile = await load_user_profile(db, candidate_id)
+    if settings.experience_tier_visibility_enabled and user_profile is not None:
+        from app.scoring.experience_tier import job_exceeds_visibility_ceiling
+
+        if job_exceeds_visibility_ceiling(
+            job.experience_tier,
+            settings.experience_tier_visibility_ceiling,
+        ):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
+
     needs_sponsorship = _needs_sponsorship_data(user_profile)
     h1b_lookup, company_lookup = await _load_job_enrichment_lookups(
         db, [job], needs_sponsorship=needs_sponsorship

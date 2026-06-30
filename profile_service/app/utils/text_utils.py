@@ -109,6 +109,10 @@ def default_constraints() -> dict:
         "minimum_hourly_rate": None,
         "has_clearance": False,
         "target_seniority": ["INTERN", "NEW_GRAD", "ENTRY", "MID", "JUNIOR"],
+        "current_experience_tier": "UNKNOWN",
+        "full_time_experience_years": None,
+        "is_currently_enrolled": None,
+        "expected_graduation_date": None,
         "eeo": {},
     }
 

@@ -17,6 +17,7 @@ from app.ingestion.extractor.llm import (
 def _base_payload() -> dict:
     return {
         "seniority": "MID",
+        "experience_tier": "MID",
         "is_internship": False,
         "is_new_grad": False,
         "sponsorship_status": "unclear",
