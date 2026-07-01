@@ -1,39 +1,45 @@
-import Link from "next/link"
-import {
-  ArrowRight,
-  BadgeCheck,
-  Brain,
-  MapPin,
-  Search,
-  Sparkles,
-  Users,
-} from "lucide-react"
-import { MarketingNav } from "@/components/layout/marketing-nav"
-import { PageSection } from "@/components/marketing/page-section"
-import { StatBlock } from "@/components/marketing/stat-block"
-import { Accordion } from "@/components/ui/accordion"
-import { Input } from "@/components/ui/input"
+"use client"
 
-const FAQ_ITEMS = [
-  {
-    id: "linkedin",
-    question: "How is CareerMatch different from LinkedIn?",
-    answer:
-      "CareerMatch uses semantic AI matching to understand executive-level nuance in your profile — not just keyword overlap. You get tailored recommendations, autofill applications, and insider connection suggestions in under a minute.",
-  },
-  {
-    id: "security",
-    question: "Is my personal information secure?",
-    answer:
-      "Yes. Your profile data is kept private and encrypted. We never sell your information to third parties, and you control what recruiters can see.",
-  },
-  {
-    id: "resume",
-    question: "Can I use the AI agent to write my resumes?",
-    answer:
-      "Absolutely. Upload your resume once and our AI tailors versions for each role, highlighting the experience and skills most relevant to that opportunity.",
-  },
+import Link from "next/link"
+import { BadgeCheck, MapPin, Search, ShieldCheck } from "lucide-react"
+import { AgentTerminal } from "@/components/marketing/agent-terminal"
+import { CapabilitiesCarousel } from "@/components/marketing/capabilities-carousel"
+import { InfiniteMarquee } from "@/components/marketing/infinite-marquee"
+import { LandingFooter } from "@/components/marketing/landing-footer"
+import { ScrollReveal } from "@/components/marketing/scroll-reveal"
+import { TestimonialsCarousel } from "@/components/marketing/testimonials-carousel"
+import { MarketingNav } from "@/components/layout/marketing-nav"
+import { Input } from "@/components/ui/input"
+import { useCountUp } from "@/lib/hooks/use-count-up"
+import { useInView } from "@/lib/hooks/use-in-view"
+
+const COMPANY_LOGOS = [
+  { id: "neuralink", label: "Neuralink" },
+  { id: "openai", label: "OpenAI", badge: "H1-B Roles" },
+  { id: "wayne", label: "Wayne Tech" },
+  { id: "stark", label: "Stark Corp" },
+  { id: "oscorp", label: "Oscorp" },
+  { id: "anduril", label: "Anduril" },
 ]
+
+function AgentStats() {
+  const { ref, inView } = useInView<HTMLDivElement>()
+  const roles = useCountUp(1200, inView)
+  const latency = useCountUp(14, inView)
+
+  return (
+    <div ref={ref} className="mt-10 flex flex-wrap gap-8">
+      <div>
+        <p className="text-2xl font-bold text-foreground">{roles}+</p>
+        <p className="text-sm text-muted-foreground">Hidden Roles Analyzed</p>
+      </div>
+      <div>
+        <p className="text-2xl font-bold text-foreground">{latency}ms</p>
+        <p className="text-sm text-muted-foreground">Matching Latency</p>
+      </div>
+    </div>
+  )
+}
 
 export function LandingPage() {
   return (
@@ -41,200 +47,223 @@ export function LandingPage() {
       <MarketingNav />
 
       {/* Hero */}
-      <section className="marketing-hero-bg border-b border-border/60">
-        <div className="mx-auto grid max-w-7xl items-center gap-12 px-6 py-16 lg:grid-cols-2 lg:py-24">
-          <div>
-            <span className="inline-flex items-center rounded-full bg-primary px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary-foreground">
-              No.1 AI Job Hunting Platform
-            </span>
-            <h1 className="mt-6 text-4xl font-bold leading-tight tracking-tight text-foreground sm:text-5xl">
-              No More Solo Job Hunting.{" "}
-              <span className="text-primary">Do it with AI.</span>
-            </h1>
-            <p className="mt-5 max-w-lg text-base leading-relaxed text-muted-foreground">
-              Get matched jobs, autofill applications, tailored resumes, and recommended insider
-              connections in less than 1 minute.
+      <section className="landing-hero-bg relative overflow-hidden pb-20 pt-12 sm:pt-16">
+        <div className="mx-auto max-w-4xl px-6 text-center">
+          <div className="animate-fade-in-up opacity-0" style={{ animationDelay: "0.1s", animationFillMode: "forwards" }}>
+            <div className="relative inline-block">
+              <h1 className="text-4xl font-bold leading-[1.15] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+                Engineering Your Next{" "}
+                <span className="script-accent text-5xl font-semibold italic sm:text-6xl lg:text-7xl">
+                  Paradigm Shift.
+                </span>
+              </h1>
+
+              <span className="animate-float absolute -left-4 top-0 hidden rounded-full border border-emerald-200 bg-card px-3 py-1.5 text-[11px] font-semibold text-emerald-700 shadow-sm sm:-left-16 sm:inline-flex sm:items-center sm:gap-1.5">
+                <BadgeCheck className="size-3.5" />
+                98% Skill Overlap
+              </span>
+              <span className="animate-float-delayed absolute -right-2 top-8 hidden rounded-full border border-primary/20 bg-card px-3 py-1.5 text-[11px] font-semibold text-primary shadow-sm sm:-right-12 sm:inline-flex sm:items-center sm:gap-1.5">
+                <ShieldCheck className="size-3.5" />
+                Sponsorship Verified
+              </span>
+            </div>
+
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-2 sm:hidden">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-card px-3 py-1.5 text-[11px] font-semibold text-emerald-700 shadow-sm">
+                <BadgeCheck className="size-3.5" />
+                98% Skill Overlap
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-card px-3 py-1.5 text-[11px] font-semibold text-primary shadow-sm">
+                <ShieldCheck className="size-3.5" />
+                Sponsorship Verified
+              </span>
+            </div>
+
+            <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+              High-density semantic matching for the top 1% of talent. Move beyond searches—start
+              achieving outcomes.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link
-                href="/login"
-                className="btn-brand inline-flex h-11 items-center rounded-lg px-6 text-sm font-semibold"
-              >
-                TRY FOR FREE
-              </Link>
-              <Link
-                href="/login"
-                className="inline-flex h-11 items-center rounded-lg border border-border bg-card px-6 text-sm font-semibold hover:bg-muted"
-              >
-                View Demo
-              </Link>
-            </div>
-            <div className="mt-8 flex items-center gap-3">
-              <div className="flex -space-x-2">
-                {["A", "B", "C"].map((letter) => (
-                  <div
-                    key={letter}
-                    className="flex size-8 items-center justify-center rounded-full border-2 border-card bg-primary/20 text-xs font-semibold text-primary"
-                  >
-                    {letter}
-                  </div>
-                ))}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Trusted by <span className="font-semibold text-foreground">1.25M+</span> Executives
-              </p>
-            </div>
           </div>
 
-          <div className="relative">
-            <div className="card-elevated mx-auto max-w-md p-6">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex size-12 items-center justify-center rounded-full bg-primary/15 text-lg font-bold text-primary">
-                    J
-                  </div>
-                  <div>
-                    <p className="font-semibold text-foreground">Jamie Parker</p>
-                    <p className="text-sm text-muted-foreground">Senior Data Scientist</p>
-                  </div>
-                </div>
-                <div className="flex size-14 flex-col items-center justify-center rounded-full border-4 border-primary/30 bg-accent text-center">
-                  <span className="text-sm font-bold text-primary">9.0</span>
-                  <span className="text-[8px] font-medium text-muted-foreground">AI Match</span>
-                </div>
-              </div>
-              <div className="mt-5 rounded-xl border border-primary/20 bg-accent/50 p-4">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-primary">AI Agent</p>
-                <p className="mt-2 text-sm leading-relaxed text-foreground/80">
-                  Strong alignment with your ML background. Salary band identified at $180k–$220k.
-                </p>
-              </div>
-              <div className="mt-4 flex gap-2">
-                <span className="rounded-full bg-add-muted px-3 py-1 text-xs font-medium text-add-foreground">
-                  Personalized Pitch
-                </span>
-                <span className="rounded-full bg-add-muted px-3 py-1 text-xs font-medium text-add-foreground">
-                  Skill Check
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats */}
-      <PageSection className="py-12">
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-          <StatBlock value="1.25M+" label="Trusted Executives" />
-          <StatBlock value="3x" label="Interview Landings" />
-          <StatBlock value="80%" label="Time Saved" />
-          <StatBlock value="No.1" label="C-Suite Choice" />
-        </div>
-      </PageSection>
-
-      {/* Job Hub */}
-      <PageSection id="job-hub" className="border-t border-border/60 bg-surface/50">
-        <h2 className="text-center text-3xl font-bold tracking-tight text-foreground">
-          ACCESS THE <span className="text-primary">LARGEST JOB HUB</span>
-        </h2>
-        <div className="mx-auto mt-8 max-w-4xl">
-          <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-3 shadow-md sm:flex-row sm:items-center">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Job Title" className="h-11 border-0 bg-surface pl-9 shadow-none" />
-            </div>
-            <Input placeholder="Work Model" className="h-11 border-0 bg-surface shadow-none sm:w-40" />
-            <div className="relative flex-1">
-              <MapPin className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="United States" className="h-11 border-0 bg-surface pl-9 shadow-none" />
-            </div>
-            <Link
-              href="/login"
-              className="btn-brand inline-flex h-11 shrink-0 items-center gap-1 rounded-lg px-6 font-semibold"
-            >
-              GO <ArrowRight className="size-4" />
-            </Link>
-          </div>
-        </div>
-
-        <div className="mt-12 grid gap-8 lg:grid-cols-2">
-          <div className="card-elevated relative overflow-hidden p-8">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
-            <div className="relative">
-              <p className="text-sm text-muted-foreground">Total Jobs</p>
-              <p className="text-4xl font-bold text-primary">8,000,000+</p>
-              <p className="mt-4 text-sm text-muted-foreground">Today&apos;s New Jobs</p>
-              <p className="text-2xl font-bold text-foreground">400,000+</p>
-            </div>
-          </div>
-          <div className="flex flex-col justify-center gap-8">
-            <div className="flex gap-4">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
-                <Brain className="size-5" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground">Semantic AI Matching</h3>
-                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                  Our engine understands executive-level nuance — leadership scope, industry context,
-                  and career trajectory — not just keywords.
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-4">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
-                <Users className="size-5" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground">Verified Connections</h3>
-                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                  Identify the right people at each company with AI-generated icebreakers tailored to
-                  your shared background.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </PageSection>
-
-      {/* FAQ */}
-      <PageSection id="faq">
-        <h2 className="mb-8 text-center text-2xl font-bold uppercase tracking-wide text-foreground">
-          Frequently Asked Questions
-        </h2>
-        <div className="mx-auto max-w-2xl">
-          <Accordion items={FAQ_ITEMS} defaultOpen="linkedin" />
-        </div>
-      </PageSection>
-
-      {/* Footer CTA */}
-      <section className="navy-section py-16 text-center">
-        <div className="mx-auto max-w-2xl px-6">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Take You to Your Next Opportunity.
-          </h2>
-          <p className="mt-4 text-sm leading-relaxed text-white/70">
-            Join the exclusive tier of high-performance executives landing their dream roles with
-            precision.
-          </p>
-          <Link
-            href="/login"
-            className="btn-brand mt-8 inline-flex h-11 items-center rounded-lg px-8 text-sm font-semibold"
+          <div
+            className="animate-fade-in-up mx-auto mt-10 max-w-3xl opacity-0"
+            style={{ animationDelay: "0.35s", animationFillMode: "forwards" }}
           >
-            TRY FOR FREE NOW
-          </Link>
+            <div className="flex flex-col gap-2 rounded-2xl border border-border/80 bg-card p-2 shadow-lg shadow-primary/5 sm:flex-row sm:items-center">
+              <div className="relative flex-1">
+                <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Role or Tech Stack (e.g., L7 Staff Engineer)"
+                  className="h-12 border-0 bg-transparent pl-11 shadow-none focus-visible:ring-0"
+                />
+              </div>
+              <div className="hidden h-8 w-px bg-border sm:block" />
+              <div className="relative sm:w-44">
+                <MapPin className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Global / Remote"
+                  className="h-12 border-0 bg-transparent pl-11 shadow-none focus-visible:ring-0"
+                />
+              </div>
+              <Link
+                href="/login"
+                className="inline-flex h-12 shrink-0 items-center justify-center rounded-xl bg-primary px-8 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/25 transition-all hover:bg-primary/90 hover:shadow-lg"
+              >
+                Initiate Match
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
-      <footer className="border-t border-border py-8 text-center text-xs text-muted-foreground">
-        <p className="flex items-center justify-center gap-1.5">
-          <Sparkles className="size-3.5 text-primary" />
-          CareerMatch — AI-powered executive job hunting
-        </p>
-        <p className="mt-2 flex items-center justify-center gap-1">
-          <BadgeCheck className="size-3.5 text-add" />
-          Verified listings · Secure profiles
-        </p>
-      </footer>
+      {/* Company marquee */}
+      <section className="border-y border-border/50 bg-surface/40 py-10">
+        <ScrollReveal>
+          <p className="mb-6 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+            Powering the future of high-growth teams
+          </p>
+          <InfiniteMarquee items={COMPANY_LOGOS} speed="slow" />
+        </ScrollReveal>
+      </section>
+
+      {/* Platform capabilities */}
+      <section className="mx-auto max-w-7xl px-6 py-20 sm:py-28">
+        <CapabilitiesCarousel />
+      </section>
+
+      {/* AI Agent */}
+      <section className="border-y border-border/50 bg-surface/30 py-20 sm:py-28">
+        <div className="mx-auto grid max-w-7xl items-center gap-12 px-6 lg:grid-cols-2 lg:gap-16">
+          <ScrollReveal direction="left">
+            <span className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold tracking-widest text-primary">
+              LIVE AI AGENT
+            </span>
+            <h2 className="mt-5 text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl">
+              Your career agent,{" "}
+              <span className="script-accent text-4xl font-semibold italic sm:text-5xl">
+                always active.
+              </span>
+            </h2>
+            <p className="mt-5 max-w-lg text-base leading-relaxed text-muted-foreground">
+              While you focus on building, your Job Scout agent is negotiating, vetting, and matching
+              in the background with terminal-grade precision.
+            </p>
+            <AgentStats />
+          </ScrollReveal>
+
+          <ScrollReveal direction="right" delay={150}>
+            <AgentTerminal />
+          </ScrollReveal>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="mx-auto max-w-7xl px-6 py-20 sm:py-28">
+        <ScrollReveal>
+          <h2 className="mb-12 text-center text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            Trusted by leaders who ship
+          </h2>
+        </ScrollReveal>
+        <div className="hidden lg:grid lg:grid-cols-3 lg:gap-6">
+          <TestimonialsGrid />
+        </div>
+        <div className="lg:hidden">
+          <TestimonialsCarousel />
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="landing-cta-bg py-20 sm:py-28">
+        <ScrollReveal>
+          <div className="mx-auto max-w-3xl rounded-3xl border border-border/60 bg-card px-8 py-14 text-center shadow-xl shadow-primary/5 sm:px-16">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+              The elite network is waiting for{" "}
+              <span className="script-accent text-4xl font-semibold italic sm:text-5xl">you.</span>
+            </h2>
+            <p className="mx-auto mt-4 max-w-lg text-muted-foreground">
+              No resume black holes. Just precise, high-value career moves tailored to your unique
+              trajectory.
+            </p>
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Link
+                href="/login"
+                className="inline-flex h-12 w-full items-center justify-center rounded-full bg-primary px-8 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/25 transition-all hover:bg-primary/90 sm:w-auto"
+              >
+                Build My Trajectory
+              </Link>
+              <Link
+                href="/login"
+                className="inline-flex h-12 w-full items-center justify-center rounded-full border border-border bg-background px-8 text-sm font-semibold text-foreground transition-colors hover:bg-muted sm:w-auto"
+              >
+                Talk to an Agent
+              </Link>
+            </div>
+            <p className="mt-6 text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+              Free for elite candidates · Always confidential
+            </p>
+          </div>
+        </ScrollReveal>
+      </section>
+
+      <LandingFooter />
     </div>
+  )
+}
+
+function TestimonialsGrid() {
+  const items = [
+    {
+      score: "98%",
+      quote:
+        "Job Scout surfaced a Principal role I'd never find on LinkedIn. Match score was dead-on — interview in 9 days.",
+      name: "Sarah Chen",
+      title: "VP Engineering @ NextGen",
+      initials: "SC",
+      color: "bg-violet-100 text-violet-700",
+    },
+    {
+      score: "96%",
+      quote:
+        "The sponsorship filter alone saved me weeks. Every role it surfaced was H1-B verified before I applied.",
+      name: "Marcus Okonkwo",
+      title: "Staff ML Engineer @ Helix",
+      initials: "MO",
+      color: "bg-blue-100 text-blue-700",
+    },
+    {
+      score: "99%",
+      quote:
+        "Salary intelligence gave me leverage I didn't know I had. Closed 22% above my initial offer.",
+      name: "Elena Vasquez",
+      title: "Director of Product @ Arcadia",
+      initials: "EV",
+      color: "bg-emerald-100 text-emerald-700",
+    },
+  ]
+
+  return (
+    <>
+      {items.map((t, i) => (
+        <ScrollReveal key={t.name} delay={i * 100}>
+          <div className="h-full rounded-2xl border border-border/80 bg-card p-8 shadow-md transition-all hover:-translate-y-1 hover:shadow-lg">
+            <span className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold tracking-widest text-primary">
+              MATCH SCORE: {t.score}
+            </span>
+            <p className="mt-5 text-sm leading-relaxed text-foreground/90">&ldquo;{t.quote}&rdquo;</p>
+            <div className="mt-6 flex items-center gap-3 border-t border-border/60 pt-5">
+              <div
+                className={`flex size-10 items-center justify-center rounded-full text-sm font-semibold ${t.color}`}
+              >
+                {t.initials}
+              </div>
+              <div>
+                <p className="font-semibold text-foreground">{t.name}</p>
+                <p className="text-sm text-muted-foreground">{t.title}</p>
+              </div>
+            </div>
+          </div>
+        </ScrollReveal>
+      ))}
+    </>
   )
 }

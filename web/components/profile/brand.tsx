@@ -9,7 +9,7 @@ export function Brand({ className }: { className?: string }) {
           <Sparkles className="size-4" aria-hidden="true" />
         </span>
         <span className="text-base font-bold tracking-tight text-foreground">
-          Career<span className="text-primary">Match</span>
+          Job Scout
         </span>
       </div>
     </div>
@@ -24,12 +24,22 @@ export function BrandMark({ className }: { className?: string }) {
         className,
       )}
     >
-      C
+      J
     </span>
   )
 }
 
 export function BrandWordmark({ className, size = "default" }: { className?: string; size?: "default" | "lg" }) {
+  return <JobScoutWordmark className={className} size={size} />
+}
+
+export function JobScoutWordmark({
+  className,
+  size = "default",
+}: {
+  className?: string
+  size?: "default" | "lg"
+}) {
   return (
     <span
       className={cn(
@@ -38,7 +48,7 @@ export function BrandWordmark({ className, size = "default" }: { className?: str
         className,
       )}
     >
-      Career<span className="text-primary">Match</span>
+      Job Scout
     </span>
   )
 }

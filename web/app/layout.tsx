@@ -1,6 +1,6 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Caveat, Geist, Geist_Mono } from 'next/font/google'
 import { SessionProvider as NextAuthSessionProvider } from 'next-auth/react'
 import { SessionProvider } from '@/components/session-provider'
 import './globals.css'
@@ -10,11 +10,16 @@ const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
 })
+const caveat = Caveat({
+  variable: '--font-caveat',
+  subsets: ['latin'],
+  weight: ['500', '600', '700'],
+})
 
 export const metadata: Metadata = {
-  title: 'CareerMatch — AI-powered executive job hunting',
+  title: 'Job Scout — Precision AI career matching',
   description:
-    'Get matched jobs, autofill applications, tailored resumes, and insider connections for executive roles.',
+    'High-density semantic matching for top talent. Get matched roles, sponsorship insights, and salary intelligence.',
   generator: 'v0.app',
   icons: {
     icon: [
@@ -41,7 +46,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${caveat.variable}`}>
       <body className="font-sans antialiased">
         <NextAuthSessionProvider>
           <SessionProvider>{children}</SessionProvider>
