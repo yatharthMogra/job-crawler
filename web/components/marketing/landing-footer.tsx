@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Linkedin, Twitter } from "lucide-react"
+import { Globe, Share2 } from "lucide-react"
 import { JobScoutWordmark } from "@/components/profile/brand"
 
 const PLATFORM_LINKS = [
@@ -36,14 +36,14 @@ export function LandingFooter() {
                 className="flex size-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
                 aria-label="LinkedIn"
               >
-                <Linkedin className="size-4" />
+                <Share2 className="size-4" />
               </a>
               <a
                 href="#"
                 className="flex size-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
                 aria-label="Twitter"
               >
-                <Twitter className="size-4" />
+                <Globe className="size-4" />
               </a>
             </div>
           </div>

@@ -35,7 +35,7 @@ Mock mode: `NEXT_PUBLIC_USE_MOCK_DATA=true` in `.env.local`
 | `/profile` | Tabbed profile (Personal, Education, Experience, Skills, EEO) |
 | `/filters` | Full job criteria editor |
 | `/onboarding` | Signup |
-| `/profile/upload` → `/profile/review` → `/profile/job-intent` → `/profile/confirm` | Onboarding flow |
+| `/profile/upload` → `/profile/review` → `/profile/job-intent` → `/jobs/recommended` | Onboarding flow |
 
 ## Role catalog
 

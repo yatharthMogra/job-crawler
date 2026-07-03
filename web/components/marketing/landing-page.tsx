@@ -48,41 +48,46 @@ export function LandingPage() {
 
       {/* Hero */}
       <section className="landing-hero-bg relative overflow-hidden pb-20 pt-12 sm:pt-16">
-        <div className="mx-auto max-w-4xl px-6 text-center">
-          <div className="animate-fade-in-up opacity-0" style={{ animationDelay: "0.1s", animationFillMode: "forwards" }}>
-            <div className="relative inline-block">
-              <h1 className="text-4xl font-bold leading-[1.15] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-                Engineering Your Next{" "}
-                <span className="script-accent text-5xl font-semibold italic sm:text-6xl lg:text-7xl">
+        <div className="mx-auto max-w-5xl px-6">
+          <div
+            className="animate-fade-in-up relative min-h-[220px] py-4 opacity-0 lg:min-h-[260px] lg:py-8"
+            style={{ animationDelay: "0.1s", animationFillMode: "forwards" }}
+          >
+            {/* Side floats — only when there is room; never over the headline */}
+            <span className="animate-float pointer-events-none absolute left-0 top-[42%] z-0 hidden -translate-y-1/2 rounded-full border border-emerald-200/80 bg-card/95 px-3 py-1.5 text-[11px] font-semibold text-emerald-700 shadow-md backdrop-blur-sm lg:inline-flex lg:items-center lg:gap-1.5">
+              <BadgeCheck className="size-3.5 shrink-0" />
+              98% Skill Overlap
+            </span>
+            <span className="animate-float-delayed pointer-events-none absolute right-0 top-[28%] z-0 hidden rounded-full border border-primary/20 bg-card/95 px-3 py-1.5 text-[11px] font-semibold text-primary shadow-md backdrop-blur-sm lg:inline-flex lg:items-center lg:gap-1.5">
+              <ShieldCheck className="size-3.5 shrink-0" />
+              Sponsorship Verified
+            </span>
+
+            <div className="relative z-10 mx-auto max-w-3xl text-center">
+              {/* Compact row above title on smaller screens */}
+              <div className="mb-5 flex flex-wrap items-center justify-center gap-2 lg:hidden">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/80 bg-card px-3 py-1.5 text-[11px] font-semibold text-emerald-700 shadow-sm">
+                  <BadgeCheck className="size-3.5 shrink-0" />
+                  98% Skill Overlap
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-card px-3 py-1.5 text-[11px] font-semibold text-primary shadow-sm">
+                  <ShieldCheck className="size-3.5 shrink-0" />
+                  Sponsorship Verified
+                </span>
+              </div>
+
+              <h1 className="text-4xl font-bold leading-tight tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+                <span className="block">Engineering Your Next</span>
+                <span className="script-accent mt-2 block text-5xl font-semibold italic leading-tight sm:text-6xl lg:text-7xl">
                   Paradigm Shift.
                 </span>
               </h1>
 
-              <span className="animate-float absolute -left-4 top-0 hidden rounded-full border border-emerald-200 bg-card px-3 py-1.5 text-[11px] font-semibold text-emerald-700 shadow-sm sm:-left-16 sm:inline-flex sm:items-center sm:gap-1.5">
-                <BadgeCheck className="size-3.5" />
-                98% Skill Overlap
-              </span>
-              <span className="animate-float-delayed absolute -right-2 top-8 hidden rounded-full border border-primary/20 bg-card px-3 py-1.5 text-[11px] font-semibold text-primary shadow-sm sm:-right-12 sm:inline-flex sm:items-center sm:gap-1.5">
-                <ShieldCheck className="size-3.5" />
-                Sponsorship Verified
-              </span>
+              <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+                High-density semantic matching for the top 1% of talent. Move beyond searches—start
+                achieving outcomes.
+              </p>
             </div>
-
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-2 sm:hidden">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-card px-3 py-1.5 text-[11px] font-semibold text-emerald-700 shadow-sm">
-                <BadgeCheck className="size-3.5" />
-                98% Skill Overlap
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-card px-3 py-1.5 text-[11px] font-semibold text-primary shadow-sm">
-                <ShieldCheck className="size-3.5" />
-                Sponsorship Verified
-              </span>
-            </div>
-
-            <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-              High-density semantic matching for the top 1% of talent. Move beyond searches—start
-              achieving outcomes.
-            </p>
           </div>
 
           <div

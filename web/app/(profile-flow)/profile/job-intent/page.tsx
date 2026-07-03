@@ -10,7 +10,7 @@ export default function JobIntentPage() {
     <JobIntentScreen
       state={jobIntent}
       onChange={setJobIntent}
-      onSubmit={() => saveJobIntent("confirm")}
+      onSubmit={() => saveJobIntent("jobs")}
       saving={saving}
     />
   )

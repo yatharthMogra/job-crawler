@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
+import { ArrowLeft, ShieldCheck } from "lucide-react"
 import { signIn } from "next-auth/react"
 import { Brand } from "@/components/profile/brand"
 import { Button } from "@/components/ui/button"
@@ -116,28 +117,45 @@ export function LoginScreen() {
   }
 
   return (
-    <div className="flow-page-bg flex min-h-screen flex-col">
-      <header className="border-b border-border/60 bg-card/80 px-6 py-4 backdrop-blur-sm">
+    <div className="landing-hero-bg relative flex min-h-screen flex-col overflow-hidden">
+      <div className="pointer-events-none absolute -left-24 top-20 size-72 rounded-full bg-primary/10 blur-3xl" />
+      <div className="pointer-events-none absolute -right-16 bottom-16 size-64 rounded-full bg-primary/5 blur-3xl" />
+
+      <header className="relative z-10 flex items-center justify-between px-6 py-5">
         <Link href="/">
           <Brand />
         </Link>
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="size-4" />
+          Back to Landing Page
+        </Link>
       </header>
 
-      <main className="flex flex-1 items-center justify-center px-6 py-12">
+      <main className="relative z-10 flex flex-1 items-center justify-center px-6 py-8">
         <div className="w-full max-w-md">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-foreground">Welcome to CareerMatch</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Sign in to access your executive job dashboard
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-card px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary">
+              <ShieldCheck className="size-3" />
+              Secure Access
+            </span>
+            <h1 className="mt-5 text-3xl font-bold tracking-tight text-foreground">
+              Enter your{" "}
+              <span className="script-accent text-4xl font-semibold italic">command center.</span>
+            </h1>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              Sign in to access personalized matches, saved roles, and your career trajectory.
             </p>
           </div>
 
-          <div className="card-elevated mt-8 p-6">
+          <div className="mt-8 rounded-2xl border border-border/80 bg-card p-6 shadow-lg shadow-primary/5">
             <button
               type="button"
               onClick={() => void handleGoogleSignIn()}
               disabled={googleLoading}
-              className="flex h-11 w-full items-center justify-center gap-3 rounded-lg border border-border bg-card text-sm font-medium transition-colors hover:bg-muted disabled:opacity-50"
+              className="flex h-12 w-full items-center justify-center gap-3 rounded-full border border-border bg-background text-sm font-semibold transition-colors hover:bg-muted disabled:opacity-50"
             >
               <GoogleIcon />
               {googleLoading ? "Redirecting..." : "Continue with Google"}
@@ -160,7 +178,7 @@ export function LoginScreen() {
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Alex Rivera"
                   autoComplete="name"
-                  className="h-11 border-border/80 bg-surface/50"
+                  className="h-12 rounded-xl border-border/80 bg-surface/50"
                 />
               </div>
               <div>
@@ -175,18 +193,22 @@ export function LoginScreen() {
                   placeholder="you@example.com"
                   autoComplete="email"
                   required
-                  className="h-11 border-border/80 bg-surface/50"
+                  className="h-12 rounded-xl border-border/80 bg-surface/50"
                 />
               </div>
               {error ? <p className="text-sm text-remove">{error}</p> : null}
-              <Button type="submit" className="btn-brand h-11 w-full" disabled={loading}>
+              <Button
+                type="submit"
+                className="btn-brand h-12 w-full rounded-full text-sm font-semibold"
+                disabled={loading}
+              >
                 {loading ? "Signing in..." : "Continue"}
               </Button>
             </form>
           </div>
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            By continuing, you agree to CareerMatch&apos;s Terms of Service and Privacy Policy.
+            By continuing, you agree to Job Scout&apos;s Terms of Service and Privacy Policy.
           </p>
         </div>
       </main>

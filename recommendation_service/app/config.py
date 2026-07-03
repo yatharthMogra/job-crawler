@@ -62,7 +62,8 @@ class Settings(BaseSettings):
             "http://127.0.0.1:3000",
             "http://localhost:3001",
             "http://127.0.0.1:3001",
-            "https://career-match-gcp.vercel.app",
+            "https://job-scout.dev",
+            "https://carrier-match-gcp.vercel.app",
         ]
         if not self.cors_origins.strip():
             return defaults

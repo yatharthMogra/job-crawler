@@ -328,12 +328,14 @@ Complete this before or immediately after the Vercel deploy — you need the fin
 
 1. **Credentials → Create credentials → OAuth client ID**
 2. Application type: **Web application**
-3. **Authorized redirect URIs:**
+3. **Authorized redirect URIs** (add all that apply; keep legacy URI during transition):
    ```text
-   https://your-app.vercel.app/api/auth/callback/google
+   https://job-scout.dev/api/auth/callback/google
+   https://carrier-match-gcp.vercel.app/api/auth/callback/google
    http://localhost:3000/api/auth/callback/google
+   http://127.0.0.1:3002/api/auth/callback/google
    ```
-   (Add the localhost URI if you still develop locally with Google login.)
+   Without the `job-scout.dev` callback URI, Google OAuth cannot complete on that domain.
 4. Save the **Client ID** and **Client Secret**
 
 #### 3.3 Generate AUTH_SECRET
@@ -365,7 +367,7 @@ In Vercel → Project → **Settings → Environment Variables** (Production sco
 | `PROFILE_API_URL` | Cloud Run profile service URL |
 | `PROFILE_API_KEY` | Same random key from Phase 2.3 |
 | `AUTH_SECRET` | Output of `openssl rand -base64 32` |
-| `AUTH_URL` | `https://your-app.vercel.app` |
+| `AUTH_URL` | `https://job-scout.dev` |
 | `GOOGLE_CLIENT_ID` | From OAuth client |
 | `GOOGLE_CLIENT_SECRET` | From OAuth client |
 | `NEXT_PUBLIC_USE_MOCK_DATA` | `false` |
@@ -376,17 +378,23 @@ See also [`web/.env.example`](web/.env.example).
 
 #### 4.3 Deploy
 
-Deploy from Vercel. Note your live URL (e.g. `https://career-match-ai.vercel.app`).
+Deploy from Vercel. Custom domain: **`https://job-scout.dev`** (legacy: `https://carrier-match-gcp.vercel.app`).
 
 #### 4.4 Update OAuth redirect (if needed)
 
-If you created the OAuth client before knowing the Vercel URL, go back to Google Cloud Console and add:
+If you created the OAuth client before the custom domain was live, go to **Google Cloud Console → APIs & Services → Credentials → your OAuth 2.0 Client** and under **Authorized redirect URIs** add:
 
 ```text
-https://career-match-ai.vercel.app/api/auth/callback/google
+https://job-scout.dev/api/auth/callback/google
 ```
 
-Ensure `AUTH_URL` in Vercel matches this URL exactly.
+Keep during transition (remove after cutover):
+
+```text
+https://carrier-match-gcp.vercel.app/api/auth/callback/google
+```
+
+Ensure `AUTH_URL` in Vercel is **`https://job-scout.dev`** (no trailing slash). It must match the domain users sign in from exactly.
 
 ---
 
@@ -397,7 +405,7 @@ The browser calls the recommendation API directly (`NEXT_PUBLIC_RECOMMENDATION_A
 Update both Cloud Run services after Vercel is live:
 
 ```bash
-VERCEL_URL="https://your-app.vercel.app"
+VERCEL_URL="https://job-scout.dev"
 
 gcloud run services update profile-service \
   --project=YOUR_PROJECT_ID \
@@ -551,7 +559,7 @@ sudo systemctl enable --now job-ingestion recommendation-worker
 | Problem | Likely cause | Fix |
 |---------|--------------|-----|
 | CORS error on job page | Missing `CORS_ORIGINS` on Cloud Run | Phase 5 |
-| Google login fails | Wrong redirect URI or `AUTH_URL` | Match Vercel URL exactly in OAuth client + Vercel env |
+| Google login fails | Wrong redirect URI or `AUTH_URL` | Add `https://job-scout.dev/api/auth/callback/google` in GCP OAuth client; set Vercel `AUTH_URL=https://job-scout.dev` |
 | Profile API returns 401 | `PROFILE_API_KEY` mismatch | Same key in Vercel and GCP `profile-api-key` secret |
 | Resume upload fails on Cloud Run | Storage bucket or service role misconfigured | Check `resumes` bucket exists; verify Supabase secrets |
 | Cloud Run DB connection errors | Wrong URL type | Pooler `:6543` on Cloud Run; direct `:5432` on home machine |
@@ -754,22 +762,22 @@ echo -n "NEW_VALUE" | gcloud secrets versions add database-url --project=YOUR_PR
 GCP_PROJECT=YOUR_PROJECT_ID GCP_REGION=us-central1 ./scripts/deploy-cloud-run.sh
 ```
 
-The script rebuilds and pushes both service images, then deploys with `--set-secrets` and `--set-env-vars`. It hardcodes production CORS in `scripts/deploy-cloud-run.sh` (`CORS_ORIGINS="https://career-match-gcp.vercel.app"`). The same URL is also in the default allow list in `profile_service/app/config.py` and `recommendation_service/app/config.py`. If your Vercel URL changes, update all three before redeploying.
+The script rebuilds and pushes both service images, then deploys with `--set-secrets` and `--set-env-vars`. It sets production CORS in `scripts/deploy-cloud-run.sh` (`CORS_ORIGINS` includes `https://job-scout.dev` and legacy `https://carrier-match-gcp.vercel.app`). The same URLs are in the default allow list in `profile_service/app/config.py` and `recommendation_service/app/config.py`. If your frontend URL changes, update all three before redeploying.
 
 Manual `gcloud run deploy` works for secret-only rotations (same image is fine), but **must still pass `CORS_ORIGINS`** — otherwise a redeploy can wipe the env var and the browser will only get localhost origins from an older image:
 
 ```bash
-VERCEL_URL="https://career-match-gcp.vercel.app"
+CORS_ORIGINS="https://job-scout.dev,https://carrier-match-gcp.vercel.app"
 
 gcloud run deploy profile-service --project YOUR_PROJECT_ID --region us-central1 \
   --image us-central1-docker.pkg.dev/YOUR_PROJECT_ID/job-crawler/profile_service:latest \
   --set-secrets "DATABASE_URL=database-url:latest,..." \
-  --set-env-vars "RESUME_STORAGE_BACKEND=supabase,SUPABASE_STORAGE_BUCKET=resumes,CORS_ORIGINS=${VERCEL_URL}"
+  --set-env-vars "RESUME_STORAGE_BACKEND=supabase,SUPABASE_STORAGE_BUCKET=resumes,CORS_ORIGINS=${CORS_ORIGINS}"
 
 gcloud run deploy recommendation-service --project YOUR_PROJECT_ID --region us-central1 \
   --image us-central1-docker.pkg.dev/YOUR_PROJECT_ID/job-crawler/recommendation_service:latest \
   --set-secrets "DATABASE_URL=database-url:latest,..." \
-  --set-env-vars "ENABLE_NOTIFICATION_SCHEDULER=false,CORS_ORIGINS=${VERCEL_URL}"
+  --set-env-vars "ENABLE_NOTIFICATION_SCHEDULER=false,CORS_ORIGINS=${CORS_ORIGINS}"
 ```
 
 Bare `gcloud run services update profile-service` with no flags errors with **"No configuration change requested"**. Either full `gcloud run deploy` (or `./scripts/deploy-cloud-run.sh`) or add a noop env bump:
@@ -784,7 +792,7 @@ gcloud run services update profile-service --region us-central1 --project=YOUR_P
 ```bash
 curl -sI -X OPTIONS \
   "https://recommendation-service-XXXX.us-central1.run.app/dashboard/jobs/recommended" \
-  -H "Origin: https://career-match-gcp.vercel.app" \
+  -H "Origin: https://job-scout.dev" \
   -H "Access-Control-Request-Method: GET"
 ```
 
@@ -806,10 +814,11 @@ Avoid piping raw secrets in **Cursor's integrated terminal** if the session may 
 
 ### Google OAuth — reuse local client
 
-You do not need a separate OAuth client for production. Add Vercel URLs to the **same** OAuth client used locally:
+You do not need a separate OAuth client for production. Add production URLs to the **same** OAuth client used locally:
 
-- Authorized redirect URI: `https://your-app.vercel.app/api/auth/callback/google`
-- `AUTH_URL` on Vercel must match exactly
+- **Primary redirect URI:** `https://job-scout.dev/api/auth/callback/google`
+- **Legacy (transition):** `https://carrier-match-gcp.vercel.app/api/auth/callback/google`
+- **`AUTH_URL` on Vercel:** `https://job-scout.dev` (must match exactly, no trailing slash)
 
 If the consent screen is in **Testing** mode, add each pilot user's Gmail under test users until the app is published.
 

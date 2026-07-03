@@ -68,6 +68,73 @@ export const ROLE_CATALOG: RoleCatalogEntry[] = [
 
 export const ROLE_CATEGORIES = [...new Set(ROLE_CATALOG.map((r) => r.category))]
 
+/** High-level domains for the executive path carousel (maps to catalog slices). */
+export const ROLE_DOMAIN_GROUPS = [
+  {
+    id: "engineering",
+    label: "Engineering",
+    description: "Backend, DevOps, AI, Systems Architecture",
+    categories: ["Software/Internet/AI", "Aerospace & Defense"] as const,
+    subcategories: [
+      "Backend Engineering",
+      "Frontend Engineering",
+      "Machine Learning & AI",
+      "Security",
+      "Systems Engineering",
+      "Hardware Engineering",
+    ] as const,
+  },
+  {
+    id: "product",
+    label: "Product",
+    description: "Product strategy, design, and GTM alignment",
+    categories: ["Software/Internet/AI", "Sales & GTM"] as const,
+    subcategories: ["Product", "Design", "Marketing"] as const,
+  },
+  {
+    id: "data-ai",
+    label: "Data & AI",
+    description: "Analytics, ML, and intelligence systems",
+    categories: ["Software/Internet/AI"] as const,
+    subcategories: ["Data & Analytics", "Machine Learning & AI"] as const,
+  },
+] as const
+
+export type RoleDomainId = (typeof ROLE_DOMAIN_GROUPS)[number]["id"]
+
+export function rolesForDomain(domainId: RoleDomainId): RoleCatalogEntry[] {
+  const domain = ROLE_DOMAIN_GROUPS.find((d) => d.id === domainId)
+  if (!domain) return ROLE_CATALOG
+  return ROLE_CATALOG.filter(
+    (r) =>
+      (domain.categories as readonly string[]).includes(r.category) &&
+      (domain.subcategories as readonly string[]).includes(r.subcategory),
+  )
+}
+
+export function rolesForCategory(category: string): RoleCatalogEntry[] {
+  return ROLE_CATALOG.filter((r) => r.category === category)
+}
+
+export function isCatalogRole(label: string): boolean {
+  return findRoleByLabel(label) !== undefined
+}
+
+export function sanitizeCatalogRoles(labels: string[]): string[] {
+  const seen = new Set<string>()
+  const result: string[] = []
+  for (const label of labels) {
+    const entry = findRoleByLabel(label)
+    if (entry && !seen.has(entry.label)) {
+      seen.add(entry.label)
+      result.push(entry.label)
+    }
+  }
+  return result
+}
+
+export const ALL_ROLE_LABELS = ROLE_CATALOG.map((r) => r.label)
+
 export function rolesByCategory(category: string): RoleCatalogEntry[] {
   return ROLE_CATALOG.filter((r) => r.category === category)
 }

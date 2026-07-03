@@ -244,6 +244,10 @@
   .animate-fade-in-up {
     animation: fade-in-up 0.8s ease-out forwards;
   }
+
+  .upload-icon-glow {
+    box-shadow: 0 0 40px oklch(0.55 0.22 276 / 0.35);
+  }
 }
 
 @keyframes float {

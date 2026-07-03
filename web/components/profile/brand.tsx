@@ -1,4 +1,4 @@
-import { Sparkles } from "lucide-react"
+import { Rocket } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export function Brand({ className }: { className?: string }) {
@@ -6,7 +6,7 @@ export function Brand({ className }: { className?: string }) {
     <div className={className}>
       <div className="flex items-center gap-2.5">
         <span className="flex size-8 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/25">
-          <Sparkles className="size-4" aria-hidden="true" />
+          <Rocket className="size-4" aria-hidden="true" />
         </span>
         <span className="text-base font-bold tracking-tight text-foreground">
           Job Scout

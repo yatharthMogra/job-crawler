@@ -133,6 +133,13 @@ export function ProfileFlowProvider({
   )
 
   const loadPendingReview = useCallback(async (id: string) => {
+    if (mockMode) {
+      setPatchId("mock-patch")
+      setReviewState(initialReviewState)
+      setHasExistingProfile(false)
+      return
+    }
+
     const [pending, evidence] = await Promise.all([getPendingPatch(id), getEvidence(id)])
     setPatchId(pending.patch_id)
     setReviewState(mapPendingPatchToReviewState(pending, evidence.evidence))
@@ -146,7 +153,7 @@ export function ProfileFlowProvider({
         throw err
       }
     }
-  }, [])
+  }, [mockMode])
 
   const setUploadFile = useCallback((selected: File) => {
     setFile(selected)
@@ -246,22 +253,22 @@ export function ProfileFlowProvider({
   }, [mockMode, candidateId, patchId, hasExistingProfile, loadProfileHome, router])
 
   const saveJobIntent = useCallback(
-    async (redirectTo: "confirm" | "profile" | "jobs" = "confirm") => {
+    async (redirectTo: "confirm" | "profile" | "jobs" = "jobs") => {
       if (mockMode) {
-        const built = buildCommittedProfile(reviewState)
-        built.primaryRoles = jobIntent.primaryRoles
-        built.secondaryRoles = jobIntent.secondaryRoles
-        built.eeo = jobIntent.eeo
-        setConfirmationProfile(built)
         setProfileHome(buildMockProfileHome(jobIntent))
         setHasExistingProfile(true)
         setMockOnboardingComplete(true)
         if (redirectTo === "profile") {
           router.push("/profile")
-        } else if (redirectTo === "jobs") {
-          router.push("/jobs/recommended")
-        } else {
+        } else if (redirectTo === "confirm") {
+          const built = buildCommittedProfile(reviewState)
+          built.primaryRoles = jobIntent.primaryRoles
+          built.secondaryRoles = jobIntent.secondaryRoles
+          built.eeo = jobIntent.eeo
+          setConfirmationProfile(built)
           router.push("/profile/confirm")
+        } else {
+          router.push("/jobs/recommended")
         }
         return
       }
