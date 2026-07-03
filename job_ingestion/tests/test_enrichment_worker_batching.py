@@ -6,9 +6,21 @@ from app.config import Settings
 from app.ingestion.enrichment_worker import (
     _allocate_tokens,
     _is_daily_quota_exhausted,
+    _is_provider_capacity_error,
     _is_retryable_error,
     _is_transient_rate_limit,
     _pack_batches,
+)
+
+GEMINI_RESOURCE_EXHAUSTED = (
+    "Gemini completion failed: 429 RESOURCE_EXHAUSTED. "
+    "{'error': {'code': 429, 'message': 'Resource has been exhausted (e.g. check quota).', "
+    "'status': 'RESOURCE_EXHAUSTED'}}"
+)
+GEMINI_DAILY_QUOTA = (
+    "Gemini completion failed: 429 RESOURCE_EXHAUSTED. "
+    "{'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan.', "
+    "'status': 'RESOURCE_EXHAUSTED'}}"
 )
 
 
@@ -20,20 +32,31 @@ def test_is_daily_quota_exhausted() -> None:
     assert _is_daily_quota_exhausted(
         "429 Quota exceeded for metric generativelanguage.googleapis.com/generate_requests_per_day"
     )
-    assert _is_daily_quota_exhausted("You exceeded your current quota")
+    assert _is_daily_quota_exhausted(GEMINI_DAILY_QUOTA)
     assert not _is_daily_quota_exhausted("429 Too Many Requests")
+    assert not _is_daily_quota_exhausted(GEMINI_RESOURCE_EXHAUSTED)
 
 
 def test_is_transient_rate_limit() -> None:
     assert _is_transient_rate_limit("429 Too Many Requests")
     assert _is_transient_rate_limit("503 UNAVAILABLE")
+    assert _is_transient_rate_limit(GEMINI_RESOURCE_EXHAUSTED)
     assert not _is_transient_rate_limit("429 Quota exceeded for metric generate_requests_per_day")
+    assert not _is_transient_rate_limit(GEMINI_DAILY_QUOTA)
+
+
+def test_is_provider_capacity_error() -> None:
+    assert _is_provider_capacity_error(GEMINI_RESOURCE_EXHAUSTED)
+    assert _is_provider_capacity_error(GEMINI_DAILY_QUOTA)
+    assert not _is_provider_capacity_error("validation error for JobEnrichment")
 
 
 def test_is_retryable_error_matches_transient_failures_only() -> None:
     assert _is_retryable_error("429 Too Many Requests")
     assert _is_retryable_error("503 UNAVAILABLE")
+    assert _is_retryable_error(GEMINI_RESOURCE_EXHAUSTED)
     assert not _is_retryable_error("429 Quota exceeded for metric generate_requests_per_day")
+    assert not _is_retryable_error(GEMINI_DAILY_QUOTA)
     assert not _is_retryable_error("schema mismatch")
 
 

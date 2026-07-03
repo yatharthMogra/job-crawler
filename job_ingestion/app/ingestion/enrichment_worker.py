@@ -45,6 +45,7 @@ def _utcnow() -> datetime:
 
 
 def _is_daily_quota_exhausted(message: str) -> bool:
+    """True only for explicit daily quota exhaustion, not generic 429 RESOURCE_EXHAUSTED."""
     lowered = message.lower()
     daily_markers = (
         "per day",
@@ -57,9 +58,7 @@ def _is_daily_quota_exhausted(message: str) -> bool:
     )
     if any(marker in lowered for marker in daily_markers):
         return True
-    if "resource_exhausted" in lowered and "quota" in lowered:
-        return True
-    if "quota exceeded" in lowered or "exceeded your current quota" in lowered:
+    if "exceeded your current quota" in lowered:
         return True
     return False
 
@@ -68,7 +67,7 @@ def _is_transient_rate_limit(message: str) -> bool:
     if _is_daily_quota_exhausted(message):
         return False
     lowered = message.lower()
-    return any(
+    if any(
         term in lowered
         for term in [
             "429",
@@ -78,8 +77,15 @@ def _is_transient_rate_limit(message: str) -> bool:
             "rate limit",
             "rate_limit",
             "too many requests",
+            "resource_exhausted",
         ]
-    )
+    ):
+        return True
+    return False
+
+
+def _is_provider_capacity_error(message: str) -> bool:
+    return _is_daily_quota_exhausted(message) or _is_transient_rate_limit(message)
 
 
 def _is_retryable_error(message: str) -> bool:
@@ -639,6 +645,47 @@ def _mark_for_retry(
     queue_row.next_retry_at = _utcnow() + timedelta(seconds=settings.enrichment_cooldown_seconds)
 
 
+def _mark_for_provider_capacity_error(
+    queue_row: EnrichmentQueue,
+    settings: Settings,
+    *,
+    error_message: str,
+    daily_quota: bool,
+) -> None:
+    """Re-queue after Gemini quota/rate-limit errors instead of permanent failure."""
+    queue_row.last_failure_reason = FailureReason.TOKEN_LIMIT_EXCEEDED
+    queue_row.last_error = error_message
+    if daily_quota:
+        queue_row.status = "queued"
+        queue_row.next_retry_at = None
+        return
+    queue_row.attempt_count += 1
+    if queue_row.attempt_count > settings.enrichment_max_retries:
+        queue_row.status = "failed"
+        queue_row.last_failure_reason = "retry_limit_exceeded"
+        return
+    queue_row.status = "cooldown"
+    queue_row.next_retry_at = _utcnow() + timedelta(seconds=settings.enrichment_cooldown_seconds)
+
+
+def _update_normalized_after_batch_error(
+    normalized: NormalizedJob,
+    queue_row: EnrichmentQueue,
+    failure_reason: str,
+) -> None:
+    normalized.failure_reason = failure_reason
+    normalized.last_failure_at = _utcnow()
+    if queue_row.status == "failed":
+        normalized.processing_state = ProcessingState.PARTIAL_SUCCESS
+        return
+    if normalized.processing_state == ProcessingState.SUCCESS:
+        return
+    if queue_row.status == "queued":
+        normalized.processing_state = ProcessingState.PENDING
+        return
+    normalized.processing_state = ProcessingState.PARTIAL_SUCCESS
+
+
 async def _process_batch(
     db: AsyncSession,
     settings: Settings,
@@ -875,12 +922,12 @@ async def _process_batch(
         daily_quota = _is_daily_quota_exhausted(message)
         retryable = _is_transient_rate_limit(message)
         schema_error = _is_schema_validation_error(message)
-        if daily_quota and settings.enrichment_stop_on_daily_quota and on_daily_quota_exhausted is not None:
+        provider_capacity = _is_provider_capacity_error(message)
+        if daily_quota and on_daily_quota_exhausted is not None:
             on_daily_quota_exhausted(message)
         if (
             len(batch_items) > 1
-            and not daily_quota
-            and not retryable
+            and not provider_capacity
             and schema_error
         ):
             batch.status = "failed"
@@ -907,12 +954,12 @@ async def _process_batch(
         for row in batch_items:
             if daily_quota and settings.enrichment_stop_on_daily_quota:
                 _mark_quota_blocked(queue_row=row.queue_row, error_message=message)
-            elif retryable:
-                _mark_for_retry(
+            elif provider_capacity:
+                _mark_for_provider_capacity_error(
                     queue_row=row.queue_row,
                     settings=settings,
-                    failure_reason=FailureReason.TOKEN_LIMIT_EXCEEDED,
                     error_message=message,
+                    daily_quota=daily_quota,
                 )
             elif schema_error:
                 _mark_for_retry(
@@ -925,9 +972,8 @@ async def _process_batch(
                 row.queue_row.status = "failed"
                 row.queue_row.last_failure_reason = FailureReason.LLM_SCHEMA_MISMATCH
                 row.queue_row.last_error = message
-            row.normalized.processing_state = ProcessingState.PARTIAL_SUCCESS
-            row.normalized.failure_reason = row.queue_row.last_failure_reason
-            row.normalized.last_failure_at = _utcnow()
+            failure_reason = row.queue_row.last_failure_reason or FailureReason.LLM_SCHEMA_MISMATCH
+            _update_normalized_after_batch_error(row.normalized, row.queue_row, failure_reason)
             db.add(
                 JobEnrichment(
                     normalized_job_id=row.normalized.id,
@@ -953,19 +999,21 @@ async def _process_batch(
                     output_tokens=0,
                     latency_ms=0,
                     status="failed",
-                    failure_reason=row.queue_row.last_failure_reason,
+                    failure_reason=failure_reason,
                 )
             )
             item = items_by_job.get(row.queue_row.id)
             if item is not None:
                 item.status = "failed"
-                item.failure_reason = row.queue_row.last_failure_reason
+                item.failure_reason = failure_reason
                 item.last_error = message
         batch.status = "failed"
-        if daily_quota and settings.enrichment_stop_on_daily_quota:
+        if provider_capacity or (daily_quota and settings.enrichment_stop_on_daily_quota):
             batch.failure_reason = FailureReason.TOKEN_LIMIT_EXCEEDED
+        elif schema_error:
+            batch.failure_reason = FailureReason.LLM_SCHEMA_MISMATCH
         else:
-            batch.failure_reason = FailureReason.TOKEN_LIMIT_EXCEEDED if retryable else FailureReason.LLM_SCHEMA_MISMATCH
+            batch.failure_reason = FailureReason.LLM_SCHEMA_MISMATCH
         batch.last_error = message
 
     batch.completed_at = _utcnow()
