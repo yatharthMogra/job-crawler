@@ -26,6 +26,15 @@ Use the helper scripts (recommended):
 ./scripts/dev-web.sh                     # http://localhost:3000 (unified dashboard + profile UI)
 ```
 
+**Home machine on Linux, ops from Mac** (SSH tunnel required — see [`DEPLOYMENT.md`](DEPLOYMENT.md) Phase 6.8):
+
+```bash
+./scripts/tunnel-home-services.sh        # Terminal 1 — keep open
+./scripts/home-health.sh                 # status via tunneled APIs
+./scripts/home-trigger-ingestion.sh
+./scripts/dev-ingestion-dashboard.sh     # internal ops UI → http://localhost:3000
+```
+
 Or manually after activating the venv:
 
 ```bash

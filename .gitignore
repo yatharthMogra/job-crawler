@@ -47,6 +47,9 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# Home machine remote ops (local SSH host override)
+deploy/home-remote.env
+
 # Local runtime data
 **/data/resumes/
 **/data/archives/

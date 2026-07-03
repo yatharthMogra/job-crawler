@@ -512,6 +512,69 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now job-ingestion recommendation-worker
 ```
 
+Verify services on the Linux machine:
+
+```bash
+./scripts/verify-home-machine.sh
+```
+
+#### 6.8 Remote ops from dev machine (Mac)
+
+When ingestion and the notification worker run on the home machine, use an SSH tunnel to reach their APIs from your Mac as if they were local.
+
+**One-time SSH setup**
+
+1. Generate a key on your Mac (skip if you already have one):
+
+   ```bash
+   ssh-keygen -t ed25519 -C "mac-to-job-crawler-home"
+   ```
+
+2. Install the public key on Linux:
+
+   ```bash
+   ssh-copy-id USER@LINUX_HOST
+   ```
+
+3. Add a host block to `~/.ssh/config` — see [`deploy/ssh/config.example`](deploy/ssh/config.example). Replace `LINUX_HOST` and `USER`, then test:
+
+   ```bash
+   ssh job-crawler-home 'echo ok'
+   ```
+
+4. Copy remote ops config:
+
+   ```bash
+   cp deploy/home-remote.env.example deploy/home-remote.env
+   ```
+
+   Edit `HOME_SSH_HOST` if your SSH alias differs.
+
+**Daily workflow (from repo root on Mac)**
+
+```bash
+# Terminal 1 — keep open
+./scripts/tunnel-home-services.sh
+
+# Terminal 2 — any of:
+./scripts/home-health.sh
+./scripts/home-trigger-ingestion.sh
+./scripts/home-trigger-notifications.sh
+./scripts/dev-ingestion-dashboard.sh   # http://localhost:3000
+open http://localhost:8000/docs        # Swagger
+```
+
+**Key read endpoints** (via tunnel): `GET /stats`, `GET /pipeline/runs`, `GET /events`, `GET /enrichment/queue`.
+
+**Security:** Do not expose port `8000` to the public internet without authentication. The ingestion API has no auth today; the SSH tunnel is the intended access path.
+
+**Logs on Linux:**
+
+```bash
+ssh job-crawler-home 'sudo journalctl -u job-ingestion -f'
+ssh job-crawler-home 'sudo journalctl -u recommendation-worker -f'
+```
+
 ---
 
 ### Phase 7 — End-to-end verification
@@ -894,8 +957,12 @@ See [`web/.env.example`](web/.env.example).
 
 | Action | Command |
 |--------|---------|
-| Trigger ingestion manually | `POST http://localhost:8000/pipeline/trigger` |
-| Trigger notification manually | `POST http://localhost:8002/notifications/run` (home worker only) |
+| SSH tunnel (Mac → home machine) | `./scripts/tunnel-home-services.sh` |
+| Home machine status | `./scripts/home-health.sh` |
+| Verify Linux systemd + health | `./scripts/verify-home-machine.sh` (on Linux) |
+| Trigger ingestion manually | `./scripts/home-trigger-ingestion.sh` or `POST http://localhost:8000/pipeline/trigger` |
+| Trigger notification manually | `./scripts/home-trigger-notifications.sh` or `POST http://localhost:8002/notifications/run` |
+| Ops admin dashboard (Mac) | `./scripts/dev-ingestion-dashboard.sh` |
 | View pipeline runs | Admin dashboard → Pipeline tab, or `GET /pipeline/runs` |
 | Check recommendation API | `GET https://<reco-api>/health` |
 | Check profile API | `GET https://<profile-api>/health` |

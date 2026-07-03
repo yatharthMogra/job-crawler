@@ -1,0 +1,16 @@
+# Copy the Host block below into ~/.ssh/config on your Mac (one-time setup).
+#
+# 1. Generate a key (skip if you already have one):
+#      ssh-keygen -t ed25519 -C "mac-to-job-crawler-home"
+# 2. Install the public key on Linux:
+#      ssh-copy-id USER@LINUX_HOST
+# 3. Replace LINUX_HOST and USER below, then append to ~/.ssh/config.
+# 4. Test: ssh job-crawler-home 'echo ok'
+
+Host job-crawler-home
+  HostName LINUX_HOST
+  User USER
+  LocalForward 8000 127.0.0.1:8000
+  LocalForward 8002 127.0.0.1:8002
+  ServerAliveInterval 60
+  ServerAliveCountMax 3
