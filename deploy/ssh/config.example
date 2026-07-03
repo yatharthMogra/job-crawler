@@ -1,15 +1,18 @@
 # Copy the Host block below into ~/.ssh/config on your Mac (one-time setup).
+# Connection uses Tailscale — works at home and away. See deploy/TAILSCALE.md.
 #
-# 1. Generate a key (skip if you already have one):
-#      ssh-keygen -t ed25519 -C "mac-to-job-crawler-home"
-# 2. Install the public key on Linux:
-#      ssh-copy-id USER@LINUX_HOST
-# 3. Replace LINUX_HOST and USER below, then append to ~/.ssh/config.
-# 4. Test: ssh job-crawler-home 'echo ok'
+# 1. Install Tailscale on Mac and Linux (same account).
+# 2. Generate a key (skip if you already have one):
+#      ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_jobcrawler -C "mac-to-job-crawler-home"
+# 3. Install the public key on Linux via Tailscale:
+#      ssh-copy-id -i ~/.ssh/id_ed25519_jobcrawler.pub ram@100.111.129.27
+# 4. Append the Host block below to ~/.ssh/config.
+# 5. Test: ssh job-crawler-home 'echo ok'
 
 Host job-crawler-home
-  HostName LINUX_HOST
-  User USER
+  HostName 100.111.129.27
+  User ram
+  IdentityFile ~/.ssh/id_ed25519_jobcrawler
   LocalForward 8000 127.0.0.1:8000
   LocalForward 8002 127.0.0.1:8002
   ServerAliveInterval 60

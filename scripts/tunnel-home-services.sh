@@ -3,7 +3,7 @@ set -euo pipefail
 # shellcheck source=_home-remote.sh
 source "$(dirname "$0")/_home-remote.sh"
 
-echo "Forwarding local ports to home machine via ${HOME_SSH_HOST}:"
+echo "Forwarding local ports to home machine via Tailscale SSH (${HOME_SSH_HOST}):"
 echo "  ${JOB_INGESTION_URL} -> job_ingestion"
 echo "  ${NOTIFICATION_WORKER_URL} -> notification worker"
 echo ""

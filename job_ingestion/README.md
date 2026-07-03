@@ -247,10 +247,11 @@ curl -X POST 'http://localhost:8000/pipeline/trigger?scope=full'
 
 ### Production (home machine)
 
-See [`../DEPLOYMENT.md`](../DEPLOYMENT.md) Phase 6. Run via `./scripts/run-job-ingestion-prod.sh`.
+Run via `./scripts/run-job-ingestion-prod.sh` on the Linux home machine. Remote ops from Mac: Tailscale (`100.111.129.27`) + `./scripts/tunnel-home-services.sh`.
 
 ## Related docs
 
 - [`CONNECTOR_GUIDE.md`](CONNECTOR_GUIDE.md) — connector interface and platform notes
 - [`IMPLEMENTATION_STATUS_V2.md`](IMPLEMENTATION_STATUS_V2.md) — feature status snapshot
 - [`../DEPLOYMENT.md`](../DEPLOYMENT.md) — production deployment
+- [`../deploy/TAILSCALE.md`](../deploy/TAILSCALE.md) — remote access to home machine

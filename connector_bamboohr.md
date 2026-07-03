@@ -424,7 +424,7 @@ Before this fix, Ashby used per-company 0.35s delays and platform concurrency of
 
 ## 15. Deployment model
 
-Production runs on a **home machine** via `./scripts/run-job-ingestion-prod.sh` → uvicorn on `0.0.0.0:8000`. Single process = single egress IP to all ATS hosts. See `DEPLOYMENT.md` for full setup.
+Production runs on a **home machine** via `./scripts/run-job-ingestion-prod.sh` → uvicorn on `0.0.0.0:8000`. Remote ops from Mac use Tailscale (`100.111.129.27`) + `./scripts/tunnel-home-services.sh`. See `deploy/TAILSCALE.md` and `DEPLOYMENT.md`.
 
 **Operational monitoring:**
 - `GET /stats` — queue depth, fetch stats, backpressure state

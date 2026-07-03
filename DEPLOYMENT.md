@@ -41,7 +41,9 @@ flowchart TB
 | **web/** | Vercel | User-facing Next.js app |
 | **job_ingestion** | Home machine | Connectors, enrichment, global scoring, H1B, YC crawl, cleanup |
 | **recommendation_service worker** | Home machine | Scheduled email notifications via Gmail SMTP |
-| **job-ingestion-dashboard** | Home machine | Internal ops UI (localhost only) |
+| **job-ingestion-dashboard** | Home machine (or Mac via tunnel) | Internal ops UI |
+
+**Remote access:** Mac connects to the Linux home machine over **Tailscale** (`100.111.129.27`) and SSH port-forwards to local APIs. See [`deploy/TAILSCALE.md`](deploy/TAILSCALE.md) and Phase 6.9.
 
 ### When the home machine is off (~2h/day)
 
@@ -61,6 +63,7 @@ Before starting, create accounts and gather credentials:
 | [Google AI Studio](https://aistudio.google.com) | Gemini API key (enrichment + resume parsing) |
 | Google OAuth credentials | Login via NextAuth |
 | Gmail app password | SMTP for notification emails |
+| [Tailscale](https://tailscale.com) (Mac + Linux home machine) | Secure SSH to home machine from anywhere |
 
 **Local tools:**
 
@@ -416,7 +419,18 @@ gcloud run services update recommendation-service \
 
 The home machine runs batch/async work (~22h/day uptime). When it is off, ingestion, enrichment, and emails pause — but the Vercel app and Cloud Run APIs remain available for existing data.
 
-#### 6.1 Python environment
+#### 6.1 Tailscale (home machine network)
+
+Install Tailscale on the Linux home machine and your Mac (same account). See [`deploy/TAILSCALE.md`](deploy/TAILSCALE.md).
+
+```bash
+# Linux — after install
+sudo tailscale up
+sudo systemctl enable tailscaled
+tailscale ip -4   # expect 100.111.129.27
+```
+
+#### 6.2 Python environment
 
 ```bash
 cd /path/to/job-crawler
@@ -424,7 +438,7 @@ cd /path/to/job-crawler
 source job-crawler/bin/activate
 ```
 
-#### 6.2 Configure `job_ingestion/.env`
+#### 6.3 Configure `job_ingestion/.env`
 
 ```bash
 cp job_ingestion/.env.example job_ingestion/.env
@@ -446,7 +460,7 @@ Use the **direct** `:5432` URL, not the pooler.
 
 Watch `GET http://localhost:8000/stats` → `fetch_backpressure.active`. When true, scheduled fetches are skipping tier-3 (or all companies in `halt_all` mode) until pending queue depth drops below the threshold.
 
-#### 6.3 Configure `recommendation_service/.env` (notification worker)
+#### 6.4 Configure `recommendation_service/.env` (notification worker)
 
 ```bash
 cp recommendation_service/.env.example recommendation_service/.env
@@ -464,7 +478,7 @@ APP_BASE_URL=https://your-app.vercel.app
 
 **Gmail app password:** Google Account → Security → 2-Step Verification → App passwords → generate one for "Mail".
 
-#### 6.4 Start processes
+#### 6.5 Start processes
 
 Use two terminals (or systemd — see Phase 6.6):
 
@@ -483,7 +497,7 @@ curl http://localhost:8000/docs     # ingestion API (Swagger)
 curl http://localhost:8002/health # notification worker
 ```
 
-#### 6.5 Trigger first ingestion
+#### 6.6 Trigger first ingestion
 
 ```bash
 curl -X POST http://localhost:8000/pipeline/trigger
@@ -491,18 +505,19 @@ curl -X POST http://localhost:8000/pipeline/trigger
 
 Watch the Terminal 1 logs. Enrichment runs in the same process and drains the queue over time. On a fresh database, users won't see jobs until ingestion and enrichment complete.
 
-#### 6.6 Admin dashboard (optional, local only)
+#### 6.7 Admin dashboard (optional)
 
 ```bash
 cd job-ingestion-dashboard
 npm install
-# Optional: .env.local with NEXT_PUBLIC_JOB_INGESTION_API_URL=http://localhost:8000
+# .env.local: NEXT_PUBLIC_JOB_INGESTION_API_URL=http://127.0.0.1:8000
+# On Mac: Tailscale + ./scripts/tunnel-home-services.sh, then ./scripts/dev-ingestion-dashboard.sh
 npm run dev
 ```
 
-Open `http://localhost:3000` on the home machine.
+Open `http://localhost:3000` on the machine running the dashboard (home machine or Mac via tunnel).
 
-#### 6.7 Auto-restart with systemd (optional)
+#### 6.8 Auto-restart with systemd (optional)
 
 Edit paths in [`deploy/systemd/job-ingestion.service`](deploy/systemd/job-ingestion.service) and [`deploy/systemd/recommendation-worker.service`](deploy/systemd/recommendation-worker.service), then:
 
@@ -518,25 +533,23 @@ Verify services on the Linux machine:
 ./scripts/verify-home-machine.sh
 ```
 
-#### 6.8 Remote ops from dev machine (Mac)
+#### 6.9 Remote ops from dev machine (Mac)
 
-When ingestion and the notification worker run on the home machine, use an SSH tunnel to reach their APIs from your Mac as if they were local.
+Operate the home machine from your Mac over **Tailscale** — same workflow at home or away. Full reference: [`deploy/TAILSCALE.md`](deploy/TAILSCALE.md).
 
-**One-time SSH setup**
+**Home machine Tailscale IP:** `100.111.129.27` (user `ram`, SSH alias `job-crawler-home`)
 
-1. Generate a key on your Mac (skip if you already have one):
+**One-time setup**
 
-   ```bash
-   ssh-keygen -t ed25519 -C "mac-to-job-crawler-home"
-   ```
-
-2. Install the public key on Linux:
+1. Tailscale installed and signed in on **both** Mac and Linux (`sudo systemctl enable tailscaled` on Linux).
+2. SSH key installed via Tailscale:
 
    ```bash
-   ssh-copy-id USER@LINUX_HOST
+   ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_jobcrawler -C "mac-to-job-crawler-home"
+   ssh-copy-id -i ~/.ssh/id_ed25519_jobcrawler.pub ram@100.111.129.27
    ```
 
-3. Add a host block to `~/.ssh/config` — see [`deploy/ssh/config.example`](deploy/ssh/config.example). Replace `LINUX_HOST` and `USER`, then test:
+3. Append [`deploy/ssh/config.example`](deploy/ssh/config.example) to `~/.ssh/config`, then test:
 
    ```bash
    ssh job-crawler-home 'echo ok'
@@ -548,9 +561,9 @@ When ingestion and the notification worker run on the home machine, use an SSH t
    cp deploy/home-remote.env.example deploy/home-remote.env
    ```
 
-   Edit `HOME_SSH_HOST` if your SSH alias differs.
-
 **Daily workflow (from repo root on Mac)**
+
+Tailscale connected on both machines, then:
 
 ```bash
 # Terminal 1 — keep open
@@ -566,14 +579,16 @@ open http://localhost:8000/docs        # Swagger
 
 **Key read endpoints** (via tunnel): `GET /stats`, `GET /pipeline/runs`, `GET /events`, `GET /enrichment/queue`.
 
-**Security:** Do not expose port `8000` to the public internet without authentication. The ingestion API has no auth today; the SSH tunnel is the intended access path.
+**Security:** Do not expose port `8000` on the public internet. Tailscale + SSH tunnel is the intended access path.
 
-**Logs on Linux:**
+**Logs on Linux (via Tailscale SSH):**
 
 ```bash
 ssh job-crawler-home 'sudo journalctl -u job-ingestion -f'
 ssh job-crawler-home 'sudo journalctl -u recommendation-worker -f'
 ```
+
+**Cursor IDE:** If SSH fails inside Cursor but works in Terminal.app, enable Local Network for Cursor in System Settings, or run the tunnel in Terminal.app.
 
 ---
 
@@ -619,7 +634,8 @@ ssh job-crawler-home 'sudo journalctl -u recommendation-worker -f'
 | Resume upload fails on Cloud Run | Storage bucket or service role misconfigured | Check `resumes` bucket exists; verify Supabase secrets |
 | Cloud Run DB connection errors | Wrong URL type | Pooler `:6543` on Cloud Run; direct `:5432` on home machine |
 | No jobs in the app | Ingestion not run yet | `POST http://localhost:8000/pipeline/trigger` |
-| Slow first page load (2–5s) | Cloud Run scale-to-zero cold start | Normal at launch; set `min-instances=1` on recommendation service later |
+| SSH fails in Cursor terminal | Cursor lacks Local Network access | System Settings → Privacy → Local Network → Cursor; or run tunnel in Terminal.app |
+| SSH `No route to host` | Tailscale not connected | Enable Tailscale on Mac and Linux; `ping 100.111.129.27` |
 | Alembic migration fails | Special characters in DB password | URL-encode the password in the connection string |
 | Migration FK errors | Wrong migration order | Run `profile_service` → `job_ingestion` → `recommendation_service` |
 | `exec format error` on Cloud Run | ARM64 image built on Apple Silicon Mac | Rebuild with `--platform linux/amd64` (see Troubleshooting) |
@@ -957,7 +973,8 @@ See [`web/.env.example`](web/.env.example).
 
 | Action | Command |
 |--------|---------|
-| SSH tunnel (Mac → home machine) | `./scripts/tunnel-home-services.sh` |
+| SSH tunnel (Mac → home machine via Tailscale) | `./scripts/tunnel-home-services.sh` |
+| Home machine Tailscale IP | `100.111.129.27` — see [`deploy/TAILSCALE.md`](deploy/TAILSCALE.md) |
 | Home machine status | `./scripts/home-health.sh` |
 | Verify Linux systemd + health | `./scripts/verify-home-machine.sh` (on Linux) |
 | Trigger ingestion manually | `./scripts/home-trigger-ingestion.sh` or `POST http://localhost:8000/pipeline/trigger` |

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shared config for remote home-machine ops from a dev Mac.
+# Shared config for remote home-machine ops from a dev Mac (via Tailscale SSH).
 # shellcheck disable=SC2034
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

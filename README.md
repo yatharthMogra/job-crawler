@@ -26,9 +26,10 @@ Use the helper scripts (recommended):
 ./scripts/dev-web.sh                     # http://localhost:3000 (unified dashboard + profile UI)
 ```
 
-**Home machine on Linux, ops from Mac** (SSH tunnel required — see [`DEPLOYMENT.md`](DEPLOYMENT.md) Phase 6.8):
+**Home machine on Linux, ops from Mac** (Tailscale + SSH tunnel — see [`deploy/TAILSCALE.md`](deploy/TAILSCALE.md) and [`DEPLOYMENT.md`](DEPLOYMENT.md) Phase 6.9):
 
 ```bash
+# Tailscale connected on Mac and Linux (home machine: 100.111.129.27)
 ./scripts/tunnel-home-services.sh        # Terminal 1 — keep open
 ./scripts/home-health.sh                 # status via tunneled APIs
 ./scripts/home-trigger-ingestion.sh
@@ -79,7 +80,7 @@ cd recommendation_service && pytest
 
 See [`testing.md`](testing.md) for end-to-end recommendation testing and [`web/README.md`](web/README.md) for the user-facing frontend.
 
-See [`DEPLOYMENT.md`](DEPLOYMENT.md) for hybrid cloud + home machine deployment (Supabase, Cloud Run, Vercel).
+See [`DEPLOYMENT.md`](DEPLOYMENT.md) for hybrid cloud + home machine deployment (Supabase, Cloud Run, Vercel, Tailscale).
 
 ## Frontend apps
 
