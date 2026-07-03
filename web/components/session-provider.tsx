@@ -74,16 +74,39 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [mockMode, nextAuthSession?.candidateId])
 
   useEffect(() => {
-    // Don't block local/mock sessions while NextAuth is still resolving.
-    if (nextAuthStatus === "loading" && !hasLocalSession) return
+    let cancelled = false
 
-    void (async () => {
+    const finishLoading = () => {
+      if (!cancelled) setLoading(false)
+    }
+
+    // Never block the UI longer than 3s (NextAuth or API can hang offline).
+    const safetyTimer = window.setTimeout(finishLoading, 3000)
+
+    const run = async () => {
+      if (nextAuthStatus === "loading" && !hasLocalSession) return
+
       try {
-        await refreshCandidate()
+        await Promise.race([
+          refreshCandidate(),
+          new Promise<void>((_, reject) =>
+            window.setTimeout(() => reject(new Error("session refresh timeout")), 5000),
+          ),
+        ])
+      } catch {
+        // Offline / slow API — still allow UI to render with stored session.
       } finally {
-        setLoading(false)
+        window.clearTimeout(safetyTimer)
+        finishLoading()
       }
-    })()
+    }
+
+    void run()
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(safetyTimer)
+    }
   }, [refreshCandidate, nextAuthStatus, hasLocalSession])
 
   const setCandidateId = useCallback(

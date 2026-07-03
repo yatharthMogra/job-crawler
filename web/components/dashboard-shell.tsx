@@ -1,18 +1,21 @@
 "use client"
 
 import { useEffect, type ReactNode } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { JobsProvider } from "@/components/jobs-provider"
 import { JobDrawerMount } from "@/components/job-drawer-mount"
 import { AppSidebar } from "@/components/layout/app-sidebar"
 import { ProfileFlowProvider } from "@/components/profile/profile-flow-provider"
 import { useSession } from "@/components/session-provider"
 import { getStoredCandidateId } from "@/lib/session"
+import { cn } from "@/lib/utils"
 
 export function DashboardShell({ children }: { children: ReactNode }) {
   const router = useRouter()
+  const pathname = usePathname()
   const { candidateId, loading } = useSession()
   const resolvedId = candidateId ?? getStoredCandidateId()
+  const isNeuralFeed = pathname === "/jobs/recommended"
 
   useEffect(() => {
     if (!loading && !resolvedId) {
@@ -36,8 +39,8 @@ export function DashboardShell({ children }: { children: ReactNode }) {
     <ProfileFlowProvider candidateId={resolvedId}>
       <JobsProvider>
         <div className="dashboard-page-bg dashboard-shell">
-          <AppSidebar />
-          <main className="dashboard-shell-main">{children}</main>
+          {!isNeuralFeed ? <AppSidebar /> : null}
+          <main className={cn("dashboard-shell-main", isNeuralFeed && "w-full")}>{children}</main>
           <JobDrawerMount />
         </div>
       </JobsProvider>

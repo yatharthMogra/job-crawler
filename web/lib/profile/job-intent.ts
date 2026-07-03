@@ -1,6 +1,6 @@
 import type { ProfileResponse } from "@/lib/profile/api-types"
 import { eeoFromApiPayload, eeoToApiPayload, emptyEeo, type EeoState } from "@/lib/profile/eeo"
-import { poolIdsForRoles } from "@/lib/profile/role-catalog"
+import { poolIdsForRoles, sanitizeCatalogRoles } from "@/lib/profile/role-catalog"
 
 export interface JobIntentState {
   primaryRoles: string[]
@@ -44,8 +44,8 @@ export function profileToJobIntent(profile: ProfileResponse): JobIntentState {
   const constraints = profile.constraints ?? {}
   const preferences = profile.preferences ?? {}
   return {
-    primaryRoles: (preferences.primary_roles as string[]) ?? [],
-    secondaryRoles: (preferences.secondary_roles as string[]) ?? [],
+    primaryRoles: sanitizeCatalogRoles((preferences.primary_roles as string[]) ?? []),
+    secondaryRoles: sanitizeCatalogRoles((preferences.secondary_roles as string[]) ?? []),
     sponsorshipRequired: Boolean(constraints.sponsorship_required),
     visaType: String(constraints.visa_type ?? ""),
     workAuthorization: String(constraints.work_authorization ?? ""),
@@ -87,10 +87,12 @@ export function jobIntentToApiPayload(state: JobIntentState): {
       eeo: eeoToApiPayload(state.eeo),
     },
     preferences: {
-      primary_roles: state.primaryRoles,
-      secondary_roles: state.secondaryRoles,
+      primary_roles: sanitizeCatalogRoles(state.primaryRoles),
+      secondary_roles: sanitizeCatalogRoles(state.secondaryRoles).filter(
+        (r) => !sanitizeCatalogRoles(state.primaryRoles).includes(r),
+      ),
       role_pool_ids: poolIdsForRoles(
-        state.primaryRoles,
+        sanitizeCatalogRoles(state.primaryRoles),
         state.internshipOnly && !state.fulltimeOnly ? "INTERNSHIP" : "FULLTIME",
       ),
       preferred_locations: state.preferredLocations,

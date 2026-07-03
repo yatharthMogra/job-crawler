@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState } from "react"
+import { usePathname } from "next/navigation"
 import { ApplyFollowUpMount } from "@/components/jobs/apply-follow-up-mount"
 import { JobsHeader } from "@/components/jobs/jobs-header"
 import { RecommendationFilters } from "@/components/jobs/recommendation-filters"
@@ -12,12 +13,18 @@ export function useJobsSearch() {
 }
 
 export default function JobsLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
   const [search, setSearch] = useState("")
+  const isNeuralFeed = pathname === "/jobs/recommended"
 
   return (
     <div>
-      <JobsHeader search={search} onSearchChange={setSearch} />
-      <RecommendationFilters />
+      {!isNeuralFeed ? (
+        <>
+          <JobsHeader search={search} onSearchChange={setSearch} />
+          <RecommendationFilters />
+        </>
+      ) : null}
       <JobsSearchContext.Provider value={{ search }}>
         {children}
         <ApplyFollowUpMount />

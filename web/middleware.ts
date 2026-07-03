@@ -35,10 +35,15 @@ export default auth((req) => {
   }
 
   if (isAuthPage && isAuthenticated) {
-    const dest = req.cookies.get("mock_onboarding_complete")?.value === "true"
-      ? "/jobs/recommended"
-      : "/app"
-    return NextResponse.redirect(new URL(dest, req.url))
+    // Only skip login when sent here from a protected route (already signed in).
+    // Direct visits to /login should still show the page (review UI, switch account).
+    const callbackUrl = req.nextUrl.searchParams.get("callbackUrl")
+    if (callbackUrl) {
+      const dest = req.cookies.get("mock_onboarding_complete")?.value === "true"
+        ? "/jobs/recommended"
+        : "/app"
+      return NextResponse.redirect(new URL(dest, req.url))
+    }
   }
 
   return NextResponse.next()

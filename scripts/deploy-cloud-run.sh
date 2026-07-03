@@ -18,8 +18,8 @@ REGION="${GCP_REGION:-us-central1}"
 REPO="${ARTIFACT_REPO:-job-crawler}"
 REGISTRY="${REGION}-docker.pkg.dev/${PROJECT}/${REPO}"
 
-# Production Vercel frontend — edit if your deploy URL changes.
-CORS_ORIGINS="https://career-match-gcp.vercel.app"
+# Production frontends — job-scout.dev is primary; keep legacy during transition.
+CORS_ORIGINS="https://job-scout.dev,https://carrier-match-gcp.vercel.app"
 
 # Docker folder name (underscore) -> Cloud Run service name (dash)
 cloud_run_name() {
