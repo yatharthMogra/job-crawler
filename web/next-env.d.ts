@@ -1,6 +1,5 @@
 /// <reference types="next" />
 /// <reference types="next/image-types/global" />
-import ".//var/folders/k7/rmzq46390q3b392psj370q440000gn/T/jobcrawler-web-next/dev/types/routes.d.ts";
 
 // NOTE: This file should not be edited
 // see https://nextjs.org/docs/app/api-reference/config/typescript for more information.
