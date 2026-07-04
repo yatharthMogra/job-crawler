@@ -1,9 +1,8 @@
 "use client"
 
 import { useEffect } from "react"
-import { ProfileTabs } from "@/components/profile/profile-tabs"
+import { ProfileCommandPage } from "@/components/profile/profile-command-page"
 import { ProfileEditDialog } from "@/components/profile/profile-edit-dialog"
-import { AppHeader } from "@/components/layout/app-header"
 import { useProfileFlow } from "@/components/profile/profile-flow-provider"
 import { useSession } from "@/components/session-provider"
 import { FeedSkeleton } from "@/components/card-skeleton"
@@ -28,18 +27,15 @@ export default function ProfilePage() {
 
   if (!profileHome) {
     return (
-      <div>
-        <AppHeader title="Profile" showSearch={false} />
-        <div className="px-6 py-4">
-          <FeedSkeleton count={3} />
-        </div>
+      <div className="px-6 py-8">
+        <FeedSkeleton count={3} />
       </div>
     )
   }
 
   return (
     <>
-      <ProfileTabs
+      <ProfileCommandPage
         data={profileHome}
         onEditSection={setEditSection}
         onSetTargetRoles={openJobIntent}

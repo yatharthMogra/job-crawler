@@ -3,8 +3,7 @@
 import { useMemo } from "react"
 import { Bookmark } from "lucide-react"
 import { useJobs } from "@/components/jobs-provider"
-import { JobFeed } from "@/components/job-feed"
-import { EmptyState } from "@/components/empty-state"
+import { JobsSplitFeed } from "@/components/jobs/jobs-split-feed"
 import { useJobsSearch } from "@/app/(dashboard)/jobs/layout"
 import type { JobWithRole } from "@/lib/jobs-data"
 
@@ -20,23 +19,21 @@ export default function LikedPage() {
 
   const saved = useMemo(
     () =>
-      allKnownJobs
-        .filter((j) => savedIds.has(j.id))
-        .filter((j) => matchesSearch(j, search)),
+      allKnownJobs.filter((j) => savedIds.has(j.id)).filter((j) => matchesSearch(j, search)),
     [allKnownJobs, savedIds, search],
   )
 
-  if (saved.length === 0) {
-    return (
-      <EmptyState
-        icon={Bookmark}
-        title="No liked jobs yet."
-        description="Save jobs from the feed to review them later."
-        ctaLabel="Browse jobs →"
-        ctaHref="/jobs/recommended"
-      />
-    )
-  }
-
-  return <JobFeed jobs={saved} />
+  return (
+    <JobsSplitFeed
+      jobs={saved}
+      emptyIcon={Bookmark}
+      emptyTitle="No saved jobs yet"
+      emptyDescription="Save jobs from recommendations to review them later."
+      emptyCtaLabel="Browse jobs"
+      emptyCtaHref="/jobs/recommended"
+      title="Saved jobs"
+      subtitle="Roles you bookmarked for later."
+      feed="saved"
+    />
+  )
 }

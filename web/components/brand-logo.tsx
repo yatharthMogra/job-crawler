@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { getBrandInitial, getBrandLogoSources } from "@/lib/brand-logos"
 import { cn } from "@/lib/utils"
 
@@ -10,6 +10,8 @@ interface BrandLogoProps {
   variant?: "company" | "school"
   shape?: "square" | "circle"
   className?: string
+  /** Prefer this domain when known (e.g. company_info.website host). */
+  domain?: string | null
 }
 
 const COLORS = [
@@ -48,8 +50,9 @@ function LetterFallback({
         colorFor(name),
         className,
       )}
-      style={{ width: size, height: size, fontSize: size * 0.42 }}
+      style={{ width: size, height: size, fontSize: size * 0.38 }}
       aria-hidden="true"
+      title={name}
     >
       {getBrandInitial(name)}
     </div>
@@ -62,31 +65,37 @@ export function BrandLogo({
   variant = "company",
   shape = "square",
   className,
+  domain,
 }: BrandLogoProps) {
-  const sources = getBrandLogoSources(name, variant)
+  const sources = useMemo(
+    () => getBrandLogoSources(name, variant, domain),
+    [name, variant, domain],
+  )
   const [sourceIndex, setSourceIndex] = useState(0)
 
   useEffect(() => {
     setSourceIndex(0)
-  }, [name, variant])
+  }, [name, variant, domain])
 
-  const roundedClass = shape === "circle" ? "rounded-full" : "rounded-lg"
+  const roundedClass = shape === "circle" ? "rounded-full" : "rounded-xl"
 
-  if (sourceIndex >= sources.length) {
-    return <LetterFallback name={name} size={size} shape={shape} className={className} />
+  if (!name.trim() || sourceIndex >= sources.length) {
+    return <LetterFallback name={name || "?"} size={size} shape={shape} className={className} />
   }
 
   return (
     <div
       className={cn(
-        "flex shrink-0 items-center justify-center overflow-hidden border border-border/50 bg-white shadow-sm",
+        "flex shrink-0 items-center justify-center overflow-hidden border border-border/40 bg-white shadow-sm",
         roundedClass,
         className,
       )}
       style={{ width: size, height: size }}
+      title={name}
     >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        key={`${name}-${sources[sourceIndex]}`}
+        key={`${name}-${domain ?? ""}-${sources[sourceIndex]}`}
         src={sources[sourceIndex]}
         alt=""
         width={size}
@@ -94,7 +103,7 @@ export function BrandLogo({
         loading="lazy"
         decoding="async"
         referrerPolicy="no-referrer"
-        className="size-full object-contain p-1.5"
+        className="size-full object-contain p-[12%]"
         onError={() => setSourceIndex((i) => i + 1)}
       />
     </div>

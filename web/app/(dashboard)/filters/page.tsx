@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { RoleCascader, poolIdsForSelectedRoles } from "@/components/profile/role-cascader"
-import { EeoForm } from "@/components/profile/eeo-form"
-import { FilterChip } from "@/components/ui/filter-chip"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import {
+  FiltersCommandPage,
+  buildDefaultFiltersState,
+} from "@/components/filters/filters-command-page"
 import { useProfileFlow } from "@/components/profile/profile-flow-provider"
 import { useSession } from "@/components/session-provider"
 import { useMockData } from "@/lib/session"
@@ -14,32 +13,21 @@ import {
   emptyJobFilters,
   profileToJobFilters,
   jobFiltersToApiPayload,
-  EXPERIENCE_LEVELS,
-  DATE_POSTED_OPTIONS,
-  WORK_MODEL_OPTIONS,
-  ROLE_INTENT_OPTIONS,
 } from "@/lib/profile/job-filters"
 import { patchConstraints, patchPreferences } from "@/lib/profile/api"
 import { useJobs } from "@/components/jobs-provider"
 import { syncSubscriptionsForCandidate } from "@/lib/recommendation/sync-subscriptions"
-import { cn } from "@/lib/utils"
-
-const SECTIONS = [
-  { id: "basic", label: "Basic Job Criteria", sub: "Job Function / Job Type / Work Model" },
-  { id: "comp", label: "Compensation & Sponsorship", sub: "Annual Salary / H1B Sponsorship" },
-] as const
-
-type SectionId = (typeof SECTIONS)[number]["id"]
+import { FeedSkeleton } from "@/components/card-skeleton"
 
 export default function FiltersPage() {
   const router = useRouter()
-  const { candidateId } = useSession()
+  const { candidateId, candidate } = useSession()
   const mockMode = useMockData()
   const { rawProfile, profileHome, loadProfileHome } = useProfileFlow()
   const { refreshJobs } = useJobs()
-  const [section, setSection] = useState<SectionId>("basic")
-  const [state, setState] = useState(emptyJobFilters())
+  const [state, setState] = useState<ReturnType<typeof emptyJobFilters> | null>(null)
   const [saving, setSaving] = useState(false)
+  const [hydrated, setHydrated] = useState(false)
 
   useEffect(() => {
     if (candidateId && !rawProfile) {
@@ -48,66 +36,29 @@ export default function FiltersPage() {
   }, [candidateId, rawProfile, loadProfileHome])
 
   useEffect(() => {
-    if (rawProfile) {
-      setState(profileToJobFilters(rawProfile))
-    } else if (profileHome) {
-      setState((prev) => ({
-        ...prev,
-        primaryRoles: profileHome.primaryRoles,
-        secondaryRoles: profileHome.secondaryRoles,
-        eeo: profileHome.eeo,
-      }))
-    }
-  }, [rawProfile, profileHome])
+    if (hydrated) return
+    const base = rawProfile
+      ? profileToJobFilters(rawProfile)
+      : profileHome
+        ? {
+            ...emptyJobFilters(),
+            primaryRoles: profileHome.primaryRoles,
+            secondaryRoles: profileHome.secondaryRoles,
+            eeo: profileHome.eeo,
+          }
+        : emptyJobFilters()
 
-  function update<K extends keyof typeof state>(key: K, value: (typeof state)[K]) {
-    setState((prev) => ({ ...prev, [key]: value }))
-  }
-
-  function toggleLevel(level: string) {
-    const levels = state.experienceLevels.includes(level)
-      ? state.experienceLevels.filter((l) => l !== level)
-      : [...state.experienceLevels, level]
-    update("experienceLevels", levels)
-  }
-
-  function toggleWorkModel(model: string) {
-    const models = state.workModels.includes(model)
-      ? state.workModels.filter((m) => m !== model)
-      : [...state.workModels, model]
-    update("workModels", models)
-  }
-
-  function toggleRoleIntent(intent: string) {
-    const intents = state.roleIntents.includes(intent)
-      ? state.roleIntents.filter((i) => i !== intent)
-      : [...state.roleIntents, intent]
-    update("roleIntents", intents)
-  }
-
-  function toggleFulltime(checked: boolean) {
-    if (checked) {
-      setState((prev) => ({ ...prev, fulltimeOnly: true, internshipOnly: false }))
-    } else {
-      setState((prev) => ({ ...prev, fulltimeOnly: false, internshipOnly: false }))
-    }
-  }
-
-  function toggleInternship(checked: boolean) {
-    if (checked) {
-      setState((prev) => ({ ...prev, fulltimeOnly: false, internshipOnly: true }))
-    } else {
-      setState((prev) => ({ ...prev, fulltimeOnly: false, internshipOnly: false }))
-    }
-  }
+    setState(
+      buildDefaultFiltersState(base, profileHome?.primaryRoles ?? base.primaryRoles),
+    )
+    setHydrated(true)
+  }, [rawProfile, profileHome, hydrated])
 
   async function handleConfirm() {
-    if (!candidateId) return
+    if (!candidateId || !state) return
     setSaving(true)
     try {
-      const suffix = state.internshipOnly && !state.fulltimeOnly ? "INTERNSHIP" : "FULLTIME"
-      const poolIds = poolIdsForSelectedRoles(state.primaryRoles, suffix)
-      const payload = jobFiltersToApiPayload({ ...state, rolePoolIds: poolIds })
+      const payload = jobFiltersToApiPayload(state)
       if (mockMode) {
         router.push("/jobs/recommended")
         return
@@ -123,236 +74,29 @@ export default function FiltersPage() {
     }
   }
 
+  function handleReset() {
+    const base = emptyJobFilters()
+    setState(
+      buildDefaultFiltersState(base, profileHome?.primaryRoles ?? []),
+    )
+  }
+
+  if (!state) {
+    return (
+      <div className="px-6 py-8">
+        <FeedSkeleton count={4} />
+      </div>
+    )
+  }
+
   return (
-    <div className="dashboard-page-bg flex min-h-screen flex-col">
-      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border/80 bg-card/95 px-6 py-3 backdrop-blur-sm">
-        <div className="flex flex-wrap gap-2">
-          {state.primaryRoles.slice(0, 4).map((r) => (
-            <FilterChip key={r} label={r} active />
-          ))}
-          {state.primaryRoles.length > 4 ? (
-            <FilterChip label={`+${state.primaryRoles.length - 4} more`} />
-          ) : null}
-        </div>
-        <Button
-          className="btn-brand"
-          onClick={() => void handleConfirm()}
-          disabled={saving}
-        >
-          {saving ? "Saving..." : "Confirm"}
-        </Button>
-      </div>
-
-      <div className="flex flex-1">
-        <aside className="w-56 shrink-0 border-r border-border/80 bg-card/60 p-3">
-          {SECTIONS.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => setSection(s.id)}
-              className={cn(
-                "mb-1 w-full rounded-lg px-3 py-2.5 text-left transition-colors",
-                section === s.id ? "bg-accent text-accent-foreground shadow-sm" : "hover:bg-secondary/80",
-              )}
-            >
-              <p className="text-sm font-medium text-foreground">{s.label}</p>
-              <p className="text-xs text-muted-foreground">{s.sub}</p>
-            </button>
-          ))}
-        </aside>
-
-        <main className="flex-1 p-6">
-          {section === "basic" ? (
-            <div className="mx-auto max-w-2xl space-y-6">
-              <div>
-                <label className="text-sm font-medium">
-                  Job Function <span className="text-red-500">*</span>
-                </label>
-                <div className="mt-2">
-                  <RoleCascader
-                    selected={state.primaryRoles}
-                    onChange={(roles) => {
-                      update("primaryRoles", roles)
-                      const suffix =
-                        state.internshipOnly && !state.fulltimeOnly ? "INTERNSHIP" : "FULLTIME"
-                      update("rolePoolIds", poolIdsForSelectedRoles(roles, suffix))
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium">Career tracks</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Coarse role types you are open to (e.g. engineer vs educator vs analyst).
-                </p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {ROLE_INTENT_OPTIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => toggleRoleIntent(option.value)}
-                      className={cn(
-                        "rounded-lg border px-3 py-2 text-sm",
-                        state.roleIntents.includes(option.value)
-                          ? "border-primary bg-accent text-accent-foreground shadow-sm"
-                          : "border-border bg-card",
-                      )}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <label className="flex items-center gap-2 rounded-lg border border-border/80 bg-card p-3">
-                  <input
-                    type="checkbox"
-                    checked={state.fulltimeOnly}
-                    onChange={(e) => toggleFulltime(e.target.checked)}
-                  />
-                  <span className="text-sm">Full-time</span>
-                </label>
-                <label className="flex items-center gap-2 rounded-lg border border-border/80 bg-card p-3">
-                  <input
-                    type="checkbox"
-                    checked={state.internshipOnly}
-                    onChange={(e) => toggleInternship(e.target.checked)}
-                  />
-                  <span className="text-sm">Internship</span>
-                </label>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium">Work model</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {WORK_MODEL_OPTIONS.map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => toggleWorkModel(m)}
-                      className={cn(
-                        "rounded-lg border px-3 py-2 text-sm",
-                        state.workModels.includes(m)
-                          ? "border-primary bg-accent text-accent-foreground shadow-sm"
-                          : "border-border bg-card",
-                      )}
-                    >
-                      {m}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium">
-                  Experience Level <span className="text-red-500">*</span>
-                </p>
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  {EXPERIENCE_LEVELS.map((level) => (
-                    <label
-                      key={level}
-                      className="flex items-center gap-2 rounded-lg border border-border/80 bg-card p-3"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={state.experienceLevels.includes(level)}
-                        onChange={() => toggleLevel(level)}
-                      />
-                      <span className="text-sm">{level}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium">Date Posted</p>
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  {DATE_POSTED_OPTIONS.map((opt) => (
-                    <label
-                      key={opt.value}
-                      className="flex items-center gap-2 rounded-lg border border-border/80 bg-card p-3"
-                    >
-                      <input
-                        type="radio"
-                        name="datePosted"
-                        checked={state.maxJobAgeDays === opt.value}
-                        onChange={() => update("maxJobAgeDays", opt.value)}
-                      />
-                      <span className="text-sm">{opt.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : null}
-
-          {section === "comp" ? (
-            <div className="mx-auto max-w-2xl space-y-6">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">Minimum Annual Salary</p>
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={state.openToAllSalary}
-                    onChange={(e) => update("openToAllSalary", e.target.checked)}
-                  />
-                  Open to all
-                </label>
-              </div>
-              {!state.openToAllSalary ? (
-                <Input
-                  type="number"
-                  placeholder="e.g. 120000"
-                  value={state.minimumSalary}
-                  onChange={(e) => update("minimumSalary", e.target.value)}
-                />
-              ) : null}
-
-              <label className="flex items-start gap-3 rounded-lg border border-border/80 bg-card p-4">
-                <input
-                  type="checkbox"
-                  checked={state.sponsorshipRequired}
-                  onChange={(e) => update("sponsorshipRequired", e.target.checked)}
-                  className="mt-1"
-                />
-                <div>
-                  <p className="text-sm font-medium">H1B sponsorship</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Show jobs that explicitly support visa sponsorship or come from companies with
-                    sponsorship history.
-                  </p>
-                </div>
-              </label>
-
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 rounded-lg border border-border/80 bg-card p-3">
-                  <input
-                    type="checkbox"
-                    checked={state.hasClearance}
-                    onChange={(e) => update("hasClearance", e.target.checked)}
-                  />
-                  <span className="text-sm">I have an active security clearance</span>
-                </label>
-                <label className="flex items-center gap-2 rounded-lg border border-border/80 bg-card p-3">
-                  <input
-                    type="checkbox"
-                    checked={state.excludeUsCitizenOnly}
-                    onChange={(e) => update("excludeUsCitizenOnly", e.target.checked)}
-                  />
-                  <span className="text-sm">Exclude US citizen only roles</span>
-                </label>
-              </div>
-
-              <div>
-                <p className="mb-3 text-sm font-medium">Equal Employment</p>
-                <EeoForm state={state.eeo} onChange={(eeo) => update("eeo", eeo)} compact />
-              </div>
-            </div>
-          ) : null}
-        </main>
-      </div>
-    </div>
+    <FiltersCommandPage
+      state={state}
+      candidateName={candidate?.name ?? profileHome?.candidateName ?? "you"}
+      saving={saving}
+      onChange={setState}
+      onReset={handleReset}
+      onConfirm={() => void handleConfirm()}
+    />
   )
 }

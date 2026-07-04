@@ -59,12 +59,12 @@ export function isPremiumRole(job: JobWithRole): boolean {
 export function neuralRationale(job: JobWithRole): string {
   if (job.match_reasons.length > 0) {
     const focus = job.match_reasons.slice(0, 2).join(" and ")
-    return `Strongest alignment in ${focus}. Your profile signals map directly to this role's core requirements and team trajectory.`
+    return `Strongest alignment in ${focus}. Your profile maps directly to this role's core requirements.`
   }
   if (job.skills.length > 0) {
-    return `Neural match driven by ${job.skills.slice(0, 3).join(", ")} overlap with your verified skill matrix.`
+    return `Match driven by ${job.skills.slice(0, 3).join(", ")} overlap with your skill profile.`
   }
-  return "High compatibility with your executive profile DNA and target role trajectory."
+  return "High compatibility with your profile and target roles."
 }
 
 export function coreSkillsMatchPercent(job: JobWithRole): number {

@@ -36,6 +36,8 @@ import { useMockData } from "@/lib/session"
 import { ALL_JOBS } from "@/lib/jobs-data"
 
 import type { EmploymentTypeFilter } from "@/lib/employment-type-filter"
+import type { SeniorityLevel } from "@/lib/jobs-data"
+import { DEFAULT_LOCATION } from "@/lib/job-filters"
 
 export interface Filters {
   role: string | null
@@ -44,15 +46,17 @@ export interface Filters {
   salaryMin: number | null
   datePosted: string | null
   employmentType: EmploymentTypeFilter
+  experienceLevel: SeniorityLevel | "any" | null
 }
 
 const EMPTY_FILTERS: Filters = {
   role: null,
-  location: null,
+  location: DEFAULT_LOCATION,
   remote: null,
   salaryMin: null,
   datePosted: null,
   employmentType: null,
+  experienceLevel: null,
 }
 
 interface JobsContextValue {
@@ -72,6 +76,7 @@ interface JobsContextValue {
   pendingApply: PendingApply | null
   toggleSave: (id: string) => void
   markApplied: (id: string) => void
+  unmarkApplied: (id: string) => void
   startApply: (job: JobWithRole) => void
   resolvePendingApply: (applied: boolean) => void
   hideJob: (id: string) => void
@@ -266,6 +271,21 @@ export function JobsProvider({ children }: { children: ReactNode }) {
     [candidateId, mockMode, allJobs, recommendedJobs],
   )
 
+  const unmarkApplied = useCallback(
+    (id: string) => {
+      if (!candidateId) return
+      setAppliedIds((prev) => {
+        const next = new Set(prev)
+        next.delete(id)
+        persistAppliedIds(candidateId, next)
+        return next
+      })
+      setAppliedJobs((prev) => prev.filter((job) => job.id !== id))
+      setSelectedJobId((current) => (current === id ? null : current))
+    },
+    [candidateId],
+  )
+
   const startApply = useCallback(
     (job: JobWithRole) => {
       if (!candidateId) return
@@ -331,7 +351,10 @@ export function JobsProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const clearFilter = useCallback((key: keyof Filters) => {
-    setFilters((prev) => ({ ...prev, [key]: null }))
+    setFilters((prev) => ({
+      ...prev,
+      [key]: key === "location" ? DEFAULT_LOCATION : null,
+    }))
   }, [])
 
   const setEmploymentTypeFilter = useCallback((value: EmploymentTypeFilter) => {
@@ -381,6 +404,7 @@ export function JobsProvider({ children }: { children: ReactNode }) {
       pendingApply,
       toggleSave,
       markApplied,
+      unmarkApplied,
       startApply,
       resolvePendingApply,
       hideJob,
@@ -409,6 +433,7 @@ export function JobsProvider({ children }: { children: ReactNode }) {
       pendingApply,
       toggleSave,
       markApplied,
+      unmarkApplied,
       startApply,
       resolvePendingApply,
       hideJob,

@@ -11,11 +11,14 @@ import {
   type RoleDomainId,
 } from "@/lib/profile/role-catalog"
 import { Brand } from "@/components/profile/brand"
-import { EeoForm } from "@/components/profile/eeo-form"
 import { RolePickerPanel } from "@/components/profile/role-picker-panel"
-import { TagInput } from "@/components/profile/review/tag-input"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import {
+  DEFAULT_LOCATION,
+  EXPERIENCE_LEVEL_OPTIONS,
+  ensureLocations,
+} from "@/lib/job-filters"
+import type { SeniorityLevel } from "@/lib/jobs-data"
 import { cn } from "@/lib/utils"
 import {
   Bell,
@@ -53,7 +56,6 @@ export function JobIntentScreen({ state, onChange, onSubmit, saving }: JobIntent
   const [domainIndex, setDomainIndex] = useState(0)
   const [progress, setProgress] = useState(0)
   const [showSecondaryPicker, setShowSecondaryPicker] = useState(false)
-  const [showAdvanced, setShowAdvanced] = useState(false)
 
   const activeDomain = ROLE_DOMAIN_GROUPS[domainIndex] ?? ROLE_DOMAIN_GROUPS[0]
   const primaryRoles = sanitizeCatalogRoles(state.primaryRoles)
@@ -322,51 +324,102 @@ export function JobIntentScreen({ state, onChange, onSubmit, saving }: JobIntent
               </div>
             </div>
 
-            <div className="rounded-2xl border border-border/80 bg-card shadow-sm">
-              <button
-                type="button"
-                onClick={() => setShowAdvanced((v) => !v)}
-                className="flex w-full items-center justify-between px-5 py-4 text-left"
-              >
-                <span className="text-sm font-semibold text-foreground">Work & location preferences</span>
-                <ChevronRight
-                  className={cn("size-4 text-muted-foreground transition-transform", showAdvanced && "rotate-90")}
-                />
-              </button>
-              {showAdvanced ? (
-                <div className="space-y-4 border-t border-border/60 px-5 pb-5 pt-4">
-                  <label className="block text-sm">
-                    <span className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                      Sponsorship required
-                    </span>
-                    <select
-                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                      value={state.sponsorshipRequired ? "true" : "false"}
-                      onChange={(e) => update("sponsorshipRequired", e.target.value === "true")}
-                    >
-                      <option value="false">No</option>
-                      <option value="true">Yes</option>
-                    </select>
-                  </label>
-                  <TagInput
-                    label="Preferred locations"
-                    tags={state.preferredLocations}
-                    onChange={(tags) => update("preferredLocations", tags)}
-                  />
-                  <label className="block text-sm">
-                    <span className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                      Remote preference
-                    </span>
-                    <Input
-                      value={state.remotePreference}
-                      onChange={(e) => update("remotePreference", e.target.value)}
-                      placeholder="Remote, Hybrid, or Onsite"
-                      className="rounded-lg"
-                    />
-                  </label>
-                  <EeoForm state={state.eeo} onChange={(eeo) => update("eeo", eeo)} compact />
-                </div>
-              ) : null}
+            <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm">
+              <h2 className="text-sm font-bold text-foreground">Matching filters</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                These filters power your recommendations. Location defaults to the United States.
+              </p>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <label className="block text-sm sm:col-span-2">
+                  <span className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                    Location (country)
+                  </span>
+                  <select
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                    value={state.preferredLocations[0] ?? DEFAULT_LOCATION}
+                    onChange={(e) =>
+                      update("preferredLocations", ensureLocations([e.target.value]))
+                    }
+                  >
+                    <option value={DEFAULT_LOCATION}>{DEFAULT_LOCATION}</option>
+                    <option value="Remote (US)">Remote (US)</option>
+                    <option value="New York, NY">New York, NY</option>
+                    <option value="San Francisco, CA">San Francisco, CA</option>
+                    <option value="Seattle, WA">Seattle, WA</option>
+                    <option value="Austin, TX">Austin, TX</option>
+                    <option value="Boston, MA">Boston, MA</option>
+                  </select>
+                </label>
+
+                <label className="block text-sm">
+                  <span className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                    Employment type
+                  </span>
+                  <select
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                    value={
+                      state.internshipOnly
+                        ? "INTERNSHIP"
+                        : state.parttimeOnly
+                          ? "PARTTIME"
+                          : "FULLTIME"
+                    }
+                    onChange={(e) => {
+                      const v = e.target.value
+                      onChange({
+                        ...state,
+                        fulltimeOnly: v === "FULLTIME",
+                        parttimeOnly: v === "PARTTIME",
+                        internshipOnly: v === "INTERNSHIP",
+                      })
+                    }}
+                  >
+                    <option value="FULLTIME">Full-time</option>
+                    <option value="PARTTIME">Part-time</option>
+                    <option value="INTERNSHIP">Internship</option>
+                  </select>
+                </label>
+
+                <label className="block text-sm">
+                  <span className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                    Experience level
+                  </span>
+                  <select
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                    value={state.experienceLevel ?? "any"}
+                    onChange={(e) =>
+                      update(
+                        "experienceLevel",
+                        e.target.value === "any" ? null : (e.target.value as SeniorityLevel),
+                      )
+                    }
+                  >
+                    {EXPERIENCE_LEVEL_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="block text-sm sm:col-span-2">
+                  <span className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                    Remote preference
+                  </span>
+                  <select
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                    value={state.remotePreference || "any"}
+                    onChange={(e) =>
+                      update("remotePreference", e.target.value === "any" ? "" : e.target.value)
+                    }
+                  >
+                    <option value="any">Any</option>
+                    <option value="remote">Remote</option>
+                    <option value="hybrid">Hybrid</option>
+                    <option value="onsite">Onsite</option>
+                  </select>
+                </label>
+              </div>
             </div>
           </div>
 

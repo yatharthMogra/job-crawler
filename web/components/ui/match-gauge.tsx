@@ -28,14 +28,16 @@ function MatchRing({
   score,
   className,
   sidebar = false,
+  size: sizeProp = "md",
 }: {
   score: number
   className?: string
   sidebar?: boolean
+  size?: "md" | "lg"
 }) {
   const pct = Math.round(Math.min(1, Math.max(0, score)) * 100)
-  const size = sidebar ? 92 : 72
-  const radius = sidebar ? 36 : 28
+  const size = sidebar ? 92 : sizeProp === "lg" ? 104 : 72
+  const radius = sidebar ? 36 : sizeProp === "lg" ? 40 : 28
   const strokeWidth = sidebar ? 5 : 5
   const circumference = 2 * Math.PI * radius
   const offset = circumference - (pct / 100) * circumference
@@ -82,13 +84,23 @@ function MatchRing({
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={cn(sidebar ? "text-xl sm:text-2xl" : "text-sm", "font-bold tabular-nums", textClass)}>
+          <span className={cn(
+            sidebar ? "text-xl sm:text-2xl" : sizeProp === "lg" ? "text-2xl" : "text-sm",
+            "font-bold tabular-nums",
+            textClass,
+          )}>
             {pct}%
           </span>
         </div>
       </div>
-      <span className={cn("font-bold tracking-wider", sidebar ? "text-[10px]" : "text-[9px]", textClass)}>
-        {label}
+      <span
+        className={cn(
+          "font-bold tracking-wider",
+          sidebar ? "text-[10px] text-white" : "text-[9px]",
+          !sidebar && textClass,
+        )}
+      >
+        {sidebar ? `${label} MATCH` : sizeProp === "lg" ? label : label}
       </span>
     </div>
   )
@@ -113,7 +125,7 @@ export function MatchGauge({
   }
 
   if (variant === "ring" || compact) {
-    return <MatchRing score={score} className={className} />
+    return <MatchRing score={score} className={className} size="lg" />
   }
 
   const pct = Math.round(Math.min(1, Math.max(0, score)) * 100)

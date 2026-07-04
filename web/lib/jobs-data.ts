@@ -45,6 +45,7 @@ export interface Job {
   description_html: string
   is_saved: boolean
   is_applied: boolean
+  application_status?: string
 }
 
 const COMPANIES = [
