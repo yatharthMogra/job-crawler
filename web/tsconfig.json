@@ -33,7 +33,13 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
+    ".next/dev/types/**/*.ts",
+    "/tmp/jobscout-next/types/**/*.ts",
+    "/tmp/jobscout-next/dev/types/**/*.ts",
+    "/var/folders/k7/rmzq46390q3b392psj370q440000gn/T/jobscout-next/types/**/*.ts",
+    "/var/folders/k7/rmzq46390q3b392psj370q440000gn/T/jobscout-next/dev/types/**/*.ts",
+    "/var/folders/k7/rmzq46390q3b392psj370q440000gn/T/jobcrawler-web-next/types/**/*.ts",
+    "/var/folders/k7/rmzq46390q3b392psj370q440000gn/T/jobcrawler-web-next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

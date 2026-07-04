@@ -1,6 +1,6 @@
 import type { EmploymentType } from "@/lib/jobs-data"
 
-export type EmploymentTypeFilter = "FULLTIME" | "INTERNSHIP" | null
+export type EmploymentTypeFilter = "FULLTIME" | "PARTTIME" | "INTERNSHIP" | null
 
 export function employmentTypeFromFlags(fulltimeOnly: boolean, internshipOnly: boolean): EmploymentTypeFilter {
   if (fulltimeOnly && !internshipOnly) return "FULLTIME"

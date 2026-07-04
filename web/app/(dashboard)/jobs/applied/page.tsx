@@ -1,10 +1,9 @@
 "use client"
 
 import { useMemo } from "react"
-import { Check } from "lucide-react"
 import { useJobs } from "@/components/jobs-provider"
-import { JobFeed } from "@/components/job-feed"
-import { EmptyState } from "@/components/empty-state"
+import { ApplicationsPage } from "@/components/applications/applications-page"
+import { FeedSkeleton } from "@/components/card-skeleton"
 import { useJobsSearch } from "@/app/(dashboard)/jobs/layout"
 import type { JobWithRole } from "@/lib/jobs-data"
 
@@ -35,33 +34,21 @@ export default function AppliedPage() {
   const { appliedJobs, appliedIds, allKnownJobs, loading } = useJobs()
   const { search } = useJobsSearch()
 
-  const applied = useMemo(() => {
-    return mergeAppliedJobs(appliedJobs, appliedIds, allKnownJobs).filter((j) =>
-      matchesSearch(j, search),
-    )
+  const applications = useMemo(() => {
+    return mergeAppliedJobs(appliedJobs, appliedIds, allKnownJobs)
+      .filter((job) => matchesSearch(job, search))
+      .sort(
+        (a, b) => new Date(b.posted_at).getTime() - new Date(a.posted_at).getTime(),
+      )
   }, [appliedJobs, appliedIds, allKnownJobs, search])
 
   if (loading) {
-    return null
-  }
-
-  if (applied.length === 0) {
     return (
-      <EmptyState
-        icon={Check}
-        title="No applied jobs yet."
-        description="Jobs you apply to will appear here."
-      />
+      <div className="px-4 py-6 lg:px-6">
+        <FeedSkeleton count={4} />
+      </div>
     )
   }
 
-  return (
-    <JobFeed
-      jobs={applied}
-      showMatch
-      cardMode="applied"
-      title="Applied Jobs"
-      subtitle="Roles you've marked as applied."
-    />
-  )
+  return <ApplicationsPage applications={applications} />
 }

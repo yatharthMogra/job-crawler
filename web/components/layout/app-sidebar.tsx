@@ -3,11 +3,10 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
+  Bookmark,
   Briefcase,
-  FileText,
-  HelpCircle,
   LogOut,
-  Settings,
+  Settings2,
   User,
 } from "lucide-react"
 import { signOut } from "next-auth/react"
@@ -17,11 +16,22 @@ import { clearStoredCandidateId } from "@/lib/session"
 import { cn } from "@/lib/utils"
 
 const NAV = [
-  { href: "/jobs/recommended", label: "Jobs", icon: Briefcase, match: "/jobs" },
-  { href: "/resume", label: "Resume", icon: FileText, match: "/resume" },
-  { href: "/profile", label: "Profile", icon: User, match: "/profile" },
-  { href: "/settings", label: "Settings", icon: Settings, match: "/settings" },
-]
+  { href: "/jobs/recommended", label: "Feed", icon: Briefcase },
+  { href: "/jobs/liked", label: "Saved", icon: Bookmark },
+  { href: "/profile", label: "Profile", icon: User },
+  { href: "/filters", label: "Filters", icon: Settings2 },
+] as const
+
+function isNavActive(pathname: string, href: string): boolean {
+  if (href === "/jobs/recommended") {
+    return (
+      pathname === "/jobs" ||
+      pathname === "/jobs/recommended" ||
+      pathname.startsWith("/jobs/recommended/")
+    )
+  }
+  return pathname === href || pathname.startsWith(`${href}/`)
+}
 
 function NavItem({
   href,
@@ -40,11 +50,11 @@ function NavItem({
       className={cn(
         "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all",
         active
-          ? "bg-accent text-primary shadow-sm"
-          : "text-muted-foreground hover:bg-muted/80 hover:text-foreground",
+          ? "bg-primary text-primary-foreground shadow-md shadow-primary/25"
+          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
       )}
     >
-      <Icon className={cn("size-5 shrink-0", active && "text-primary")} strokeWidth={active ? 2.5 : 2} />
+      <Icon className="size-5 shrink-0" strokeWidth={active ? 2.5 : 2} />
       {label}
     </Link>
   )
@@ -61,8 +71,6 @@ export function AppSidebar() {
     router.push("/login")
   }
 
-  const initials = (candidate?.name ?? "U").charAt(0).toUpperCase()
-
   return (
     <aside className="dashboard-shell-sidebar sticky top-0 z-30 flex h-screen flex-col">
       <div className="flex h-16 items-center px-5">
@@ -76,35 +84,37 @@ export function AppSidebar() {
           <NavItem
             key={item.href}
             {...item}
-            active={pathname.startsWith(item.match)}
+            active={isNavActive(pathname, item.href)}
           />
         ))}
       </nav>
 
       <div className="border-t border-sidebar-border p-4">
-        <div className="mb-3 flex items-center gap-3 rounded-xl bg-accent/50 px-3 py-2.5">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
-            {initials}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-foreground">{candidate?.name ?? "Guest"}</p>
-            <p className="truncate text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              Executive
-            </p>
+        <div className="mb-3 rounded-xl border border-sidebar-border bg-sidebar-accent/30 p-3">
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+              {(candidate?.name ?? "U")
+                .split(" ")
+                .map((n) => n[0])
+                .join("")
+                .slice(0, 2)
+                .toUpperCase()}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-sidebar-foreground">
+                {candidate?.name ?? "Guest"}
+              </p>
+              <p className="truncate text-[10px] font-bold uppercase tracking-widest text-sidebar-foreground/50">
+                Executive
+              </p>
+            </div>
           </div>
         </div>
         <div className="flex flex-col gap-0.5">
           <button
             type="button"
-            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
-          >
-            <HelpCircle className="size-4" />
-            Support
-          </button>
-          <button
-            type="button"
             onClick={() => void handleLogout()}
-            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
           >
             <LogOut className="size-4" />
             Log out

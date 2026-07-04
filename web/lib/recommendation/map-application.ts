@@ -38,6 +38,7 @@ export function mapApplicationToUi(application: UserApplicationApi): Job & { rol
     description_html: descriptionTextToHtml(application.description_text),
     is_saved: false,
     is_applied: true,
+    application_status: application.status,
     roleCategory: "Applied",
   }
 }

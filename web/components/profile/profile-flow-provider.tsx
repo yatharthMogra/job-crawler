@@ -33,7 +33,6 @@ import {
   uploadResume,
 } from "@/lib/profile/api"
 import {
-  buildConfirmationFromProfileHome,
   mapApiToProfileHome,
   type ProfileHomeData,
 } from "@/lib/profile/map-profile"
@@ -276,27 +275,20 @@ export function ProfileFlowProvider({
       setSaving(true)
       try {
         const { constraints, preferences } = jobIntentToApiPayload(jobIntent)
-        await patchConstraints(candidateId, constraints)
-        await patchPreferences(candidateId, preferences)
-        await loadProfileHome(candidateId)
-        await syncSubscriptionsForCandidate(candidateId)
+        await Promise.all([
+          patchConstraints(candidateId, constraints),
+          patchPreferences(candidateId, preferences),
+        ])
+        // Navigate immediately; profile refresh + subscription sync continue in background.
         if (redirectTo === "profile") {
           router.push("/profile")
-        } else if (redirectTo === "jobs") {
+        } else if (redirectTo === "confirm") {
           router.push("/jobs/recommended")
         } else {
-          const home = profileHome ?? (await (async () => {
-            const [candidate, profile, evidence, resumes] = await Promise.all([
-              getCandidate(candidateId),
-              getProfile(candidateId),
-              getEvidence(candidateId),
-              listResumes(candidateId),
-            ])
-            return mapApiToProfileHome(candidate, profile, evidence.evidence, resumes)
-          })())
-          setConfirmationProfile(buildConfirmationFromProfileHome(home))
-          router.push("/profile/confirm")
+          router.push("/jobs/recommended")
         }
+        void loadProfileHome(candidateId).catch(() => undefined)
+        void syncSubscriptionsForCandidate(candidateId).catch(() => undefined)
       } finally {
         setSaving(false)
       }

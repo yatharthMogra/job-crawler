@@ -23,8 +23,10 @@ export function defaultMockJobIntent(): JobIntentState {
     ...emptyJobIntent(),
     primaryRoles: ["Backend Engineer", "Full Stack Engineer"],
     secondaryRoles: ["DevOps Engineer"],
-    preferredLocations: ["New York, NY", "Remote (US)"],
+    preferredLocations: ["United States"],
     remotePreference: "hybrid",
+    fulltimeOnly: true,
+    experienceLevel: "mid",
     eeo: {
       authorizedToWorkUs: true,
       hasDisability: false,

@@ -1,6 +1,8 @@
 import type { ProfileResponse } from "@/lib/profile/api-types"
 import { eeoFromApiPayload, eeoToApiPayload, emptyEeo, type EeoState } from "@/lib/profile/eeo"
 import { poolIdsForRoles, sanitizeCatalogRoles } from "@/lib/profile/role-catalog"
+import { ensureLocations } from "@/lib/job-filters"
+import type { SeniorityLevel } from "@/lib/jobs-data"
 
 export interface JobIntentState {
   primaryRoles: string[]
@@ -10,10 +12,12 @@ export interface JobIntentState {
   workAuthorization: string
   internshipOnly: boolean
   fulltimeOnly: boolean
+  parttimeOnly: boolean
   minimumHourlyRate: string
   preferredLocations: string[]
   remotePreference: string
   preferredIndustries: string[]
+  experienceLevel: SeniorityLevel | "any" | null
   fullTimeExperienceYears: number | null
   isCurrentlyEnrolled: boolean | null
   expectedGraduationDate: string
@@ -28,11 +32,13 @@ export function emptyJobIntent(): JobIntentState {
     visaType: "",
     workAuthorization: "",
     internshipOnly: false,
-    fulltimeOnly: false,
+    fulltimeOnly: true,
+    parttimeOnly: false,
     minimumHourlyRate: "",
-    preferredLocations: [],
+    preferredLocations: ensureLocations([]),
     remotePreference: "",
     preferredIndustries: [],
+    experienceLevel: null,
     fullTimeExperienceYears: null,
     isCurrentlyEnrolled: null,
     expectedGraduationDate: "",
@@ -51,11 +57,13 @@ export function profileToJobIntent(profile: ProfileResponse): JobIntentState {
     workAuthorization: String(constraints.work_authorization ?? ""),
     internshipOnly: Boolean(constraints.internship_only),
     fulltimeOnly: Boolean(constraints.fulltime_only),
+    parttimeOnly: Boolean(constraints.parttime_only),
     minimumHourlyRate:
       constraints.minimum_hourly_rate != null ? String(constraints.minimum_hourly_rate) : "",
-    preferredLocations: (preferences.preferred_locations as string[]) ?? [],
+    preferredLocations: ensureLocations((preferences.preferred_locations as string[]) ?? []),
     remotePreference: String(preferences.remote_preference ?? ""),
     preferredIndustries: (preferences.preferred_industries as string[]) ?? [],
+    experienceLevel: (preferences.experience_level as SeniorityLevel | "any" | null) ?? null,
     fullTimeExperienceYears:
       constraints.full_time_experience_years != null
         ? Number(constraints.full_time_experience_years)
@@ -80,11 +88,13 @@ export function jobIntentToApiPayload(state: JobIntentState): {
       work_authorization: state.workAuthorization || null,
       internship_only: state.internshipOnly,
       fulltime_only: state.fulltimeOnly,
+      parttime_only: state.parttimeOnly,
       minimum_hourly_rate: state.minimumHourlyRate ? Number(state.minimumHourlyRate) : null,
       full_time_experience_years: state.fullTimeExperienceYears,
       is_currently_enrolled: state.isCurrentlyEnrolled,
       expected_graduation_date: state.expectedGraduationDate || null,
-      eeo: eeoToApiPayload(state.eeo),
+      // EEO is not used for job matching; keep empty payload for API compatibility.
+      eeo: eeoToApiPayload(emptyEeo()),
     },
     preferences: {
       primary_roles: sanitizeCatalogRoles(state.primaryRoles),
@@ -95,9 +105,10 @@ export function jobIntentToApiPayload(state: JobIntentState): {
         sanitizeCatalogRoles(state.primaryRoles),
         state.internshipOnly && !state.fulltimeOnly ? "INTERNSHIP" : "FULLTIME",
       ),
-      preferred_locations: state.preferredLocations,
+      preferred_locations: ensureLocations(state.preferredLocations),
       remote_preference: state.remotePreference || null,
       preferred_industries: state.preferredIndustries,
+      experience_level: state.experienceLevel && state.experienceLevel !== "any" ? state.experienceLevel : null,
     },
   }
 }

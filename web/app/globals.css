@@ -325,3 +325,27 @@
   min-width: 0;
   min-height: 100vh;
 }
+
+.salary-range-thumb::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  border: 2px solid white;
+  background: var(--primary);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.18);
+  cursor: pointer;
+}
+
+.salary-range-thumb::-moz-range-thumb {
+  pointer-events: auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  border: 2px solid white;
+  background: var(--primary);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.18);
+  cursor: pointer;
+}
