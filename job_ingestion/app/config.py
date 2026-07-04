@@ -61,6 +61,13 @@ class Settings(BaseSettings):
     llm_input_token_cost_per_1k: float = 0.0015
     llm_output_token_cost_per_1k: float = 0.002
     enrichment_stop_on_daily_quota: bool = True
+    enrichment_worker_daily_api_call_limit: int = 500
+    enrichment_worker_daily_reset_time: str = "00:00"
+    enrichment_worker_daily_reset_timezone: str = "America/Los_Angeles"
+    enrichment_worker_daily_flush_interval: int = 50
+    enrichment_worker_rate_limit_initial_backoff_seconds: int = 60
+    enrichment_worker_rate_limit_backoff_multiplier: int = 2
+    enrichment_worker_rate_limit_max_backoff_seconds: int = 600
     job_max_age_days: int = 7
     ashby_host_rate_per_second: float = 1.5
     ashby_host_burst: int = 3
@@ -111,6 +118,12 @@ class Settings(BaseSettings):
         rpm_cap = max(self.enrichment_llm_max_rpm, 1)
         window_batches = min(self.enrichment_max_batches_per_window, rpm_cap)
         return self.enrichment_window_seconds / window_batches
+
+    def enrichment_worker_backoff_seconds(self, attempt: int) -> float:
+        delay = self.enrichment_worker_rate_limit_initial_backoff_seconds * (
+            self.enrichment_worker_rate_limit_backoff_multiplier**attempt
+        )
+        return float(min(delay, self.enrichment_worker_rate_limit_max_backoff_seconds))
 
     @property
     def yc_waas_roles_list(self) -> list[str]:

@@ -74,6 +74,10 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     finally:
         logger.info("Stopping scheduler (no new jobs)")
         scheduler.shutdown(wait=False)
+        try:
+            await pool.flush_all_capacity_state()
+        except Exception:
+            logger.exception("Failed to flush enrichment worker capacity state")
         pool.stop()
         logger.info(
             "Waiting up to %ss for %s enrichment worker(s) to stop",

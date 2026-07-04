@@ -146,6 +146,24 @@ async def collect_ops_stats(
         )
     ).all()
 
+    worker_state_rows = (
+        await db.execute(
+            text(
+                """
+                SELECT
+                  worker_id,
+                  capacity_mode,
+                  api_calls,
+                  rate_limited_until,
+                  window_start,
+                  rate_limit_backoff_attempt
+                FROM enrichment_worker_state
+                ORDER BY worker_id
+                """
+            )
+        )
+    ).all()
+
     keys = settings.gemini_api_keys_list()
     worker_count = settings.resolved_enrichment_worker_count() if keys else 0
 
@@ -193,6 +211,21 @@ async def collect_ops_stats(
                 if enrichment_windows.last_completion
                 else None
             ),
+            "worker_state": [
+                {
+                    "worker_id": int(row.worker_id),
+                    "capacity_mode": row.capacity_mode,
+                    "api_calls": int(row.api_calls or 0),
+                    "rate_limit_backoff_attempt": int(row.rate_limit_backoff_attempt or 0),
+                    "rate_limited_until": (
+                        row.rate_limited_until.isoformat() if row.rate_limited_until else None
+                    ),
+                    "window_start": (
+                        row.window_start.isoformat() if row.window_start else None
+                    ),
+                }
+                for row in worker_state_rows
+            ],
         },
         "recent_company_polls": [
             {

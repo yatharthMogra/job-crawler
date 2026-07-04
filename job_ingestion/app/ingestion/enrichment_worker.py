@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Callable, Optional
+from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import and_, or_, select, text
@@ -22,7 +22,7 @@ from app.ingestion.extractor.llm import (
 )
 from app.ingestion.extractor.seniority import build_batch_job_payload
 from app.ingestion.extractor.text_cleaner import clean_job_description
-from app.ingestion.job_archive_sync import update_job_archive_after_enrichment
+from app.ingestion.enrichment_worker_capacity import WorkerCapacityTracker
 from app.ingestion.job_freshness import FreshnessVerdict, refresh_posted_at_verdict
 from app.ingestion.job_purge import PurgeTarget, purge_normalized_jobs
 from app.ingestion.recommendation_fields import (
@@ -258,9 +258,13 @@ class EnrichmentWorker:
         self._settings = settings
         self._worker_id = worker_id
         self._worker_count = worker_count
-        self._quota_paused = False
+        self._capacity = WorkerCapacityTracker(worker_id=worker_id, settings=settings)
         self._stop = asyncio.Event()
         self._wake = asyncio.Event()
+
+    @property
+    def capacity(self) -> WorkerCapacityTracker:
+        return self._capacity
 
     def stop(self) -> None:
         self._stop.set()
@@ -269,8 +273,11 @@ class EnrichmentWorker:
     def wake(self) -> None:
         self._wake.set()
 
-    def pause_for_daily_quota(self, _message: str) -> None:
-        self._quota_paused = True
+    async def flush_capacity_state(self) -> None:
+        async with AsyncSessionLocal() as db:
+            await self._capacity.load_or_create(db)
+            await self._capacity.flush_pending(db)
+            await db.commit()
 
     async def _sleep_until_stop(self, seconds: float) -> bool:
         """Sleep up to `seconds`. Returns True if stop was signaled."""
@@ -302,21 +309,27 @@ class EnrichmentWorker:
 
     async def run_forever(self) -> None:
         while not self._stop.is_set():
-            if self._quota_paused:
-                if await self._sleep_until_stop(30.0):
-                    break
-                continue
+            now = _utcnow()
             batches_processed = 0
             try:
                 async with AsyncSessionLocal() as db:
-                    processed, batches_processed = await process_enrichment_window(
-                        db=db,
-                        settings=self._settings,
-                        worker_id=self._worker_id,
-                        worker_count=self._worker_count,
-                        on_daily_quota_exhausted=self.pause_for_daily_quota,
-                        stop_event=self._stop,
-                    )
+                    await self._capacity.load_or_create(db)
+                    self._capacity.tick(now)
+                    self._capacity.clear_window_error_flag()
+                    if not self._capacity.can_process(now):
+                        await db.commit()
+                    else:
+                        max_batches = self._capacity.effective_max_batches(now)
+                        processed, batches_processed = await process_enrichment_window(
+                            db=db,
+                            settings=self._settings,
+                            worker_id=self._worker_id,
+                            worker_count=self._worker_count,
+                            stop_event=self._stop,
+                            max_batches_cap=max_batches,
+                            capacity=self._capacity,
+                        )
+                        await db.commit()
             except asyncio.CancelledError:
                 raise
             except Exception:
@@ -324,6 +337,11 @@ class EnrichmentWorker:
 
             if self._stop.is_set():
                 break
+
+            if not self._capacity.can_process():
+                if await self._sleep_until_stop(self._capacity.sleep_seconds()):
+                    break
+                continue
 
             if batches_processed > 0:
                 if await self._sleep_until_stop(float(self._settings.enrichment_window_seconds)):
@@ -361,6 +379,10 @@ class EnrichmentWorkerPool:
     def stop(self) -> None:
         for worker in self.workers:
             worker.stop()
+
+    async def flush_all_capacity_state(self) -> None:
+        for worker in self.workers:
+            await worker.flush_capacity_state()
 
 
 async def queue_job_for_enrichment(
@@ -725,7 +747,7 @@ async def _process_batch(
     batch_items: list[WorkItem],
     source: str,
     *,
-    on_daily_quota_exhausted: Callable[[str], None] | None = None,
+    capacity: WorkerCapacityTracker | None = None,
 ) -> None:
     started = _utcnow()
     enriched_for_notifications: list[tuple[UUID, UUID]] = []
@@ -767,6 +789,8 @@ async def _process_batch(
     ]
     provider = get_llm_provider(settings)
     try:
+        if capacity is not None:
+            await capacity.dispatch_before_api_call(db)
         result = await enrich_job_batch_text(provider, payload_jobs)
         by_job_id = {entry.job_id: entry for entry in result.output.items}
         input_allocations = _allocate_tokens(result.input_tokens, [row.estimated_tokens for row in batch_items])
@@ -950,14 +974,18 @@ async def _process_batch(
                 enriched_for_notifications.append((row.normalized.id, row.normalized.company_id))
 
         batch.status = "completed"
+        if capacity is not None:
+            await capacity.dispatch_api_success(db)
     except Exception as exc:
         message = str(exc)
         daily_quota = _is_daily_quota_exhausted(message)
         retryable = _is_transient_rate_limit(message)
         schema_error = _is_schema_validation_error(message)
         provider_capacity = _is_provider_capacity_error(message)
-        if daily_quota and on_daily_quota_exhausted is not None:
-            on_daily_quota_exhausted(message)
+        if daily_quota and capacity is not None:
+            await capacity.dispatch_daily_quota(db)
+        elif retryable and not daily_quota and capacity is not None:
+            await capacity.dispatch_transient_rate_limit(db)
         if (
             len(batch_items) > 1
             and not provider_capacity
@@ -977,7 +1005,7 @@ async def _process_batch(
                     settings=settings,
                     batch_items=[row],
                     source="worker_single_fallback",
-                    on_daily_quota_exhausted=on_daily_quota_exhausted,
+                    capacity=capacity,
                 )
             return
         items = (
@@ -1126,10 +1154,13 @@ async def process_enrichment_window(
     settings: Optional[Settings] = None,
     worker_id: int = 0,
     worker_count: int = 1,
-    on_daily_quota_exhausted: Callable[[str], None] | None = None,
     stop_event: asyncio.Event | None = None,
+    max_batches_cap: int | None = None,
+    capacity: WorkerCapacityTracker | None = None,
 ) -> tuple[int, int]:
     settings = settings or get_settings()
+    if max_batches_cap == 0:
+        return 0, 0
     now = _utcnow()
     partition = _partition_filter(worker_id, worker_count)
     eligible = and_(
@@ -1178,8 +1209,12 @@ async def process_enrichment_window(
         return 0, 0
 
     rpm_cap = max(settings.enrichment_llm_max_rpm, 1)
-    batches = batches[: min(settings.enrichment_max_batches_per_window, rpm_cap)]
+    window_cap = min(settings.enrichment_max_batches_per_window, rpm_cap)
+    if max_batches_cap is not None:
+        window_cap = min(window_cap, max_batches_cap)
+    batches = batches[:window_cap]
     processed_jobs = 0
+    batches_processed = 0
     for idx, batch in enumerate(batches):
         if stop_event is not None and stop_event.is_set():
             break
@@ -1197,11 +1232,15 @@ async def process_enrichment_window(
             settings=settings,
             batch_items=batch,
             source=f"worker_{worker_id}",
-            on_daily_quota_exhausted=on_daily_quota_exhausted,
+            capacity=capacity,
         )
         processed_jobs += len(batch)
-        await db.commit()
-    return processed_jobs, len(batches)
+        batches_processed += 1
+        if capacity is not None and (
+            capacity.window_error_fired() or not capacity.can_process()
+        ):
+            break
+    return processed_jobs, batches_processed
 
 
 async def process_job_immediately(

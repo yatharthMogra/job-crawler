@@ -13,6 +13,7 @@ from app.models.h1b import (
 from app.models.enrichment_batch import EnrichmentBatch
 from app.models.enrichment_batch_item import EnrichmentBatchItem
 from app.models.enrichment_queue import EnrichmentQueue
+from app.models.enrichment_worker_state import EnrichmentWorkerState
 from app.models.ingestion_event import IngestionEvent
 from app.models.job_archive import JobArchive
 from app.models.job_enrichment import JobEnrichment
@@ -26,6 +27,7 @@ __all__ = [
     "Company",
     "CompanyEnrichment",
     "EnrichmentQueue",
+    "EnrichmentWorkerState",
     "EnrichmentBatch",
     "EnrichmentBatchItem",
     "RawJob",
