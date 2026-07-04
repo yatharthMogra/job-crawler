@@ -1,15 +1,18 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
 from app.config import Settings
 from app.ingestion.enrichment_worker import (
     _allocate_tokens,
+    _batch_is_ready,
     _is_daily_quota_exhausted,
     _is_provider_capacity_error,
     _is_retryable_error,
     _is_transient_rate_limit,
     _pack_batches,
+    _partition_ready_batches,
 )
 
 GEMINI_RESOURCE_EXHAUSTED = (
@@ -92,3 +95,67 @@ def test_batch_interval_respects_rpm_cap() -> None:
         enrichment_llm_max_rpm=12,
     )
     assert settings.enrichment_batch_interval_seconds == 5.0
+
+
+def _work_item(*, minutes_ago: float, attempt_count: int = 0):
+    now = datetime.now(timezone.utc)
+    ts = now - timedelta(minutes=minutes_ago)
+    return SimpleNamespace(
+        estimated_tokens=100,
+        queue_row=SimpleNamespace(
+            created_at=ts,
+            updated_at=ts,
+            attempt_count=attempt_count,
+        ),
+    )
+
+
+def test_batch_is_ready_when_min_size_met() -> None:
+    settings = Settings(enrichment_min_batch_enabled=True, enrichment_min_batch_size=6)
+    now = datetime.now(timezone.utc)
+    batch = [_work_item(minutes_ago=5) for _ in range(6)]
+    assert _batch_is_ready(batch, settings, now)
+
+
+def test_batch_is_not_ready_when_undersized_and_fresh() -> None:
+    settings = Settings(
+        enrichment_min_batch_enabled=True,
+        enrichment_min_batch_size=6,
+        enrichment_min_batch_bypass_wait_seconds=1800,
+    )
+    now = datetime.now(timezone.utc)
+    batch = [_work_item(minutes_ago=5) for _ in range(4)]
+    assert not _batch_is_ready(batch, settings, now)
+
+
+def test_batch_is_ready_when_undersized_but_stale() -> None:
+    settings = Settings(
+        enrichment_min_batch_enabled=True,
+        enrichment_min_batch_size=6,
+        enrichment_min_batch_bypass_wait_seconds=1800,
+    )
+    now = datetime.now(timezone.utc)
+    batch = [_work_item(minutes_ago=5) for _ in range(3)] + [_work_item(minutes_ago=31)]
+    assert _batch_is_ready(batch, settings, now)
+
+
+def test_batch_is_ready_when_min_batch_disabled() -> None:
+    settings = Settings(enrichment_min_batch_enabled=False, enrichment_min_batch_size=6)
+    now = datetime.now(timezone.utc)
+    batch = [_work_item(minutes_ago=1)]
+    assert _batch_is_ready(batch, settings, now)
+
+
+def test_partition_ready_batches_splits_held_and_ready() -> None:
+    settings = Settings(
+        enrichment_min_batch_enabled=True,
+        enrichment_min_batch_size=6,
+        enrichment_min_batch_bypass_wait_seconds=1800,
+    )
+    now = datetime.now(timezone.utc)
+    fresh_small = [_work_item(minutes_ago=5) for _ in range(3)]
+    ready_large = [_work_item(minutes_ago=5) for _ in range(6)]
+    ready, held = _partition_ready_batches([fresh_small, ready_large], settings, now)
+    assert len(ready) == 1
+    assert len(ready[0]) == 6
+    assert len(held) == 3

@@ -501,6 +501,39 @@ def _pack_batches(settings: Settings, items: list[WorkItem]) -> tuple[list[list[
     return batches, deferred
 
 
+def _queue_wait_started_at(queue_row: EnrichmentQueue) -> datetime:
+    if queue_row.attempt_count == 0:
+        return queue_row.created_at
+    return queue_row.updated_at
+
+
+def _batch_is_ready(batch: list[WorkItem], settings: Settings, now: datetime) -> bool:
+    if not settings.enrichment_min_batch_enabled:
+        return True
+    min_size = settings.enrichment_min_batch_size
+    if min_size <= 1:
+        return True
+    if len(batch) >= min_size:
+        return True
+    bypass = timedelta(seconds=settings.enrichment_min_batch_bypass_wait_seconds)
+    return any(now - _queue_wait_started_at(row.queue_row) >= bypass for row in batch)
+
+
+def _partition_ready_batches(
+    batches: list[list[WorkItem]],
+    settings: Settings,
+    now: datetime,
+) -> tuple[list[list[WorkItem]], list[WorkItem]]:
+    ready: list[list[WorkItem]] = []
+    held: list[WorkItem] = []
+    for batch in batches:
+        if _batch_is_ready(batch, settings, now):
+            ready.append(batch)
+        else:
+            held.extend(batch)
+    return ready, held
+
+
 def _allocate_tokens(total_tokens: int, estimates: list[int]) -> list[int]:
     if not estimates:
         return []
@@ -1135,6 +1168,11 @@ async def process_enrichment_window(
     batches, deferred = _pack_batches(settings=settings, items=candidates)
     for row in deferred:
         row.queue_row.status = "queued"
+
+    batches, held_for_min_size = _partition_ready_batches(batches, settings=settings, now=now)
+    for row in held_for_min_size:
+        row.queue_row.status = "queued"
+
     if not batches:
         await db.commit()
         return 0, 0

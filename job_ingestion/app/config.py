@@ -46,6 +46,9 @@ class Settings(BaseSettings):
     ingestion_stats_interval_minutes: int = 5
     token_spike_threshold: int = 8000
     enrichment_micro_batch_size: int = 12
+    enrichment_min_batch_enabled: bool = True
+    enrichment_min_batch_size: int = 6
+    enrichment_min_batch_bypass_wait_seconds: int = 1800
     enrichment_window_seconds: int = 45
     enrichment_max_batches_per_window: int = 12
     enrichment_max_jobs_per_window: int = 64
