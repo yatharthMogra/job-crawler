@@ -1,5 +1,5 @@
 import type { UserApplicationApi } from "@/lib/recommendation/api"
-import { descriptionTextToHtml } from "@/lib/recommendation/description-html"
+import { resolveJobDescription } from "@/lib/recommendation/parse-description"
 import type { Effort, EmploymentType, Job, RemoteType } from "@/lib/jobs-data"
 import { mapApiSeniorityToUi } from "@/lib/profile/seniority"
 
@@ -9,8 +9,13 @@ export function mapApplicationToUi(application: UserApplicationApi): Job & { rol
   const skills = [...(application.tech_stack ?? []), ...(application.skills ?? [])].slice(0, 8)
   const jobId = application.normalized_job_id ?? application.id
 
+  const description = resolveJobDescription({
+    description_text: application.description_text,
+  })
+
   return {
     id: jobId,
+    application_id: application.id,
     title: application.job_title,
     company: application.company_name,
     location: application.location ?? "Location not specified",
@@ -27,15 +32,16 @@ export function mapApplicationToUi(application: UserApplicationApi): Job & { rol
     match_reasons: [],
     recommendation_reason: "You applied to this role.",
     skills,
-    responsibilities: [],
-    required_qualifications: [],
-    preferred_qualifications: [],
-    benefits: [],
+    responsibilities: description.responsibilities,
+    required_qualifications: description.required_qualifications,
+    preferred_qualifications: description.preferred_qualifications,
+    benefits: description.benefits,
     sponsorship_status: "unclear",
     sponsorship_confidence: "low",
     h1b_sponsorship: null,
     company_info: null,
-    description_html: descriptionTextToHtml(application.description_text),
+    about_summary: description.about,
+    description_html: description.fallbackHtml,
     is_saved: false,
     is_applied: true,
     application_status: application.status,

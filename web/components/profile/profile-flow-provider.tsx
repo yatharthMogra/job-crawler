@@ -37,6 +37,7 @@ import {
   type ProfileHomeData,
 } from "@/lib/profile/map-profile"
 import {
+  collectAllPatchOperationIds,
   collectApprovedOperationIds,
   emptyReviewState,
   mapPendingPatchToReviewState,
@@ -78,6 +79,7 @@ interface ProfileFlowContextValue {
   loadProfileHome: (id: string) => Promise<void>
   handleProfileEdit: (section: EditSection, values: Record<string, unknown>) => Promise<void>
   handleResumeLabelSave: (resumeId: string, label: string | null) => Promise<void>
+  uploadResumeInline: (file: File) => Promise<void>
   resetForNewResume: () => void
   loadPendingReview: (id: string) => Promise<void>
   openJobIntent: () => void
@@ -366,6 +368,50 @@ export function ProfileFlowProvider({
     router.push("/profile/upload")
   }, [router])
 
+  const uploadResumeInline = useCallback(
+    async (selected: File) => {
+      setUploadError(null)
+
+      if (mockMode) {
+        setProfileHome((prev) => {
+          const base = prev ?? buildMockProfileHome(defaultMockJobIntent())
+          const newResume = {
+            id: `mock-resume-${Date.now()}`,
+            originalFilename: selected.name,
+            displayLabel: null as string | null,
+            uploadedAt: new Date().toISOString(),
+            fileSizeBytes: selected.size,
+          }
+          const resumes = [newResume, ...base.resumes]
+          return { ...base, resumes, resumeCount: resumes.length }
+        })
+        setHasExistingProfile(true)
+        return
+      }
+
+      async function discardPendingIfAny() {
+        try {
+          const pending = await getPendingPatch(candidateId)
+          await discardPatch(candidateId, pending.patch_id)
+        } catch (err) {
+          if (err instanceof ApiError && err.status === 404) return
+          throw err
+        }
+      }
+
+      await discardPendingIfAny()
+
+      const result = await uploadResume(candidateId, selected)
+      const pending = await getPendingPatch(candidateId)
+      const approvedIds = collectAllPatchOperationIds(pending)
+      if (approvedIds.length > 0) {
+        await commitPatch(candidateId, result.patch_id, approvedIds)
+      }
+      await loadProfileHome(candidateId)
+    },
+    [mockMode, candidateId, loadProfileHome],
+  )
+
   const openJobIntent = useCallback(() => {
     if (rawProfile) {
       setJobIntent(profileToJobIntent(rawProfile))
@@ -398,6 +444,7 @@ export function ProfileFlowProvider({
       loadProfileHome,
       handleProfileEdit,
       handleResumeLabelSave,
+      uploadResumeInline,
       resetForNewResume,
       loadPendingReview,
       openJobIntent,
@@ -423,6 +470,7 @@ export function ProfileFlowProvider({
       loadProfileHome,
       handleProfileEdit,
       handleResumeLabelSave,
+      uploadResumeInline,
       resetForNewResume,
       loadPendingReview,
       openJobIntent,

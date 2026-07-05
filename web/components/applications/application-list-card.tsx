@@ -1,11 +1,13 @@
 "use client"
 
-import { ExternalLink } from "lucide-react"
+import { ChevronDown, ExternalLink } from "lucide-react"
 import { CompanyLogo } from "@/components/company-logo"
 import {
+  CARD_STATUS_OPTIONS,
   formatAppliedDate,
   PIPELINE_STATUS_LABELS,
   PIPELINE_STATUS_STYLES,
+  type ApplicationPipelineStatus,
   type ApplicationRecord,
 } from "@/lib/applications/pipeline-status"
 import { REMOTE_LABEL } from "@/lib/job-meta"
@@ -13,10 +15,10 @@ import { cn } from "@/lib/utils"
 
 export function ApplicationListCard({
   record,
-  onWithdraw,
+  onStatusChange,
 }: {
   record: ApplicationRecord
-  onWithdraw: () => void
+  onStatusChange: (status: ApplicationPipelineStatus) => void
 }) {
   const { job, status, appliedAt } = record
   const statusStyle = PIPELINE_STATUS_STYLES[status]
@@ -55,7 +57,7 @@ export function ApplicationListCard({
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2 xl:pl-4">
+        <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center xl:pl-4">
           <a
             href={job.posting_url}
             target="_blank"
@@ -65,13 +67,29 @@ export function ApplicationListCard({
             View posting
             <ExternalLink className="size-3.5" />
           </a>
-          <button
-            type="button"
-            onClick={onWithdraw}
-            className="inline-flex h-10 min-w-[132px] flex-1 items-center justify-center rounded-xl border border-border/70 bg-card px-4 text-sm font-semibold text-foreground/80 transition-colors hover:bg-muted/50 xl:flex-none"
-          >
-            Withdraw
-          </button>
+          <label className="relative inline-flex h-10 min-w-[180px] flex-1 xl:flex-none">
+            <span className="sr-only">Application stage</span>
+            <select
+              value={status}
+              onChange={(event) =>
+                onStatusChange(event.target.value as ApplicationPipelineStatus)
+              }
+              className={cn(
+                "h-full w-full appearance-none rounded-xl border border-border/70 bg-card pl-3.5 pr-9 text-sm font-semibold text-foreground shadow-sm transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+                statusStyle.badge,
+              )}
+            >
+              {CARD_STATUS_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {PIPELINE_STATUS_LABELS[option]}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden="true"
+            />
+          </label>
         </div>
       </div>
     </article>

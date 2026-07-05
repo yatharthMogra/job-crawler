@@ -1,5 +1,5 @@
 import { BrandLogo } from "@/components/brand-logo"
-import { domainFromWebsite } from "@/lib/brand-logos"
+import { domainFromWebsite, resolveBrandDomain } from "@/lib/brand-logos"
 
 interface CompanyLogoProps {
   company: string
@@ -19,7 +19,8 @@ export function CompanyLogo({
   website,
   domain,
 }: CompanyLogoProps) {
-  const resolvedDomain = domain ?? domainFromWebsite(website)
+  const resolvedDomain =
+    domain ?? domainFromWebsite(website) ?? resolveBrandDomain(company, "company")
 
   return (
     <BrandLogo

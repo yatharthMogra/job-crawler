@@ -406,6 +406,18 @@ export function collectApprovedOperationIds(state: ReviewState): string[] {
   return ids
 }
 
+export function collectAllPatchOperationIds(pending: PendingPatchResponse): string[] {
+  return [
+    ...pending.skills,
+    ...pending.experiences,
+    ...pending.projects,
+    ...pending.certifications,
+    ...pending.education,
+    ...pending.constraints,
+    ...pending.preferences,
+  ].map((op) => op.id)
+}
+
 export function emptyReviewState(): ReviewState {
   return {
     skills: [],

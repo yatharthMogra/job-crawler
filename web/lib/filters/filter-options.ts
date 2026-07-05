@@ -53,16 +53,28 @@ export const EXPERIENCE_TIERS = [
 
 export const WORK_ARRANGEMENTS = [
   {
-    id: "remote",
-    label: "Remote-First",
-    description: "Fully distributed or remote-friendly teams",
-    models: ["Remote"],
+    id: "any",
+    label: "Anywhere",
+    description: "Open to any work arrangement",
+    models: [] as string[],
+  },
+  {
+    id: "onsite",
+    label: "Onsite",
+    description: "In-office roles",
+    models: ["Onsite"],
   },
   {
     id: "hybrid",
-    label: "Hybrid / On-site",
-    description: "Office presence or hybrid schedules",
-    models: ["Hybrid", "Onsite"],
+    label: "Hybrid",
+    description: "Mix of office and remote",
+    models: ["Hybrid"],
+  },
+  {
+    id: "remote",
+    label: "Remote anywhere in USA",
+    description: "Fully remote within the United States",
+    models: ["Remote"],
   },
 ] as const
 

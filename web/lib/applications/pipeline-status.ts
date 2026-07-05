@@ -1,13 +1,26 @@
 import type { JobWithRole } from "@/lib/jobs-data"
 
-export type ApplicationPipelineStatus = "submitted" | "under_review" | "interview" | "offer"
+export type ApplicationPipelineStatus =
+  | "submitted"
+  | "under_review"
+  | "online_assessment"
+  | "interview"
+  | "offer"
 
 export const PIPELINE_STATUS_LABELS: Record<ApplicationPipelineStatus, string> = {
-  submitted: "Applied",
+  submitted: "Active",
   under_review: "Under review",
-  interview: "Interviewing",
+  online_assessment: "Online assessment",
+  interview: "Interview",
   offer: "Offer",
 }
+
+export const CARD_STATUS_OPTIONS: ApplicationPipelineStatus[] = [
+  "submitted",
+  "under_review",
+  "online_assessment",
+  "interview",
+]
 
 export const PIPELINE_STATUS_STYLES: Record<
   ApplicationPipelineStatus,
@@ -19,6 +32,10 @@ export const PIPELINE_STATUS_STYLES: Record<
   },
   under_review: {
     badge: "bg-sky-500/10 text-sky-800",
+    counter: "text-foreground",
+  },
+  online_assessment: {
+    badge: "bg-violet-500/10 text-violet-800",
     counter: "text-foreground",
   },
   interview: {
@@ -39,35 +56,38 @@ export interface ApplicationRecord {
   appliedAt: string
 }
 
-function hashId(id: string): number {
-  return id.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0)
-}
-
 function mapApiStatus(status: string | undefined): ApplicationPipelineStatus {
-  const value = (status ?? "").toLowerCase()
+  const value = (status ?? "").toLowerCase().replace(/-/g, "_").trim()
+  if (!value || value === "applied" || value === "submitted" || value === "active") {
+    return "submitted"
+  }
+  if (value.includes("online") || value.includes("assessment") || value === "oa") {
+    return "online_assessment"
+  }
   if (value.includes("interview")) return "interview"
   if (value.includes("offer")) return "offer"
   if (value.includes("review") || value.includes("screen")) return "under_review"
   return "submitted"
 }
 
+export function toApiStatus(status: ApplicationPipelineStatus): string {
+  if (status === "submitted") return "applied"
+  return status
+}
+
 export function derivePipelineStatus(
   job: JobWithRole,
   apiStatus?: string,
 ): ApplicationPipelineStatus {
-  if (apiStatus) return mapApiStatus(apiStatus)
-  const bucket = hashId(job.id) % 10
-  if (bucket >= 8) return "interview"
-  if (bucket >= 5) return "under_review"
+  if (apiStatus ?? job.application_status) {
+    return mapApiStatus(apiStatus ?? job.application_status)
+  }
   return "submitted"
 }
 
 export function deriveAppliedAt(job: JobWithRole): string {
   if (job.posted_at) return job.posted_at
-  const daysAgo = (hashId(job.id) % 14) + 1
-  const date = new Date()
-  date.setDate(date.getDate() - daysAgo)
-  return date.toISOString()
+  return new Date().toISOString()
 }
 
 export function toApplicationRecord(
@@ -87,6 +107,7 @@ export function countByStatus(records: ApplicationRecord[]) {
     all: records.length,
     submitted: records.filter((r) => r.status === "submitted").length,
     under_review: records.filter((r) => r.status === "under_review").length,
+    online_assessment: records.filter((r) => r.status === "online_assessment").length,
     interview: records.filter((r) => r.status === "interview").length,
     offer: records.filter((r) => r.status === "offer").length,
   }

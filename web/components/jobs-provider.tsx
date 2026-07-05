@@ -15,15 +15,23 @@ import {
   clearPendingApply,
   getPendingApply,
   loadAppliedIds,
+  loadApplicationStatuses,
   loadHiddenIds,
   loadSavedIds,
   persistAppliedIds,
+  persistApplicationStatus,
   persistHiddenIds,
   persistSavedIds,
   setPendingApply,
   type PendingApply,
 } from "@/lib/job-storage"
-import { fetchApplications, fetchDashboardJobs, fetchRecommendedJobs, applyToJob } from "@/lib/recommendation/api"
+import {
+  fetchApplications,
+  fetchDashboardJobs,
+  fetchRecommendedJobs,
+  applyToJob,
+  patchApplication,
+} from "@/lib/recommendation/api"
 import { mapApplicationToUi } from "@/lib/recommendation/map-application"
 import { mapApiJobToUi, mapRecommendedApiJob } from "@/lib/recommendation/map-job"
 import { syncSubscriptionsForCandidate } from "@/lib/recommendation/sync-subscriptions"
@@ -34,6 +42,10 @@ import {
 } from "@/lib/job-feedback"
 import { useMockData } from "@/lib/session"
 import { ALL_JOBS } from "@/lib/jobs-data"
+import {
+  toApiStatus,
+  type ApplicationPipelineStatus,
+} from "@/lib/applications/pipeline-status"
 
 import type { EmploymentTypeFilter } from "@/lib/employment-type-filter"
 import type { SeniorityLevel } from "@/lib/jobs-data"
@@ -77,6 +89,7 @@ interface JobsContextValue {
   toggleSave: (id: string) => void
   markApplied: (id: string) => void
   unmarkApplied: (id: string) => void
+  updateApplicationStatus: (jobId: string, status: ApplicationPipelineStatus) => void
   startApply: (job: JobWithRole) => void
   resolvePendingApply: (applied: boolean) => void
   hideJob: (id: string) => void
@@ -124,13 +137,20 @@ export function JobsProvider({ children }: { children: ReactNode }) {
 
     if (mockMode) {
       const mockApplied = loadAppliedIds(candidateId)
+      const mockStatuses = loadApplicationStatuses(candidateId)
       setAppliedIds(mockApplied)
       setAllJobs(ALL_JOBS as JobWithRole[])
       setRecommendedJobs(
         [...(ALL_JOBS as JobWithRole[])].sort((a, b) => b.personal_score - a.personal_score),
       )
       setAppliedJobs(
-        (ALL_JOBS as JobWithRole[]).filter((job) => mockApplied.has(job.id)),
+        (ALL_JOBS as JobWithRole[])
+          .filter((job) => mockApplied.has(job.id))
+          .map((job) => ({
+            ...job,
+            is_applied: true,
+            application_status: mockStatuses[job.id] ?? "applied",
+          })),
       )
       setLoading(false)
       setRecommendedLoading(false)
@@ -232,7 +252,7 @@ export function JobsProvider({ children }: { children: ReactNode }) {
             allJobs.find((job) => job.id === id) ??
             recommendedJobs.find((job) => job.id === id)
           if (!fromCatalog) return prev
-          return [{ ...fromCatalog, is_applied: true }, ...prev]
+          return [{ ...fromCatalog, is_applied: true, application_status: "applied" }, ...prev]
         })
         clearPendingApply(candidateId)
         setPendingApplyState(null)
@@ -284,6 +304,51 @@ export function JobsProvider({ children }: { children: ReactNode }) {
       setSelectedJobId((current) => (current === id ? null : current))
     },
     [candidateId],
+  )
+
+  const updateApplicationStatus = useCallback(
+    (jobId: string, status: ApplicationPipelineStatus) => {
+      if (!candidateId) return
+      const apiStatus = toApiStatus(status)
+
+      if (mockMode) {
+        persistApplicationStatus(candidateId, jobId, apiStatus)
+      }
+
+      setAppliedJobs((prev) => {
+        const existing =
+          prev.find((job) => job.id === jobId) ??
+          allJobs.find((job) => job.id === jobId) ??
+          recommendedJobs.find((job) => job.id === jobId)
+        if (!existing) return prev
+
+        const updatedJob = {
+          ...existing,
+          is_applied: true,
+          application_status: apiStatus,
+        }
+        const withoutDup = prev.filter((job) => job.id !== jobId)
+        const next = [updatedJob, ...withoutDup]
+
+        if (!mockMode) {
+          const applicationId = existing.application_id
+          if (applicationId) {
+            void patchApplication(candidateId, applicationId, { status: apiStatus })
+              .then((updated) => {
+                const mapped = mapApplicationToUi(updated)
+                setAppliedJobs((current) => {
+                  const rest = current.filter((job) => job.id !== jobId)
+                  return [mapped, ...rest]
+                })
+              })
+              .catch(() => undefined)
+          }
+        }
+
+        return next
+      })
+    },
+    [candidateId, mockMode, allJobs, recommendedJobs],
   )
 
   const startApply = useCallback(
@@ -405,6 +470,7 @@ export function JobsProvider({ children }: { children: ReactNode }) {
       toggleSave,
       markApplied,
       unmarkApplied,
+      updateApplicationStatus,
       startApply,
       resolvePendingApply,
       hideJob,
@@ -434,6 +500,7 @@ export function JobsProvider({ children }: { children: ReactNode }) {
       toggleSave,
       markApplied,
       unmarkApplied,
+      updateApplicationStatus,
       startApply,
       resolvePendingApply,
       hideJob,

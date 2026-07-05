@@ -314,7 +314,6 @@
 }
 
 .dashboard-shell-sidebar {
-  width: 220px;
   flex-shrink: 0;
   background-color: var(--sidebar);
   border-right: 1px solid var(--sidebar-border);

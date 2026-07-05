@@ -44,22 +44,6 @@ function salaryMatches(
   return true
 }
 
-function industryMatches(industries: string[], job: JobWithRole): boolean {
-  if (industries.length === 0) return true
-  const haystack = [job.roleCategory, job.company, job.title, ...(job.skills ?? [])]
-    .join(" ")
-    .toLowerCase()
-  return industries.some((industry) => haystack.includes(industry.toLowerCase()))
-}
-
-function skillsMatch(preferredSkills: string[], job: JobWithRole): boolean {
-  if (preferredSkills.length === 0) return true
-  const jobSkills = (job.skills ?? []).map((s) => s.toLowerCase())
-  return preferredSkills.some((skill) => {
-    const needle = skill.toLowerCase()
-    return jobSkills.some((s) => s.includes(needle) || needle.includes(s))
-  })
-}
 
 export function filterJobsByState(
   jobs: JobWithRole[],
@@ -75,8 +59,8 @@ export function filterJobsByState(
     if (!salaryMatches(job, minimumSalary, maximumSalary)) return false
     if (!remoteMatches(state.workModels, job.remote_type)) return false
     if (!seniorityMatches(state.experienceLevels, job.seniority_level)) return false
-    if (!industryMatches(state.preferredIndustries, job)) return false
-    if (!skillsMatch(state.preferredSkills, job)) return false
+    if (state.sponsorshipRequired && job.sponsorship_status !== "yes") return false
+    if (state.excludeUsCitizenOnly && job.sponsorship_status === "no") return false
     return true
   })
 }
