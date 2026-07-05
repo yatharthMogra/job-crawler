@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import Settings
 from app.ingestion.constants import EventCategory, EventSeverity, EventType, FailureReason, ProcessingState
 from app.ingestion.events import write_event
+from app.ingestion.gemini_error_log import record_gemini_error
 from app.ingestion.extractor.deterministic import extract_deterministic_fields
 from app.ingestion.extractor.llm import DEFAULT_ENRICHMENT, enrich_job_text
 from app.ingestion.extractor.text_cleaner import clean_job_description
@@ -163,13 +164,24 @@ async def reprocess_jobs(
                 input_tokens = llm_result.input_tokens
                 output_tokens = llm_result.output_tokens
                 latency_ms = llm_result.latency_ms
-            except Exception:  # noqa: BLE001
+            except Exception as exc:  # noqa: BLE001
                 enrichment = DEFAULT_ENRICHMENT
                 failure_reason = FailureReason.LLM_SCHEMA_MISMATCH
                 status = "failed"
                 input_tokens = 0
                 output_tokens = 0
                 latency_ms = 0
+                await record_gemini_error(
+                    db,
+                    exc=exc,
+                    assigned_failure_reason=failure_reason,
+                    call_site="reprocessor",
+                    llm_provider=settings.llm_provider,
+                    llm_model=settings.gemini_model if settings.llm_provider == "gemini" else None,
+                    company_id=company.id,
+                    normalized_job_ids=[normalized.id],
+                    batch_size=1,
+                )
 
         recommendation_fields: dict = {}
         if status == "success":

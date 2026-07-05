@@ -15,6 +15,8 @@ from app.ingestion.company_enrichment.llm import (
     CompanyEnrichmentResult,
 )
 from app.ingestion.company_enrichment.resolver import resolve_company_website
+from app.ingestion.constants import FailureReason
+from app.ingestion.gemini_error_log import record_gemini_error
 from app.llm.factory import get_llm_provider
 from app.models.company import Company
 from app.models.company_enrichment import CompanyEnrichment
@@ -49,11 +51,24 @@ async def enrich_company(
         f"Known website: {website}\n\n"
         f"About page text:\n{about_text}"
     )
-    result = await provider.complete(
-        COMPANY_ENRICHMENT_SYSTEM_PROMPT,
-        user_prompt,
-        CompanyEnrichmentResult,
-    )
+    try:
+        result = await provider.complete(
+            COMPANY_ENRICHMENT_SYSTEM_PROMPT,
+            user_prompt,
+            CompanyEnrichmentResult,
+        )
+    except Exception as exc:
+        await record_gemini_error(
+            db,
+            exc=exc,
+            assigned_failure_reason=FailureReason.LLM_SCHEMA_MISMATCH,
+            call_site="company_enrichment",
+            llm_provider=settings.llm_provider,
+            llm_model=settings.gemini_model if settings.llm_provider == "gemini" else None,
+            company_id=company.id,
+            batch_size=1,
+        )
+        raise
     enrichment = result.output
     if enrichment.website is None:
         enrichment = enrichment.model_copy(update={"website": website})

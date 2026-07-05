@@ -23,6 +23,7 @@ from app.ingestion.extractor.llm import (
 from app.ingestion.extractor.seniority import build_batch_job_payload
 from app.ingestion.extractor.text_cleaner import clean_job_description
 from app.ingestion.enrichment_worker_capacity import WorkerCapacityTracker
+from app.ingestion.gemini_error_log import record_gemini_error, resolve_batch_assigned_failure_reason
 from app.ingestion.job_archive_sync import update_job_archive_after_enrichment
 from app.ingestion.job_freshness import FreshnessVerdict, refresh_posted_at_verdict
 from app.ingestion.job_purge import PurgeTarget, purge_normalized_jobs
@@ -983,6 +984,24 @@ async def _process_batch(
         retryable = _is_transient_rate_limit(message)
         schema_error = _is_schema_validation_error(message)
         provider_capacity = _is_provider_capacity_error(message)
+        assigned_failure_reason = resolve_batch_assigned_failure_reason(
+            provider_capacity=provider_capacity,
+            daily_quota=daily_quota,
+            schema_error=schema_error,
+            stop_on_daily_quota=settings.enrichment_stop_on_daily_quota,
+        )
+        await record_gemini_error(
+            db,
+            exc=exc,
+            assigned_failure_reason=assigned_failure_reason,
+            call_site="enrichment_batch",
+            llm_provider=settings.llm_provider,
+            llm_model=settings.gemini_model if settings.llm_provider == "gemini" else None,
+            enrichment_batch_id=batch.id,
+            normalized_job_ids=[row.normalized.id for row in batch_items],
+            batch_size=len(batch_items),
+            source=source,
+        )
         if daily_quota and capacity is not None:
             await capacity.dispatch_daily_quota(db)
         elif retryable and not daily_quota and capacity is not None:
