@@ -19,7 +19,7 @@ REPO="${ARTIFACT_REPO:-job-crawler}"
 REGISTRY="${REGION}-docker.pkg.dev/${PROJECT}/${REPO}"
 
 # Production frontends — job-scout.dev is primary; keep legacy during transition.
-CORS_ORIGINS="https://job-scout.dev,https://carrier-match-gcp.vercel.app"
+CORS_ORIGINS="https://job-scout.dev"
 
 # Docker folder name (underscore) -> Cloud Run service name (dash)
 cloud_run_name() {

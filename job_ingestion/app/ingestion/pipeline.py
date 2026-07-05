@@ -93,6 +93,7 @@ class CompanyRunOutcome:
     jobs_removed: int = 0
     jobs_deduped: int = 0
     jobs_ledger_skipped: int = 0
+    jobs_ledger_baselined: int = 0
     jobs_rejected_stale_fetch: int = 0
     jobs_rejected_stale_pipeline: int = 0
     error_message: Optional[str] = None
@@ -150,6 +151,14 @@ async def _normalized_map_for_company(db: AsyncSession, company_id: Any) -> dict
 
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def _is_baseline_run(
+    ledger_hashes: dict[str, str],
+    raw_hashes: dict[str, str],
+    normalized_by_external_id: dict[str, NormalizedJob],
+) -> bool:
+    return not ledger_hashes and not raw_hashes and not normalized_by_external_id
 
 
 def _resolve_terminal_status(successful_companies: int, failed_companies: int) -> TerminalRunStatus:
@@ -295,6 +304,7 @@ async def process_company_raw_jobs(
     raw_hashes = await _latest_hashes_for_company(db, company.id)
     previous_hashes = {**raw_hashes, **ledger_hashes}
     normalized_by_external_id = await _normalized_map_for_company(db, company.id)
+    is_baseline = _is_baseline_run(ledger_hashes, raw_hashes, normalized_by_external_id)
     active_ids = {job_id for job_id, row in normalized_by_external_id.items() if row.is_active}
     classified = classify_jobs(raw_jobs, previous_hashes, active_ids)
     outcome.jobs_new = len(classified.new)
@@ -307,10 +317,31 @@ async def process_company_raw_jobs(
     for job in changed_jobs:
         content_hash = compute_content_hash(job)
         deterministic_fields = extract_deterministic_fields(job, platform=company.platform)
-        if (
-            classify_posted_at(deterministic_fields.get("posted_at"), settings=settings)
-            == FreshnessVerdict.STALE
-        ):
+        external_id = deterministic_fields["external_job_id"]
+        freshness = classify_posted_at(deterministic_fields.get("posted_at"), settings=settings)
+        if is_baseline and freshness != FreshnessVerdict.FRESH:
+            await upsert_ledger_entry(
+                db,
+                company.id,
+                external_id,
+                content_hash,
+                seen_at=now,
+            )
+            ledger_hashes[external_id] = content_hash
+            outcome.jobs_ledger_baselined += 1
+            if external_id in new_external_ids:
+                outcome.jobs_new -= 1
+            else:
+                outcome.jobs_updated -= 1
+            if structlog:
+                logger.info(
+                    "job_ledger_baselined",
+                    company_id=str(company.id),
+                    external_job_id=external_id,
+                    freshness=freshness.value,
+                )
+            continue
+        if freshness == FreshnessVerdict.STALE:
             outcome.jobs_rejected_stale_pipeline += 1
             continue
         company_name = deterministic_fields.get("company_name") or company.name
@@ -481,10 +512,15 @@ async def _process_single_company(
                 pipeline_run_id=pipeline_run_id,
             )
 
+            ledger_hashes = await load_ledger_hashes(db, company.id)
+            raw_hashes = await _latest_hashes_for_company(db, company.id)
+            normalized_map = await _normalized_map_for_company(db, company.id)
+            baseline_run = _is_baseline_run(ledger_hashes, raw_hashes, normalized_map)
             raw_jobs, rejected_stale_fetch = await fetch_company_jobs(
                 company,
                 known_raw_by_id=await _latest_raw_by_external_id(db, company.id),
                 known_raw_fetched_at=await _latest_raw_fetch_times(db, company.id),
+                baseline_run=baseline_run,
             )
             outcome.jobs_rejected_stale_fetch = rejected_stale_fetch
             processed = await process_company_raw_jobs(
@@ -501,6 +537,7 @@ async def _process_single_company(
             outcome.jobs_removed = processed.jobs_removed
             outcome.jobs_deduped = processed.jobs_deduped
             outcome.jobs_ledger_skipped = processed.jobs_ledger_skipped
+            outcome.jobs_ledger_baselined = processed.jobs_ledger_baselined
             outcome.jobs_rejected_stale_pipeline = processed.jobs_rejected_stale_pipeline
         except Exception as exc:  # noqa: BLE001
             outcome.status = "failed"

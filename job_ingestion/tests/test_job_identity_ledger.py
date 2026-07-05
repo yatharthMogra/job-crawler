@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import timezone
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
@@ -194,7 +194,7 @@ async def test_process_company_raw_jobs_reingests_on_hash_mismatch(monkeypatch) 
 
 
 @pytest.mark.asyncio
-async def test_process_company_raw_jobs_writes_ledger_on_first_ingest(monkeypatch) -> None:
+async def test_process_company_raw_jobs_baseline_ledgers_unknown_posted_at(monkeypatch) -> None:
     company = _company()
     job = {"id": "job-new", "title": "Engineer", "content": "<p>New role</p>"}
 
@@ -227,6 +227,129 @@ async def test_process_company_raw_jobs_writes_ledger_on_first_ingest(monkeypatc
         settings=Settings(),
     )
 
-    assert outcome.jobs_new == 1
+    assert outcome.jobs_new == 0
+    assert outcome.jobs_ledger_baselined == 1
     assert outcome.jobs_ledger_skipped == 0
+    db.add.assert_not_called()
+    upsert_mock.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_process_company_raw_jobs_baseline_ingests_fresh_jobs(monkeypatch) -> None:
+    company = _company()
+    reference = datetime.now(timezone.utc)
+    job = {
+        "id": "job-fresh",
+        "title": "Engineer",
+        "content": "<p>Fresh role</p>",
+        "created_at": (reference - timedelta(days=2)).isoformat().replace("+00:00", "Z"),
+    }
+
+    monkeypatch.setattr(pipeline, "load_ledger_hashes", AsyncMock(return_value={}))
+    monkeypatch.setattr(pipeline, "_latest_hashes_for_company", AsyncMock(return_value={}))
+    monkeypatch.setattr(pipeline, "_normalized_map_for_company", AsyncMock(return_value={}))
+    monkeypatch.setattr(pipeline, "fingerprint_exists", AsyncMock(return_value=False))
+    monkeypatch.setattr(
+        pipeline,
+        "upsert_job_archive_from_deterministic",
+        AsyncMock(return_value=uuid4()),
+    )
+    monkeypatch.setattr(
+        pipeline,
+        "_upsert_normalized_core",
+        AsyncMock(return_value=SimpleNamespace(id=uuid4())),
+    )
+    monkeypatch.setattr(pipeline, "queue_job_for_enrichment", AsyncMock())
+    upsert_mock = AsyncMock()
+    monkeypatch.setattr(pipeline, "upsert_ledger_entry", upsert_mock)
+
+    db = MagicMock()
+    db.flush = AsyncMock()
+
+    outcome = await pipeline.process_company_raw_jobs(
+        db,
+        company,
+        [job],
+        pipeline_run_id=uuid4(),
+        settings=Settings(),
+    )
+
+    assert outcome.jobs_new == 1
+    assert outcome.jobs_ledger_baselined == 0
+    db.add.assert_called_once()
+    upsert_mock.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_process_company_raw_jobs_baseline_ledgers_stale_jobs(monkeypatch) -> None:
+    company = _company()
+    reference = datetime.now(timezone.utc)
+    job = {
+        "id": "job-stale",
+        "title": "Engineer",
+        "content": "<p>Old role</p>",
+        "created_at": (reference - timedelta(days=30)).isoformat().replace("+00:00", "Z"),
+    }
+
+    monkeypatch.setattr(pipeline, "load_ledger_hashes", AsyncMock(return_value={}))
+    monkeypatch.setattr(pipeline, "_latest_hashes_for_company", AsyncMock(return_value={}))
+    monkeypatch.setattr(pipeline, "_normalized_map_for_company", AsyncMock(return_value={}))
+    monkeypatch.setattr(pipeline, "fingerprint_exists", AsyncMock(return_value=False))
+    upsert_mock = AsyncMock()
+    monkeypatch.setattr(pipeline, "upsert_ledger_entry", upsert_mock)
+
+    db = MagicMock()
+
+    outcome = await pipeline.process_company_raw_jobs(
+        db,
+        company,
+        [job],
+        pipeline_run_id=uuid4(),
+        settings=Settings(),
+    )
+
+    assert outcome.jobs_new == 0
+    assert outcome.jobs_ledger_baselined == 1
+    assert outcome.jobs_rejected_stale_pipeline == 0
+    db.add.assert_not_called()
+    upsert_mock.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_process_company_raw_jobs_second_run_ingests_new_jobs(monkeypatch) -> None:
+    company = _company()
+    job = {"id": "job-new", "title": "Engineer", "content": "<p>New role</p>"}
+
+    monkeypatch.setattr(pipeline, "load_ledger_hashes", AsyncMock(return_value={"job-old": "existing-hash"}))
+    monkeypatch.setattr(pipeline, "_latest_hashes_for_company", AsyncMock(return_value={}))
+    monkeypatch.setattr(pipeline, "_normalized_map_for_company", AsyncMock(return_value={}))
+    monkeypatch.setattr(pipeline, "fingerprint_exists", AsyncMock(return_value=False))
+    monkeypatch.setattr(
+        pipeline,
+        "upsert_job_archive_from_deterministic",
+        AsyncMock(return_value=uuid4()),
+    )
+    monkeypatch.setattr(
+        pipeline,
+        "_upsert_normalized_core",
+        AsyncMock(return_value=SimpleNamespace(id=uuid4())),
+    )
+    monkeypatch.setattr(pipeline, "queue_job_for_enrichment", AsyncMock())
+    upsert_mock = AsyncMock()
+    monkeypatch.setattr(pipeline, "upsert_ledger_entry", upsert_mock)
+
+    db = MagicMock()
+    db.flush = AsyncMock()
+
+    outcome = await pipeline.process_company_raw_jobs(
+        db,
+        company,
+        [job],
+        pipeline_run_id=uuid4(),
+        settings=Settings(),
+    )
+
+    assert outcome.jobs_new == 1
+    assert outcome.jobs_ledger_baselined == 0
+    db.add.assert_called_once()
     upsert_mock.assert_awaited_once()

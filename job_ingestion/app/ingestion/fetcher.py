@@ -61,6 +61,7 @@ async def fetch_company_jobs(
     *,
     known_raw_by_id: dict[str, dict[str, Any]] | None = None,
     known_raw_fetched_at: dict[str, datetime] | None = None,
+    baseline_run: bool = False,
 ) -> tuple[list[dict[str, Any]], int]:
     if is_manual_push_company(company):
         from app.exceptions import ConnectorFetchError
@@ -78,5 +79,7 @@ async def fetch_company_jobs(
         )
     else:
         jobs = await connector.fetch_jobs(company)
+    if baseline_run:
+        return jobs, 0
     filtered, rejected = filter_fetched_jobs(jobs, company.platform)
     return filtered, rejected

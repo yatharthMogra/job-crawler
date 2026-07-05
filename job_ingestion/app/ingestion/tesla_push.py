@@ -118,6 +118,7 @@ async def run_tesla_manual_push(
         outcome.jobs_removed = processed.jobs_removed
         outcome.jobs_deduped = processed.jobs_deduped
         outcome.jobs_ledger_skipped = processed.jobs_ledger_skipped
+        outcome.jobs_ledger_baselined = processed.jobs_ledger_baselined
         outcome.jobs_rejected_stale_pipeline = processed.jobs_rejected_stale_pipeline
         run.status = "completed"
         run.successful_companies = 1
