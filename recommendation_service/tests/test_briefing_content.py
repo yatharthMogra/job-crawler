@@ -21,6 +21,7 @@ def _job(**kwargs) -> NormalizedJob:
         "location": "New York, NY",
         "posting_url": "https://example.com",
         "posted_at": now - timedelta(hours=2),
+        "reference_at": now - timedelta(hours=2),
         "is_active": True,
         "processing_state": "success",
         "seniority": "junior",

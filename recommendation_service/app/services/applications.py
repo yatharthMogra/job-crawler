@@ -4,7 +4,7 @@ import uuid
 from typing import Optional
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -78,6 +78,20 @@ async def get_user_applications(
         )
         for application, archive in rows
     ]
+
+
+async def applied_count_by_company(
+    db: AsyncSession,
+    candidate_id: uuid.UUID,
+) -> dict[str, int]:
+    rows = (
+        await db.execute(
+            select(func.lower(UserApplication.company_name), func.count())
+            .where(UserApplication.candidate_id == candidate_id)
+            .group_by(func.lower(UserApplication.company_name))
+        )
+    ).all()
+    return {company: count for company, count in rows if company}
 
 
 async def apply_to_job(

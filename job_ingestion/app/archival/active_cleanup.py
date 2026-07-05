@@ -30,8 +30,7 @@ async def run_active_cleanup(db: AsyncSession) -> dict:
     while True:
         result = await db.execute(
             select(NormalizedJob.id, NormalizedJob.raw_job_id, NormalizedJob.job_archive_id)
-            .where(NormalizedJob.posted_at < cutoff)
-            .where(NormalizedJob.posted_at.is_not(None))
+            .where(NormalizedJob.reference_at < cutoff)
             .limit(batch_size)
         )
         rows = result.all()

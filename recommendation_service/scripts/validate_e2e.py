@@ -54,7 +54,7 @@ async def run_ingestion_validation() -> tuple[int, uuid.UUID | None, str | None]
             job.application_effort = effort
             job.retrieval_pools = assign_retrieval_pools(roles, job.is_internship, job.is_new_grad)
             job.opportunity_score = compute_opportunity_score(
-                job.posted_at,
+                job.reference_at or job.posted_at or job.created_at,
                 job.salary_min,
                 job.salary_max,
                 effort,

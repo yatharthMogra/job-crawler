@@ -13,5 +13,4 @@ def test_build_notification_age_filter_applies_cutoff() -> None:
     assert len(filters) == 1
     cutoff = datetime.now(timezone.utc) - timedelta(days=7)
     clause = str(filters[0])
-    assert "posted_at" in clause
-    assert cutoff.strftime("%Y-%m-%d") in clause or "posted_at" in clause
+    assert "reference_at" in clause

@@ -37,13 +37,14 @@ def format_salary(job: NormalizedJob) -> str | None:
     return None
 
 
-def posted_ago(posted_at: datetime | None) -> str:
-    if posted_at is None:
+def posted_ago(job: NormalizedJob) -> str:
+    ts = job.reference_at or job.posted_at
+    if ts is None:
         return "Recently"
-    posted_at = _ensure_utc(posted_at)
-    hours = int((_utc_now() - posted_at).total_seconds() / 3600)
+    ts = _ensure_utc(ts)
+    hours = int((_utc_now() - ts).total_seconds() / 3600)
     if hours < 1:
-        minutes = max(int((_utc_now() - posted_at).total_seconds() / 60), 1)
+        minutes = max(int((_utc_now() - ts).total_seconds() / 60), 1)
         return f"{minutes}m ago"
     if hours < 24:
         return f"{hours}h ago"
@@ -70,9 +71,10 @@ def estimate_total_review_minutes(total_scanned: int) -> int:
 
 
 def _velocity_label(job: NormalizedJob) -> str:
-    if job.posted_at is None:
+    ts = job.reference_at or job.posted_at
+    if ts is None:
         return "Moderate activity"
-    hours = (_utc_now() - _ensure_utc(job.posted_at)).total_seconds() / 3600
+    hours = (_utc_now() - _ensure_utc(ts)).total_seconds() / 3600
     opp = job.opportunity_score or 0.0
     if hours <= 6 and opp >= 0.45:
         return "High velocity"
@@ -201,7 +203,7 @@ def build_job_card(
         "posting_url": job.posting_url or "#",
         "salary": format_salary(job),
         "location": job.location or "Location not specified",
-        "posted_ago": posted_ago(job.posted_at),
+        "posted_ago": posted_ago(job),
         "detected_after": detected_after(job),
         "summary": _summary_blurb(job, explanations, rank, score),
         "velocity": _velocity_label(job),

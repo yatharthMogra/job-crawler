@@ -286,6 +286,7 @@ def _serialize_job_detail(row: NormalizedJob, enrichment_out: list[JobEnrichment
         description_preview=row.description_preview,
         description_text=row.description_text,
         posted_at=row.posted_at,
+        reference_at=row.reference_at,
         is_active=row.is_active,
         consecutive_misses=row.consecutive_misses,
         last_seen_at=row.last_seen_at,

@@ -39,6 +39,7 @@ from app.ingestion.extractor.text_cleaner import build_description_preview, clea
 from app.ingestion.fetcher import fetch_company_jobs
 from app.ingestion.job_freshness import FreshnessVerdict, classify_posted_at
 from app.ingestion.job_field_limits import clamp_deterministic_fields
+from app.ingestion.job_timestamp import resolve_reference_at
 from app.ingestion.job_archive_sync import (
     upsert_job_archive_from_deterministic,
     upsert_job_archive_from_normalized,
@@ -213,6 +214,10 @@ async def _upsert_normalized_job(
         description_text=deterministic_fields.get("description_text"),
         description_preview=deterministic_fields.get("description_preview"),
         posted_at=deterministic_fields["posted_at"],
+        reference_at=resolve_reference_at(
+            deterministic_fields.get("posted_at"),
+            raw_row.fetch_timestamp,
+        ),
         is_active=True,
         consecutive_misses=0,
         last_seen_at=now,

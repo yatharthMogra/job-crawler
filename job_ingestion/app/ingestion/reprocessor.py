@@ -17,6 +17,7 @@ from app.ingestion.extractor.llm import DEFAULT_ENRICHMENT, enrich_job_text
 from app.ingestion.extractor.text_cleaner import clean_job_description
 from app.ingestion.job_freshness import FreshnessVerdict, classify_posted_at
 from app.ingestion.job_purge import PurgeTarget, purge_normalized_jobs
+from app.ingestion.job_timestamp import resolve_reference_at
 from app.ingestion.recommendation_fields import (
     assign_validated_retrieval_pools,
     compute_opportunity_score,
@@ -97,6 +98,10 @@ async def reprocess_jobs(
             normalized.department = extracted.get("department")
             normalized.posting_url = extracted.get("posting_url")
             normalized.posted_at = extracted.get("posted_at")
+            normalized.reference_at = resolve_reference_at(
+                normalized.posted_at,
+                raw_job.fetch_timestamp,
+            )
             normalized.employment_type = extracted.get("employment_type")
         except Exception:  # noqa: BLE001
             normalized.processing_state = ProcessingState.EXTRACTION_FAILED
@@ -195,7 +200,7 @@ async def reprocess_jobs(
             )
             computed_at = _utcnow()
             opportunity_score = compute_opportunity_score(
-                normalized.posted_at,
+                normalized.reference_at,
                 enrichment.salary_min,
                 enrichment.salary_max,
                 enrichment.application_effort,

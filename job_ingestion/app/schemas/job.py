@@ -31,6 +31,7 @@ class NormalizedJobDetailOut(NormalizedJobOut):
     external_job_id: str
     employment_type: Optional[str]
     posted_at: Optional[datetime]
+    reference_at: Optional[datetime]
     consecutive_misses: int
     last_seen_at: datetime
     extraction_version: str

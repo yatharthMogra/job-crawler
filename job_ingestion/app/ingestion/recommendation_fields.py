@@ -54,7 +54,7 @@ def _resolve_role_type(is_internship: bool, is_new_grad: bool) -> str:
 
 
 def compute_opportunity_score(
-    posted_at: datetime | None,
+    reference_at: datetime,
     salary_min: int | None,
     salary_max: int | None,
     application_effort: str | None,
@@ -62,7 +62,7 @@ def compute_opportunity_score(
     settings: Settings | None = None,
 ) -> float:
     settings = settings or get_settings()
-    freshness = _freshness_score(posted_at, decay=settings.opportunity_score_freshness_decay)
+    freshness = _freshness_score(reference_at, decay=settings.opportunity_score_freshness_decay)
     compensation = _compensation_score(
         salary_min,
         salary_max,
@@ -79,13 +79,11 @@ def compute_opportunity_score(
     )
 
 
-def _freshness_score(posted_at: datetime | None, *, decay: float) -> float:
-    if posted_at is None:
-        return 0.5
+def _freshness_score(reference_at: datetime, *, decay: float) -> float:
     now = datetime.now(timezone.utc)
-    if posted_at.tzinfo is None:
-        posted_at = posted_at.replace(tzinfo=timezone.utc)
-    hours_old = max(0.0, (now - posted_at).total_seconds() / 3600)
+    if reference_at.tzinfo is None:
+        reference_at = reference_at.replace(tzinfo=timezone.utc)
+    hours_old = max(0.0, (now - reference_at).total_seconds() / 3600)
     return math.exp(-decay * hours_old)
 
 

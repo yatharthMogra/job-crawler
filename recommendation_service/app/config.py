@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -9,6 +10,10 @@ class Settings(BaseSettings):
     notification_cadence_minutes: int | None = None
     enable_notification_scheduler: bool = True
     notification_retrieval_limit: int = 500
+    recommendation_retrieval_limit: int | None = None
+    recommendation_pool_floor_ratio: float = 0.1
+    recommendation_max_company_share: float = 0.03
+    recommendation_company_unlock_batch: int = 5
     notification_jobs_per_email: int = 4
     notification_max_jobs_per_company: int = 1
     job_max_age_days: int = 7
@@ -54,6 +59,16 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         case_sensitive=False,
     )
+
+    @model_validator(mode="after")
+    def _sync_retrieval_limit(self) -> "Settings":
+        if self.recommendation_retrieval_limit is None:
+            self.recommendation_retrieval_limit = self.notification_retrieval_limit
+        return self
+
+    @property
+    def effective_retrieval_limit(self) -> int:
+        return self.recommendation_retrieval_limit or self.notification_retrieval_limit
 
     @property
     def allowed_cors_origins(self) -> list[str]:

@@ -54,7 +54,7 @@ export function mapApiJobToUi(
     remote_type: remote,
     application_effort: effort,
     posting_url: job.posting_url ?? "#",
-    posted_at: job.posted_at ?? new Date().toISOString(),
+    posted_at: job.posted_at!,
     opportunity_score: job.opportunity_score ?? 0,
     personal_score: extras?.personal_score ?? job.opportunity_score ?? 0,
     match_reasons: matchReasons,

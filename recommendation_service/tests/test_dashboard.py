@@ -17,6 +17,8 @@ def _job(**kwargs) -> NormalizedJob:
         "description_text": "Build scalable backend services.",
         "description_preview": "Build scalable backend services.",
         "posted_at": datetime.now(timezone.utc),
+        "reference_at": datetime.now(timezone.utc),
+        "experience_tier": "JUNIOR",
         "is_active": True,
         "processing_state": "success",
         "seniority": "JUNIOR",

@@ -78,6 +78,7 @@ class NormalizedJob(Base):
     description_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     description_preview: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     posted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    reference_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False)
     processing_state: Mapped[str] = mapped_column(String(32), nullable=False)
     seniority: Mapped[str] = mapped_column(String(64), nullable=False)

@@ -10,8 +10,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import Settings, get_settings
 from app.database import get_db
 from app.models.shared import NormalizedJob
-from app.notification.ranker import deduplicate_ranked_jobs, rank_jobs
-from app.notification.retrieval import build_constraint_filters, query_jobs_in_pools
+from app.notification.ranker import deduplicate_ranked_jobs, rank_jobs, select_diversified_jobs
+from app.notification.retrieval import (
+    build_constraint_filters,
+    fetch_jobs_with_pool_floors,
+    query_jobs_in_pools,
+)
 from app.scoring.explainability import generate_explanations
 from app.scoring.sponsorship import h1b_info_from_lookup
 from app.schemas.applications import (
@@ -27,7 +31,12 @@ from app.schemas.dashboard import (
     DashboardRecommendedJobsResponse,
     H1BSponsorshipInfo,
 )
-from app.services.applications import apply_to_job, get_user_applications, patch_application
+from app.services.applications import (
+    applied_count_by_company,
+    apply_to_job,
+    get_user_applications,
+    patch_application,
+)
 from app.services.company_enrichment_lookup import load_company_enrichment_lookup
 from app.services.h1b_lookup import H1bLookup, load_h1b_summary_lookup
 from app.services.h1b_pool_family import pool_family_from_roles
@@ -59,6 +68,10 @@ def _h1b_sponsorship_for_job(
     )
 
 
+def _canonical_posted_at(job: NormalizedJob):
+    return job.reference_at or job.posted_at
+
+
 def _job_to_out(
     job: NormalizedJob,
     *,
@@ -73,7 +86,7 @@ def _job_to_out(
         posting_url=job.posting_url,
         description_text=job.description_text,
         description_preview=job.description_preview,
-        posted_at=job.posted_at,
+        posted_at=_canonical_posted_at(job),
         remote_type=job.remote_type,
         application_effort=job.application_effort,
         salary_min=job.salary_min,
@@ -196,28 +209,6 @@ async def get_dashboard_jobs(
     return DashboardJobsResponse(jobs=jobs_out, total=total)
 
 
-async def _fetch_all_pool_jobs(
-    db: AsyncSession,
-    *,
-    pools: list[str],
-    filters: list,
-    cap: int,
-) -> list[NormalizedJob]:
-    all_jobs: list[NormalizedJob] = []
-    offset = 0
-    while len(all_jobs) < cap:
-        chunk = await query_jobs_in_pools(
-            db, pools=pools, filters=filters, limit=min(200, cap - len(all_jobs)), offset=offset
-        )
-        if not chunk:
-            break
-        all_jobs.extend(chunk)
-        offset += len(chunk)
-        if len(chunk) < 200:
-            break
-    return all_jobs
-
-
 @router.get("/jobs/recommended", response_model=DashboardRecommendedJobsResponse)
 async def get_recommended_jobs(
     candidate_id: uuid.UUID = Query(...),
@@ -235,8 +226,14 @@ async def get_recommended_jobs(
         return DashboardRecommendedJobsResponse(jobs=[], total=0)
 
     filters = build_constraint_filters(user_profile, settings)
-    cap = settings.notification_retrieval_limit
-    all_jobs = await _fetch_all_pool_jobs(db, pools=pools, filters=filters, cap=cap)
+    cap = settings.effective_retrieval_limit
+    all_jobs = await fetch_jobs_with_pool_floors(
+        db,
+        pools=pools,
+        filters=filters,
+        cap=cap,
+        floor_ratio=settings.recommendation_pool_floor_ratio,
+    )
 
     needs_sponsorship = _needs_sponsorship_data(user_profile)
     h1b_lookup, company_lookup = await _load_job_enrichment_lookups(
@@ -246,8 +243,16 @@ async def get_recommended_jobs(
     ranked = deduplicate_ranked_jobs(
         rank_jobs(all_jobs, user_profile, settings, h1b_lookup=scoring_lookup)
     )
-    total = len(ranked)
-    page = ranked[offset : offset + limit]
+    applied_counts = await applied_count_by_company(db, candidate_id)
+    diversified = select_diversified_jobs(
+        ranked,
+        cap,
+        applied_count_by_company=applied_counts,
+        max_share=settings.recommendation_max_company_share,
+        unlock_batch_size=settings.recommendation_company_unlock_batch,
+    )
+    total = len(diversified)
+    page = diversified[offset : offset + limit]
 
     jobs_out: list[DashboardRecommendedJobOut] = []
     for job, score in page:

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import math
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
+from uuid import UUID
 
 from sqlalchemy import and_, not_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,15 +29,113 @@ def build_notification_age_filter(settings: Settings) -> list[Any]:
     if days <= 0:
         return []
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    return [NormalizedJob.reference_at >= cutoff]
+
+
+def pool_floor_size(cap: int, num_pools: int, ratio: float) -> int:
+    if num_pools <= 0:
+        return cap
+    return max(1, math.ceil((cap / num_pools) * ratio))
+
+
+def _base_pool_conditions(pools: list[str], filters: list[Any]) -> list[Any]:
     return [
-        or_(
-            NormalizedJob.posted_at >= cutoff,
-            and_(
-                NormalizedJob.posted_at.is_(None),
-                NormalizedJob.created_at >= cutoff,
-            ),
-        )
+        NormalizedJob.retrieval_pools.overlap(pools),
+        NormalizedJob.is_active.is_(True),
+        NormalizedJob.processing_state == "success",
+        NormalizedJob.opportunity_score.is_not(None),
+        *filters,
     ]
+
+
+async def query_jobs_in_single_pool(
+    db: AsyncSession,
+    *,
+    pool: str,
+    filters: list[Any],
+    limit: int,
+    exclude_ids: set[UUID] | None = None,
+) -> list[NormalizedJob]:
+    conditions = [
+        NormalizedJob.retrieval_pools.contains([pool]),
+        NormalizedJob.is_active.is_(True),
+        NormalizedJob.processing_state == "success",
+        NormalizedJob.opportunity_score.is_not(None),
+        *filters,
+    ]
+    if exclude_ids:
+        conditions.append(NormalizedJob.id.notin_(list(exclude_ids)))
+    stmt = (
+        select(NormalizedJob)
+        .where(and_(*conditions))
+        .order_by(NormalizedJob.opportunity_score.desc())
+        .limit(limit)
+    )
+    return list((await db.scalars(stmt)).all())
+
+
+async def fetch_jobs_with_pool_floors(
+    db: AsyncSession,
+    *,
+    pools: list[str],
+    filters: list[Any],
+    cap: int,
+    floor_ratio: float,
+) -> list[NormalizedJob]:
+    if not pools or cap <= 0:
+        return []
+
+    selected: list[NormalizedJob] = []
+    selected_ids: set[UUID] = set()
+    min_per_pool = pool_floor_size(cap, len(pools), floor_ratio)
+
+    for pool in pools:
+        if len(selected) >= cap:
+            break
+        chunk = await query_jobs_in_single_pool(
+            db,
+            pool=pool,
+            filters=filters,
+            limit=min_per_pool,
+            exclude_ids=selected_ids,
+        )
+        for job in chunk:
+            if job.id in selected_ids:
+                continue
+            selected_ids.add(job.id)
+            selected.append(job)
+            if len(selected) >= cap:
+                break
+
+    remaining = cap - len(selected)
+    if remaining <= 0:
+        return selected
+
+    offset = 0
+    while len(selected) < cap:
+        chunk_limit = min(200, cap - len(selected))
+        chunk = await query_jobs_in_pools(
+            db,
+            pools=pools,
+            filters=filters,
+            limit=chunk_limit,
+            offset=offset,
+            exclude_ids=selected_ids,
+        )
+        if not chunk:
+            break
+        for job in chunk:
+            if job.id in selected_ids:
+                continue
+            selected_ids.add(job.id)
+            selected.append(job)
+            if len(selected) >= cap:
+                break
+        offset += len(chunk)
+        if len(chunk) < chunk_limit:
+            break
+
+    return selected
 
 
 async def fetch_new_jobs_in_pools(
@@ -151,14 +251,11 @@ async def query_jobs_in_pools(
     filters: list[Any],
     limit: int,
     offset: int,
+    exclude_ids: set[UUID] | None = None,
 ) -> list[NormalizedJob]:
-    conditions = [
-        NormalizedJob.retrieval_pools.overlap(pools),
-        NormalizedJob.is_active.is_(True),
-        NormalizedJob.processing_state == "success",
-        NormalizedJob.opportunity_score.is_not(None),
-        *filters,
-    ]
+    conditions = _base_pool_conditions(pools, filters)
+    if exclude_ids:
+        conditions.append(NormalizedJob.id.notin_(list(exclude_ids)))
     stmt = (
         select(NormalizedJob)
         .where(and_(*conditions))

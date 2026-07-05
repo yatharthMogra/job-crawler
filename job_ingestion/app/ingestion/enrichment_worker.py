@@ -27,6 +27,7 @@ from app.ingestion.gemini_error_log import record_gemini_error, resolve_batch_as
 from app.ingestion.job_archive_sync import update_job_archive_after_enrichment
 from app.ingestion.job_freshness import FreshnessVerdict, refresh_posted_at_verdict
 from app.ingestion.job_purge import PurgeTarget, purge_normalized_jobs
+from app.ingestion.job_timestamp import resolve_reference_at
 from app.ingestion.recommendation_fields import (
     assign_validated_retrieval_pools,
     compute_opportunity_score,
@@ -168,6 +169,7 @@ async def _purge_if_stale_before_enrichment(
     )
     if posted_at is not None:
         normalized.posted_at = posted_at
+    normalized.reference_at = resolve_reference_at(normalized.posted_at, raw_job.fetch_timestamp)
     if verdict != FreshnessVerdict.STALE:
         return False
 
@@ -210,6 +212,7 @@ async def _purge_if_stale_after_enrichment(
     )
     if posted_at is not None:
         normalized.posted_at = posted_at
+    normalized.reference_at = resolve_reference_at(normalized.posted_at, raw_job.fetch_timestamp)
     if verdict != FreshnessVerdict.STALE:
         return False
 
@@ -587,7 +590,12 @@ def _apply_enrichment_to_job(
     normalized: NormalizedJob,
     enrichment: BatchJobEnrichment,
     settings: Settings,
+    *,
+    raw_job: RawJob | None = None,
 ) -> None:
+    if normalized.reference_at is None:
+        fetch_ts = raw_job.fetch_timestamp if raw_job is not None else normalized.created_at
+        normalized.reference_at = resolve_reference_at(normalized.posted_at, fetch_ts)
     normalized.seniority = enrichment.seniority
     normalized.experience_tier = enrichment.experience_tier
     normalized.is_internship = enrichment.is_internship
@@ -620,7 +628,7 @@ def _apply_enrichment_to_job(
     )
     now = _utcnow()
     normalized.opportunity_score = compute_opportunity_score(
-        normalized.posted_at,
+        normalized.reference_at,
         normalized.salary_min,
         normalized.salary_max,
         normalized.application_effort,
@@ -652,7 +660,12 @@ def _recommendation_fields_from_enrichment(
     normalized: NormalizedJob,
     enrichment: BatchJobEnrichment,
     settings: Settings,
+    *,
+    raw_job: RawJob | None = None,
 ) -> dict:
+    if normalized.reference_at is None:
+        fetch_ts = raw_job.fetch_timestamp if raw_job is not None else normalized.created_at
+        normalized.reference_at = resolve_reference_at(normalized.posted_at, fetch_ts)
     normalized_roles = list(enrichment.normalized_roles)
     retrieval_pools = assign_validated_retrieval_pools(
         normalized_roles,
@@ -663,7 +676,7 @@ def _recommendation_fields_from_enrichment(
     )
     computed_at = _utcnow()
     opportunity_score = compute_opportunity_score(
-        normalized.posted_at,
+        normalized.reference_at,
         enrichment.salary_min,
         enrichment.salary_max,
         enrichment.application_effort,
@@ -906,7 +919,7 @@ async def _process_batch(
                 )
                 continue
 
-            _apply_enrichment_to_job(row.normalized, enrichment, settings)
+            _apply_enrichment_to_job(row.normalized, enrichment, settings, raw_job=row.raw_job)
             _apply_waas_sponsorship_hint(row.normalized, row.raw_job)
             if row.normalized.job_archive_id is not None:
                 await update_job_archive_after_enrichment(
@@ -926,7 +939,9 @@ async def _process_batch(
                     requires_clearance=enrichment.requires_clearance,
                     role_intent=enrichment.role_intent,
                 )
-            recommendation_fields = _recommendation_fields_from_enrichment(row.normalized, enrichment, settings)
+            recommendation_fields = _recommendation_fields_from_enrichment(
+                row.normalized, enrichment, settings, raw_job=row.raw_job
+            )
             db.add(
                 JobEnrichment(
                     normalized_job_id=row.normalized.id,

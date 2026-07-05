@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import re
 from datetime import timezone
 
@@ -57,16 +58,50 @@ def select_top_jobs(
     return selected
 
 
+def select_diversified_jobs(
+    ranked: list[tuple[NormalizedJob, float]],
+    limit: int,
+    *,
+    applied_count_by_company: dict[str, int],
+    max_share: float,
+    unlock_batch_size: int,
+) -> list[tuple[NormalizedJob, float]]:
+    """Pick top jobs with per-company share cap and apply-based batch unlock."""
+    if limit <= 0:
+        return []
+    if max_share <= 0:
+        return ranked[:limit]
+
+    base_cap = max(1, math.ceil(limit * max_share))
+    batch = max(1, unlock_batch_size)
+    selected: list[tuple[NormalizedJob, float]] = []
+    visible_counts: dict[str, int] = {}
+
+    for job, score in ranked:
+        company = job.company_name.lower().strip()
+        applied = applied_count_by_company.get(company, 0)
+        allowed = base_cap + (applied // batch) * batch
+        if visible_counts.get(company, 0) >= allowed:
+            continue
+        selected.append((job, score))
+        visible_counts[company] = visible_counts.get(company, 0) + 1
+        if len(selected) >= limit:
+            break
+    return selected
+
+
+def _reference_timestamp(job: NormalizedJob) -> float:
+    ts = job.reference_at or job.posted_at
+    if ts is None:
+        ts = job.created_at
+    if ts.tzinfo is None:
+        ts = ts.replace(tzinfo=timezone.utc)
+    return ts.timestamp()
+
+
 def _rank_sort_key(item: tuple[NormalizedJob, float]) -> tuple[float, float, float]:
     job, score = item
-    posted_at = job.posted_at
-    if posted_at is not None:
-        if posted_at.tzinfo is None:
-            posted_at = posted_at.replace(tzinfo=timezone.utc)
-        posted_ts = posted_at.timestamp()
-    else:
-        posted_ts = 0.0
-    return (score, job.opportunity_score or 0.0, posted_ts)
+    return (score, job.opportunity_score or 0.0, _reference_timestamp(job))
 
 
 def rank_jobs(
