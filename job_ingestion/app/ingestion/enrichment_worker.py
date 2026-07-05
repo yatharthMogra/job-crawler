@@ -23,6 +23,7 @@ from app.ingestion.extractor.llm import (
 from app.ingestion.extractor.seniority import build_batch_job_payload
 from app.ingestion.extractor.text_cleaner import clean_job_description
 from app.ingestion.enrichment_worker_capacity import WorkerCapacityTracker
+from app.ingestion.job_archive_sync import update_job_archive_after_enrichment
 from app.ingestion.job_freshness import FreshnessVerdict, refresh_posted_at_verdict
 from app.ingestion.job_purge import PurgeTarget, purge_normalized_jobs
 from app.ingestion.recommendation_fields import (
