@@ -275,10 +275,9 @@ export function ProfileFlowProvider({
       setSaving(true)
       try {
         const { constraints, preferences } = jobIntentToApiPayload(jobIntent)
-        await Promise.all([
-          patchConstraints(candidateId, constraints),
-          patchPreferences(candidateId, preferences),
-        ])
+        // Sequential: each PATCH creates a new profile version; parallel calls race on DB constraints.
+        await patchConstraints(candidateId, constraints)
+        await patchPreferences(candidateId, preferences)
         // Navigate immediately; profile refresh + subscription sync continue in background.
         if (redirectTo === "profile") {
           router.push("/profile")
