@@ -41,6 +41,9 @@ export function mockHiringContact(job: JobWithRole) {
 }
 
 export function buildRoleAboutIntro(job: JobWithRole): string {
+  if (job.about_summary?.trim()) {
+    return job.about_summary.trim()
+  }
   if (job.company_info?.one_line_description) {
     return job.company_info.one_line_description
   }

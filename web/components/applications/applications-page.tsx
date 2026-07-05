@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/empty-state"
 import { useJobs } from "@/components/jobs-provider"
 import {
   toApplicationRecord,
+  type ApplicationPipelineStatus,
   type ApplicationStatusFilter,
 } from "@/lib/applications/pipeline-status"
 import type { JobWithRole } from "@/lib/jobs-data"
@@ -19,7 +20,7 @@ interface ApplicationsPageProps {
 }
 
 export function ApplicationsPage({ applications }: ApplicationsPageProps) {
-  const { unmarkApplied } = useJobs()
+  const { updateApplicationStatus } = useJobs()
   const [statusFilter, setStatusFilter] = useState<ApplicationStatusFilter>("all")
 
   const records = useMemo(
@@ -109,7 +110,9 @@ export function ApplicationsPage({ applications }: ApplicationsPageProps) {
                     <ApplicationListCard
                       key={record.job.id}
                       record={record}
-                      onWithdraw={() => unmarkApplied(record.job.id)}
+                      onStatusChange={(status: ApplicationPipelineStatus) =>
+                        updateApplicationStatus(record.job.id, status)
+                      }
                     />
                   ))}
                 </div>

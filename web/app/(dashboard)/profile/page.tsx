@@ -16,7 +16,6 @@ export default function ProfilePage() {
     setEditSection,
     handleProfileEdit,
     loadProfileHome,
-    openJobIntent,
   } = useProfileFlow()
 
   useEffect(() => {
@@ -38,7 +37,6 @@ export default function ProfilePage() {
       <ProfileCommandPage
         data={profileHome}
         onEditSection={setEditSection}
-        onSetTargetRoles={openJobIntent}
       />
       <ProfileEditDialog
         section={editSection}

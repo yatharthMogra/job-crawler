@@ -10,7 +10,6 @@ import { H1bSponsorshipSection, SponsorshipStatusPill } from "@/components/h1b-s
 import {
   JobDescriptionSectionsView,
   buildMatchedLabels,
-  hasDescriptionSections,
 } from "@/components/job-description-sections"
 import {
   HiringTeamUpsell,
@@ -116,7 +115,12 @@ export function JobDetailContent({
     [job],
   )
 
-  const hasStructured = hasDescriptionSections(descriptionSections)
+  const hasQualsOrBenefits =
+    descriptionSections.required_qualifications.length > 0 ||
+    descriptionSections.preferred_qualifications.length > 0 ||
+    descriptionSections.benefits.length > 0
+  const showFullDescription =
+    job.responsibilities.length === 0 && !hasQualsOrBenefits && Boolean(job.description_html)
   const matchPct = Math.round(Math.min(1, Math.max(0, job.personal_score)) * 100)
   const salaryLabel = formatSalary(job.salary_min, job.salary_max)
 
@@ -201,7 +205,7 @@ export function JobDetailContent({
               </section>
             ) : null}
 
-            {hasStructured ? (
+            {hasQualsOrBenefits ? (
               <section className="mb-6">
                 <div className="text-[15px] leading-relaxed [&_h4]:mb-2 [&_h4]:mt-5 [&_h4]:text-[15px] [&_h4]:font-bold [&_li]:mb-2 [&_li]:text-[15px] [&_li]:leading-relaxed">
                   <JobDescriptionSectionsView
@@ -215,7 +219,7 @@ export function JobDetailContent({
                   />
                 </div>
               </section>
-            ) : job.description_html ? (
+            ) : showFullDescription ? (
               <section className="mb-6">
                 <h3 className="mb-3 text-lg font-bold text-foreground">Full description</h3>
                 <div
@@ -335,7 +339,7 @@ export function JobDrawer({
   if (variant === "inline") {
     if (!job) return null
     return (
-      <aside className="hidden h-full min-h-0 min-w-0 flex-[7] flex-col overflow-hidden border-l border-border/70 bg-background shadow-[inset_4px_0_12px_-8px_rgba(0,0,0,0.08)] md:flex">
+      <aside className="hidden h-full min-h-0 w-full flex-col overflow-hidden border-l border-border/70 bg-background shadow-[inset_4px_0_12px_-8px_rgba(0,0,0,0.08)] md:flex">
         <JobDetailContent job={job} showMatch={showMatch} feed={feed} />
       </aside>
     )

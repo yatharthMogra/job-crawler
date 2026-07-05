@@ -264,3 +264,17 @@ export function applyToJob(candidateId: string, jobId: string) {
     { method: "POST" },
   )
 }
+
+export function patchApplication(
+  candidateId: string,
+  applicationId: string,
+  payload: { status?: string; notes?: string },
+) {
+  return request<UserApplicationApi>(
+    `/dashboard/applications/${encodeURIComponent(applicationId)}?candidate_id=${encodeURIComponent(candidateId)}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    },
+  )
+}

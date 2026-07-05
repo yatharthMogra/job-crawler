@@ -59,6 +59,10 @@ function LetterFallback({
   )
 }
 
+function isLowQualityLogo(img: HTMLImageElement): boolean {
+  return img.naturalWidth <= 16 || img.naturalHeight <= 16
+}
+
 export function BrandLogo({
   name,
   size = 32,
@@ -78,6 +82,10 @@ export function BrandLogo({
   }, [name, variant, domain])
 
   const roundedClass = shape === "circle" ? "rounded-full" : "rounded-xl"
+
+  function tryNextSource() {
+    setSourceIndex((i) => i + 1)
+  }
 
   if (!name.trim() || sourceIndex >= sources.length) {
     return <LetterFallback name={name || "?"} size={size} shape={shape} className={className} />
@@ -104,7 +112,10 @@ export function BrandLogo({
         decoding="async"
         referrerPolicy="no-referrer"
         className="size-full object-contain p-[12%]"
-        onError={() => setSourceIndex((i) => i + 1)}
+        onError={tryNextSource}
+        onLoad={(e) => {
+          if (isLowQualityLogo(e.currentTarget)) tryNextSource()
+        }}
       />
     </div>
   )

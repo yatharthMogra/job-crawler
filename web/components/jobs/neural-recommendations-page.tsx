@@ -1,16 +1,16 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import Link from "next/link"
 import { RefreshCw, Sparkles } from "lucide-react"
 import { useJobs } from "@/components/jobs-provider"
 import { useProfileFlow } from "@/components/profile/profile-flow-provider"
 import { useSession } from "@/components/session-provider"
 import { NeuralJobCard } from "@/components/jobs/neural-job-card"
 import { RecsFilterBar } from "@/components/jobs/recs-filter-bar"
+import { RecommendationsFilterPanel } from "@/components/filters/recommendations-filter-panel"
 import { JobDrawer } from "@/components/job-drawer"
 import { FeedSkeleton } from "@/components/card-skeleton"
-import { EmptyState } from "@/components/empty-state"
+import { ResizeSplit } from "@/components/ui/resize-split"
 import { Button } from "@/components/ui/button"
 import { matchesEmploymentTypeFilter } from "@/lib/employment-type-filter"
 import {
@@ -19,7 +19,10 @@ import {
   applyLocationFilter,
   DEFAULT_LOCATION,
 } from "@/lib/job-filters"
+import { DEFAULT_SALARY_MAX } from "@/lib/filters/filter-options"
+import { filterJobsByState } from "@/lib/filters/match-estimate"
 import { filterJobsByCatalogRoles } from "@/lib/recommendation/neural-display"
+import type { JobFiltersState } from "@/lib/profile/job-filters"
 import type { JobWithRole } from "@/lib/jobs-data"
 import { useJobsSearch } from "@/app/(dashboard)/jobs/layout"
 import { cn } from "@/lib/utils"
@@ -34,6 +37,19 @@ function matchesSearch(job: JobWithRole, q: string) {
     job.company.toLowerCase().includes(lower) ||
     job.skills.some((s) => s.toLowerCase().includes(lower))
   )
+}
+
+function countAdvancedFilters(state: JobFiltersState | null): number {
+  if (!state) return 0
+  let count = 0
+  if (state.primaryRoles.length > 0) count += 1
+  if (!state.openToAllSalary && state.minimumSalary) count += 1
+  if (state.workModels.length > 0) count += 1
+  if (state.experienceLevels.length > 0) count += 1
+  if (state.sponsorshipRequired) count += 1
+  if (state.excludeUsCitizenOnly) count += 1
+  if (state.fulltimeOnly || state.internshipOnly) count += 1
+  return count
 }
 
 export function NeuralRecommendationsPage() {
@@ -53,6 +69,8 @@ export function NeuralRecommendationsPage() {
   const { search } = useJobsSearch()
   const [visibleCount, setVisibleCount] = useState(BATCH)
   const [syncing, setSyncing] = useState(false)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [advancedFilters, setAdvancedFilters] = useState<JobFiltersState | null>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
   const detailOpen = Boolean(selectedJobId)
 
@@ -62,7 +80,6 @@ export function NeuralRecommendationsPage() {
     }
   }, [candidateId, profileHome, loadProfileHome])
 
-  // Seed location from profile; never leave null.
   useEffect(() => {
     if (filters.location) return
     const fromProfile = profileHome?.preferences?.find((p) => p.label === "Locations")?.value
@@ -70,11 +87,13 @@ export function NeuralRecommendationsPage() {
     setFilter("location", first || DEFAULT_LOCATION)
   }, [filters.location, profileHome, setFilter])
 
-  const primaryRoles = profileHome?.primaryRoles ?? []
+  const primaryRoles = advancedFilters?.primaryRoles.length
+    ? advancedFilters.primaryRoles
+    : (profileHome?.primaryRoles ?? [])
   const secondaryRoles = profileHome?.secondaryRoles ?? []
 
   const ranked = useMemo<JobWithRole[]>(() => {
-    const base = recommendedJobs
+    let base = recommendedJobs
       .filter((j) => !j.is_applied)
       .filter((j) => !hiddenIds.has(j.id))
       .filter((j) => matchesSearch(j, search))
@@ -82,6 +101,10 @@ export function NeuralRecommendationsPage() {
       .filter((j) => applyDatePostedFilter(j, filters.datePosted))
       .filter((j) => applyLocationFilter(j, filters.location))
       .filter((j) => applyExperienceLevelFilter(j, filters.experienceLevel))
+
+    if (advancedFilters) {
+      base = filterJobsByState(base, advancedFilters, DEFAULT_SALARY_MAX)
+    }
 
     return filterJobsByCatalogRoles(base, primaryRoles, secondaryRoles).sort(
       (a, b) => b.personal_score - a.personal_score,
@@ -96,10 +119,12 @@ export function NeuralRecommendationsPage() {
     filters.datePosted,
     filters.location,
     filters.experienceLevel,
+    advancedFilters,
   ])
 
   const visible = ranked.slice(0, visibleCount)
   const hasMore = visibleCount < ranked.length
+  const advancedFilterCount = countAdvancedFilters(advancedFilters)
 
   useEffect(() => {
     if (recommendedLoading || ranked.length === 0) return
@@ -119,6 +144,7 @@ export function NeuralRecommendationsPage() {
     filters.datePosted,
     filters.location,
     filters.experienceLevel,
+    advancedFilters,
   ])
 
   useEffect(() => {
@@ -146,6 +172,52 @@ export function NeuralRecommendationsPage() {
     }
   }
 
+  const jobList = (
+    <div className="px-4 pb-8 pt-3 lg:px-6">
+      {error ? (
+        <div className="flex flex-col items-center justify-center px-6 py-24 text-center">
+          <Sparkles className="mb-4 size-10 text-primary/60" />
+          <h3 className="text-sm font-semibold text-foreground">Could not load recommendations</h3>
+          <p className="mt-1 max-w-xs text-sm text-muted-foreground">{error}</p>
+          <Button className="btn-brand mt-4" onClick={() => setFiltersOpen(true)}>
+            Adjust filters
+          </Button>
+        </div>
+      ) : recommendedLoading ? (
+        <FeedSkeleton count={4} />
+      ) : ranked.length === 0 ? (
+        <div className="flex flex-col items-center justify-center px-6 py-24 text-center">
+          <Sparkles className="mb-4 size-10 text-primary/60" />
+          <h3 className="text-sm font-semibold text-foreground">No matches yet</h3>
+          <p className="mt-1 max-w-xs text-sm text-muted-foreground">
+            Set your primary roles and filters to unlock personalized recommendations.
+          </p>
+          <Button className="btn-brand mt-4" onClick={() => setFiltersOpen(true)}>
+            Open filters
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {visible.map((job) => (
+            <NeuralJobCard key={job.id} job={job} compact={detailOpen} />
+          ))}
+          {hasMore ? <div ref={sentinelRef} className="h-8" aria-hidden="true" /> : null}
+          <div className="flex justify-center pt-4">
+            <Button
+              variant="outline"
+              className="h-10 gap-2 rounded-xl px-5"
+              disabled={syncing}
+              onClick={() => void handleSync()}
+            >
+              <RefreshCw className={cn("size-4", syncing && "animate-spin")} />
+              {syncing ? "Refreshing..." : "Refresh recommendations"}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+
   return (
     <div className="flex h-[calc(100vh-3.5rem)] min-h-0 flex-col">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border/50 px-4 py-3 lg:px-6">
@@ -162,65 +234,27 @@ export function NeuralRecommendationsPage() {
             {recommendedLoading ? "Loading…" : `${ranked.length} matches`}
           </p>
         </div>
-        <RecsFilterBar />
+        <RecsFilterBar
+          onOpenAllFilters={() => setFiltersOpen(true)}
+          advancedFilterCount={advancedFilterCount}
+        />
       </div>
 
-      <div className="flex min-h-0 flex-1">
-        <div
-          className={cn(
-            "min-w-0 overflow-y-auto px-4 pb-8 lg:px-6",
-            detailOpen ? "min-w-[360px] flex-[5] border-r border-border/50 bg-muted/[0.18]" : "flex-1",
-          )}
-        >
-          {error ? (
-            <EmptyState
-              icon={Sparkles}
-              title="Could not load recommendations"
-              description={error}
-              ctaLabel="Open filters"
-              ctaHref="/filters"
-            />
-          ) : recommendedLoading ? (
-            <FeedSkeleton count={4} />
-          ) : ranked.length === 0 ? (
-            <EmptyState
-              icon={Sparkles}
-              title="No matches yet"
-              description="Set your primary roles and filters to unlock personalized recommendations."
-              ctaLabel="Define target roles"
-              ctaHref="/profile/job-intent"
-            />
-          ) : (
-            <div className="space-y-3">
-              {visible.map((job) => (
-                <NeuralJobCard key={job.id} job={job} compact={detailOpen} />
-              ))}
-              {hasMore ? <div ref={sentinelRef} className="h-8" aria-hidden="true" /> : null}
-              <div className="flex justify-center pt-4">
-                <Button
-                  variant="outline"
-                  className="h-10 gap-2 rounded-xl px-5"
-                  disabled={syncing}
-                  onClick={() => void handleSync()}
-                >
-                  <RefreshCw className={cn("size-4", syncing && "animate-spin")} />
-                  {syncing ? "Refreshing..." : "Refresh recommendations"}
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
+      <ResizeSplit
+        enabled={detailOpen}
+        left={jobList}
+        right={detailOpen ? <JobDrawer showMatch variant="inline" /> : null}
+      />
 
-        {/* Desktop: in-flow detail — list shrinks, panel does not overlay */}
-        {detailOpen ? (
-          <JobDrawer showMatch variant="inline" />
-        ) : null}
-      </div>
-
-      {/* Mobile: overlay drawer only */}
       <div className="md:hidden">
         <JobDrawer showMatch variant="overlay" />
       </div>
+
+      <RecommendationsFilterPanel
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        onApplied={(state) => setAdvancedFilters(state)}
+      />
     </div>
   )
 }

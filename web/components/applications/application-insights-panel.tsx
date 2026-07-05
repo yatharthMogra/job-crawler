@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils"
 function buildFunnel(records: ApplicationRecord[]) {
   const total = Math.max(records.length, 1)
   const screening = records.filter((r) =>
-    ["under_review", "interview", "offer"].includes(r.status),
+    ["under_review", "online_assessment", "interview", "offer"].includes(r.status),
   ).length
   const interviews = records.filter((r) => ["interview", "offer"].includes(r.status)).length
   const offers = records.filter((r) => r.status === "offer").length
@@ -45,6 +45,7 @@ export function ApplicationInsightsPanel({
 
   const nextSteps = useMemo(() => {
     const interview = records.find((r) => r.status === "interview")
+    const assessment = records.find((r) => r.status === "online_assessment")
     const review = records.find((r) => r.status === "under_review")
     const steps: { kind: "interview" | "task"; title: string; subtitle: string; when: string }[] =
       []
@@ -55,6 +56,14 @@ export function ApplicationInsightsPanel({
         title: `Technical round · ${interview.job.company}`,
         subtitle: interview.job.title,
         when: "In 2 days",
+      })
+    }
+    if (assessment) {
+      steps.push({
+        kind: "task",
+        title: "Complete online assessment",
+        subtitle: assessment.job.company,
+        when: "This week",
       })
     }
     if (review) {
@@ -79,7 +88,11 @@ export function ApplicationInsightsPanel({
   const responseRate =
     counts.all === 0
       ? 0
-      : Math.round(((counts.under_review + counts.interview + counts.offer) / counts.all) * 100)
+      : Math.round(
+          ((counts.under_review + counts.online_assessment + counts.interview + counts.offer) /
+            counts.all) *
+            100,
+        )
 
   const isEmpty = records.length === 0
 

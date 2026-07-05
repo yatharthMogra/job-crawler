@@ -69,3 +69,29 @@ export function clearPendingApply(candidateId: string) {
   if (typeof window === "undefined") return
   sessionStorage.removeItem(key(candidateId, "pending_apply"))
 }
+
+function applicationStatusKey(candidateId: string) {
+  return `cma_application_status_${candidateId}`
+}
+
+export function loadApplicationStatuses(candidateId: string): Record<string, string> {
+  if (typeof window === "undefined") return {}
+  try {
+    const raw = localStorage.getItem(applicationStatusKey(candidateId))
+    if (!raw) return {}
+    return JSON.parse(raw) as Record<string, string>
+  } catch {
+    return {}
+  }
+}
+
+export function persistApplicationStatus(
+  candidateId: string,
+  jobId: string,
+  status: string,
+) {
+  if (typeof window === "undefined") return
+  const current = loadApplicationStatuses(candidateId)
+  current[jobId] = status
+  localStorage.setItem(applicationStatusKey(candidateId), JSON.stringify(current))
+}

@@ -13,6 +13,7 @@ const SCHOOL_NOISE =
 const COMPANY_DOMAINS: Record<string, string> = {
   // Mock / common startups
   scaleai: "scale.com",
+  "scale ai": "scale.com",
   scale: "scale.com",
   ramp: "ramp.com",
   vercel: "vercel.com",
@@ -368,12 +369,12 @@ export function getBrandLogoSources(
   const domain = resolveBrandDomain(name, variant, explicitDomain)
   const encoded = encodeURIComponent(domain)
 
-  // High-quality Clearbit first, then resilient favicon CDNs.
+  // Google favicons first (most reliable); Clearbit is deprecated.
   return [
-    `https://logo.clearbit.com/${domain}`,
     `https://www.google.com/s2/favicons?domain=${encoded}&sz=128`,
     `https://icons.duckduckgo.com/ip3/${domain}.ico`,
-    `https://unavatar.io/${encoded}?fallback=false`,
+    `https://unavatar.io/${encoded}`,
+    `https://logo.clearbit.com/${domain}`,
   ]
 }
 

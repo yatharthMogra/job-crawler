@@ -1,5 +1,6 @@
 "use client"
 
+import { SlidersHorizontal } from "lucide-react"
 import { useJobs } from "@/components/jobs-provider"
 import {
   DATE_POSTED_OPTIONS,
@@ -8,6 +9,7 @@ import {
 } from "@/lib/job-filters"
 import type { EmploymentTypeFilter } from "@/lib/employment-type-filter"
 import type { SeniorityLevel } from "@/lib/jobs-data"
+import { cn } from "@/lib/utils"
 
 const LOCATION_OPTIONS = [
   DEFAULT_LOCATION,
@@ -53,7 +55,13 @@ function CompactSelect({
   )
 }
 
-export function RecsFilterBar() {
+export function RecsFilterBar({
+  onOpenAllFilters,
+  advancedFilterCount = 0,
+}: {
+  onOpenAllFilters?: () => void
+  advancedFilterCount?: number
+}) {
   const { filters, setFilter, setEmploymentTypeFilter } = useJobs()
 
   return (
@@ -90,6 +98,26 @@ export function RecsFilterBar() {
           label: o.label,
         }))}
       />
+      {onOpenAllFilters ? (
+        <button
+          type="button"
+          onClick={onOpenAllFilters}
+          className={cn(
+            "inline-flex h-8 items-center gap-1.5 rounded-md border px-3 text-sm font-medium transition-colors",
+            advancedFilterCount > 0
+              ? "border-primary/40 bg-primary/5 text-primary"
+              : "border-border/70 bg-background text-foreground hover:border-primary/30",
+          )}
+        >
+          <SlidersHorizontal className="size-3.5" />
+          All filters
+          {advancedFilterCount > 0 ? (
+            <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">
+              {advancedFilterCount}
+            </span>
+          ) : null}
+        </button>
+      ) : null}
     </div>
   )
 }

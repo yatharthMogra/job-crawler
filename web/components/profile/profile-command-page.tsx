@@ -7,13 +7,13 @@ import {
   Mail,
   MapPin,
   Pencil,
-  Plus,
 } from "lucide-react"
 import type { ProfileHomeData } from "@/lib/profile/map-profile"
 import type { EditSection } from "@/components/profile/profile-edit-dialog"
 import { educationLevelLabel } from "@/lib/profile/contact"
 import { ProfileExperienceTimeline } from "@/components/profile/profile-experience-timeline"
 import { ProfileInsightsPanel } from "@/components/profile/profile-insights-panel"
+import { EeoDisplay } from "@/components/profile/eeo-form"
 import { BrandLogo } from "@/components/brand-logo"
 import { cn } from "@/lib/utils"
 
@@ -21,7 +21,7 @@ const TABS = [
   { id: "experience", label: "Experience" },
   { id: "education", label: "Education" },
   { id: "certifications", label: "Certifications" },
-  { id: "preferences", label: "Preferences" },
+  { id: "preferences", label: "Equal employment" },
 ] as const
 
 type TabId = (typeof TABS)[number]["id"]
@@ -38,18 +38,15 @@ function initials(name: string): string {
 interface ProfileCommandPageProps {
   data: ProfileHomeData
   onEditSection: (section: EditSection | null) => void
-  onSetTargetRoles: () => void
 }
 
 export function ProfileCommandPage({
   data,
   onEditSection,
-  onSetTargetRoles,
 }: ProfileCommandPageProps) {
   const [tab, setTab] = useState<TabId>("experience")
   const { profile, contact } = data
-  const headlineRole = data.primaryRoles[0] ?? profile.experiences[0]?.title ?? "Professional"
-  const allSkills = profile.skills.flatMap((g) => g.names)
+  const headlineRole = profile.experiences[0]?.title ?? "Professional"
 
   const linkedinHref = contact.linkedin
     ? contact.linkedin.startsWith("http")
@@ -131,38 +128,6 @@ export function ProfileCommandPage({
                     {data.email}
                   </span>
                 </div>
-
-                <div className="mt-6 border-t border-border/60 pt-5">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                    Target roles
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {data.primaryRoles.map((role) => (
-                      <span
-                        key={role}
-                        className="rounded-full bg-slate-900 px-3.5 py-1.5 text-sm font-semibold text-white"
-                      >
-                        {role}
-                      </span>
-                    ))}
-                    {data.secondaryRoles.slice(0, 2).map((role) => (
-                      <span
-                        key={role}
-                        className="rounded-full border border-border bg-muted/40 px-3.5 py-1.5 text-sm font-medium text-foreground/80"
-                      >
-                        {role}
-                      </span>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={onSetTargetRoles}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-primary/40 px-3.5 py-1.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/5"
-                    >
-                      <Plus className="size-3.5" />
-                      Add role
-                    </button>
-                  </div>
-                </div>
               </div>
             </div>
           </section>
@@ -194,43 +159,23 @@ export function ProfileCommandPage({
           {/* Tab panels */}
           <div className="mt-8">
             {tab === "experience" ? (
-              <div className="space-y-10">
-                <section>
-                  <div className="mb-6 flex items-center justify-between">
+              <section>
+                <div className="mb-6 flex items-center justify-between">
+                  <div>
                     <h2 className="text-xl font-bold text-foreground">Work experience</h2>
-                    <Link
-                      href="/resume"
-                      className="text-sm font-semibold text-primary hover:underline"
-                    >
-                      + Add position
-                    </Link>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Roles, impact, and technologies extracted from your resumes.
+                    </p>
                   </div>
-                  <ProfileExperienceTimeline experiences={profile.experiences} />
-                </section>
-
-                <section>
-                  <h2 className="mb-4 text-xl font-bold text-foreground">Skills &amp; expertise</h2>
-                  {allSkills.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No skills on your profile yet.</p>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {allSkills.map((name, index) => (
-                        <span
-                          key={name}
-                          className={cn(
-                            "rounded-full px-3.5 py-1.5 text-sm font-medium",
-                            index < 6
-                              ? "border border-emerald-500/25 bg-emerald-500/10 text-emerald-900"
-                              : "border border-border/70 bg-muted/40 text-foreground/80",
-                          )}
-                        >
-                          {name}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </section>
-              </div>
+                  <Link
+                    href="/resume"
+                    className="text-sm font-semibold text-primary hover:underline"
+                  >
+                    Update via resume
+                  </Link>
+                </div>
+                <ProfileExperienceTimeline experiences={profile.experiences} />
+              </section>
             ) : null}
 
             {tab === "education" ? (
@@ -289,54 +234,45 @@ export function ProfileCommandPage({
             ) : null}
 
             {tab === "preferences" ? (
-              <section className="space-y-6">
-                <div>
-                  <div className="mb-4 flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-foreground">Job preferences</h2>
+              <section>
+                <div className="mb-6 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold text-foreground">
+                      Equal employment opportunity
+                    </h2>
+                    <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+                      Voluntary self-identification used for compliance and to match roles that fit
+                      your work authorization and sponsorship needs.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onEditSection("eeo")}
+                    className="shrink-0 text-sm font-semibold text-primary hover:underline"
+                  >
+                    Edit
+                  </button>
+                </div>
+                {data.eeoRows.length > 0 ? (
+                  <div className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm">
+                    <EeoDisplay state={data.eeo} />
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-border/70 bg-card px-6 py-10 text-center">
+                    <p className="text-sm font-medium text-foreground">No EEO responses yet</p>
+                    <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
+                      Add your equal employment opportunity information to improve application
+                      matching.
+                    </p>
                     <button
                       type="button"
-                      onClick={() => onEditSection("preferences")}
-                      className="text-sm font-semibold text-primary hover:underline"
+                      onClick={() => onEditSection("eeo")}
+                      className="mt-4 text-sm font-semibold text-primary hover:underline"
                     >
-                      Edit
+                      Add EEO information
                     </button>
                   </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {data.preferences.map((row) => (
-                      <div
-                        key={row.label}
-                        className="rounded-xl border border-border/60 bg-card px-4 py-3.5 shadow-sm"
-                      >
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                          {row.label}
-                        </p>
-                        <p className="mt-1 text-sm font-semibold text-foreground">{row.value}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <h3 className="mb-4 text-lg font-bold text-foreground">Constraints</h3>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {data.constraints.map((row) => (
-                      <div
-                        key={row.label}
-                        className="rounded-xl border border-border/60 bg-card px-4 py-3.5 shadow-sm"
-                      >
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                          {row.label}
-                        </p>
-                        <p className="mt-1 text-sm font-semibold text-foreground">{row.value}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  <Link href="/filters" className="font-semibold text-primary hover:underline">
-                    Open all filters
-                  </Link>{" "}
-                  to refine recommendations.
-                </p>
+                )}
               </section>
             ) : null}
           </div>

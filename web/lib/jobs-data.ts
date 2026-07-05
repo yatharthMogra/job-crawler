@@ -3,6 +3,7 @@ import type {
   H1BSponsorshipInfo,
   SponsorshipStatus,
 } from "@/lib/recommendation/api"
+import { resolveBrandDomain } from "@/lib/brand-logos"
 
 export type EmploymentType = "FULLTIME" | "PARTTIME" | "INTERNSHIP" | "CONTRACT"
 export type RemoteType = "remote" | "hybrid" | "onsite"
@@ -42,10 +43,12 @@ export interface Job {
   sponsorship_confidence: string
   h1b_sponsorship: H1BSponsorshipInfo | null
   company_info: CompanyEnrichmentInfo | null
+  about_summary: string | null
   description_html: string
   is_saved: boolean
   is_applied: boolean
   application_status?: string
+  application_id?: string
 }
 
 const COMPANIES = [
@@ -75,6 +78,19 @@ const COMPANIES = [
   "Census",
   "Clearbit",
 ]
+
+function mockCompanyInfo(company: string): CompanyEnrichmentInfo {
+  const domain = resolveBrandDomain(company, "company")
+  return {
+    founded_year: null,
+    headquarters: null,
+    employee_count_range: null,
+    one_line_description: null,
+    website: `https://${domain}`,
+    linkedin_url: null,
+    glassdoor_rating: null,
+  }
+}
 
 const ROLES = [
   { title: "Infrastructure Software Engineer", role: "Backend Engineer", skills: ["Go", "Kubernetes", "AWS", "Distributed Systems"], reasons: ["Backend Engineering", "Distributed Systems", "AWS"] },
@@ -212,7 +228,8 @@ export const ALL_JOBS: Job[] = Array.from({ length: TOTAL }).map((_, i) => {
     sponsorship_status: "unclear",
     sponsorship_confidence: "low",
     h1b_sponsorship: null,
-    company_info: null,
+    company_info: mockCompanyInfo(company),
+    about_summary: `${company} is looking for a ${role.title} to join our team. You'll work on high-impact systems and collaborate closely with product and design.`,
     description_html: descriptionHtml(role.title, company, role.skills),
     is_saved: false,
     is_applied: false,

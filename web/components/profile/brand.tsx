@@ -20,11 +20,12 @@ export function BrandMark({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "flex size-9 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-md shadow-primary/20",
+        "flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/20",
         className,
       )}
     >
-      J
+      <Rocket className="size-4" aria-hidden="true" />
+      <span className="sr-only">Job Scout</span>
     </span>
   )
 }

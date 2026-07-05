@@ -1,6 +1,5 @@
 import type { DashboardJobApi, RecommendedJobApi } from "@/lib/recommendation/api"
-import { descriptionTextToHtml } from "@/lib/recommendation/description-html"
-import { hasDescriptionSections } from "@/components/job-description-sections"
+import { resolveJobDescription } from "@/lib/recommendation/parse-description"
 import type { Effort, EmploymentType, Job, RemoteType } from "@/lib/jobs-data"
 import { mapApiSeniorityToUi } from "@/lib/profile/seniority"
 
@@ -20,19 +19,6 @@ function inferRoleCategory(normalizedRoles: string[]): string {
   return normalizedRoles[0] ?? "SWE"
 }
 
-function mapDescriptionHtml(job: DashboardJobApi): string {
-  const sections = {
-    responsibilities: job.responsibilities ?? [],
-    required_qualifications: job.required_qualifications ?? [],
-    preferred_qualifications: job.preferred_qualifications ?? [],
-    benefits: job.benefits ?? [],
-  }
-  if (hasDescriptionSections(sections)) {
-    return ""
-  }
-  return descriptionTextToHtml(job.description_text)
-}
-
 export function mapApiJobToUi(
   job: DashboardJobApi,
   extras?: { personal_score?: number; match_reasons?: string[] },
@@ -41,6 +27,15 @@ export function mapApiJobToUi(
   const remote = (job.remote_type ?? "unclear") as RemoteType
   const skills = [...(job.tech_stack ?? []), ...(job.skills ?? [])].slice(0, 8)
   const matchReasons = extras?.match_reasons ?? job.job_capabilities?.slice(0, 5) ?? []
+
+  const description = resolveJobDescription({
+    description_text: job.description_text,
+    description_preview: job.description_preview,
+    responsibilities: job.responsibilities,
+    required_qualifications: job.required_qualifications,
+    preferred_qualifications: job.preferred_qualifications,
+    benefits: job.benefits,
+  })
 
   return {
     id: job.id,
@@ -63,15 +58,16 @@ export function mapApiJobToUi(
         ? `Strong ${matchReasons[0].toLowerCase()} alignment.`
         : "Matches your profile preferences.",
     skills,
-    responsibilities: job.responsibilities ?? [],
-    required_qualifications: job.required_qualifications ?? [],
-    preferred_qualifications: job.preferred_qualifications ?? [],
-    benefits: job.benefits ?? [],
+    responsibilities: description.responsibilities,
+    required_qualifications: description.required_qualifications,
+    preferred_qualifications: description.preferred_qualifications,
+    benefits: description.benefits,
     sponsorship_status: job.sponsorship_status ?? "unclear",
     sponsorship_confidence: job.sponsorship_confidence ?? "low",
     h1b_sponsorship: job.h1b_sponsorship ?? null,
     company_info: job.company_info ?? null,
-    description_html: mapDescriptionHtml(job),
+    about_summary: description.about,
+    description_html: description.fallbackHtml,
     is_saved: false,
     is_applied: false,
     roleCategory: inferRoleCategory(job.normalized_roles ?? []),

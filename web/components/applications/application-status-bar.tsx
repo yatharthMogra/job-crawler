@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils"
 const FILTERS: { id: ApplicationStatusFilter; label: string }[] = [
   { id: "all", label: "Active" },
   { id: "under_review", label: "Under review" },
+  { id: "online_assessment", label: "Online assessment" },
   { id: "interview", label: "Interviews" },
   { id: "submitted", label: "Applied" },
 ]
