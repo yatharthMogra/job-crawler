@@ -7,7 +7,7 @@ from app.notification.retrieval import build_constraint_filters
 from app.services.profile_loader import UserProfile
 
 
-def test_clearance_filter_disabled_by_default() -> None:
+def test_clearance_filter_applies_without_feature_flag() -> None:
     profile = UserProfile(
         candidate_id=MagicMock(),
         email="a@b.com",
@@ -16,15 +16,8 @@ def test_clearance_filter_disabled_by_default() -> None:
         preferences={},
         skills={},
     )
-    with_clearance = build_constraint_filters(
-        profile,
-        Settings(clearance_filter_enabled=True),
-    )
-    without_clearance = build_constraint_filters(
-        profile,
-        Settings(clearance_filter_enabled=False),
-    )
-    assert len(with_clearance) == len(without_clearance) + 1
+    filters = build_constraint_filters(profile, Settings(clearance_filter_enabled=False))
+    assert len(filters) >= 1
 
 
 def test_clearance_filter_excludes_requires_clearance_jobs() -> None:
@@ -36,5 +29,5 @@ def test_clearance_filter_excludes_requires_clearance_jobs() -> None:
         preferences={},
         skills={},
     )
-    filters = build_constraint_filters(profile, Settings(clearance_filter_enabled=True))
+    filters = build_constraint_filters(profile, Settings())
     assert len(filters) >= 1

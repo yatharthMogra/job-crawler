@@ -191,7 +191,7 @@ def build_constraint_filters(
             )
         )
 
-    if settings.clearance_filter_enabled and not constraints.get("has_clearance", False):
+    if not constraints.get("has_clearance", False):
         filters.append(NormalizedJob.requires_clearance.is_(False))
 
     if settings.domain_filter_enabled:
@@ -202,7 +202,7 @@ def build_constraint_filters(
         filters.extend(build_domain_filters(candidate_domains))
 
     if constraints.get("sponsorship_required"):
-        filters.append(NormalizedJob.sponsorship_status != "no")
+        filters.append(NormalizedJob.requires_citizenship.is_(False))
 
     if constraints.get("internship_only"):
         filters.append(NormalizedJob.is_internship.is_(True))

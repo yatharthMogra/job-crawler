@@ -42,6 +42,7 @@ class JobArchive(Base):
     job_domain: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     job_secondary_domain: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     requires_clearance: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    requires_citizenship: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     role_intent: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     description_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(

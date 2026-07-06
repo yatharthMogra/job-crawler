@@ -60,6 +60,7 @@ class NormalizedJob(Base):
     job_domain: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
     job_secondary_domain: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     requires_clearance: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    requires_citizenship: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     role_intent: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
     dedup_fingerprint: Mapped[Optional[str]] = mapped_column(String(200), nullable=True, index=True)
     salary_min: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)

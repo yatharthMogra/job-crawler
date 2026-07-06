@@ -150,11 +150,19 @@ ROLE_INTENT_PROMPT_RULES = (
     '"Solutions Consultant" (client advisory) → consultant\n'
     '"Engineering Manager" with people-management focus → manager\n\n'
     "requires_clearance:\n"
-    "- true ONLY when the posting requires an ACTIVE, EXISTING clearance at time of application "
-    '("must hold TS/SCI", "active Secret clearance required", "existing clearance required")\n'
-    "- false when clearance is sponsorable, preferred, or obtainable "
-    '("clearance sponsorship available", "clearance preferred", "must be able to obtain clearance")\n'
-    "- false when clearance is not mentioned"
+    "- true ONLY when the posting EXPLICITLY requires a security clearance "
+    '("active Secret clearance required", "must hold TS/SCI", "requires security clearance", '
+    '"must be able to obtain/maintain a clearance", "eligible for Top Secret clearance")\n'
+    "- false when clearance is not mentioned, only preferred, or ambiguous\n"
+    "- false when only a general background check is mentioned (not a clearance)\n\n"
+    "requires_citizenship:\n"
+    "- true ONLY when the posting EXPLICITLY restricts to US persons/citizens OR EXPLICITLY "
+    "states no visa sponsorship for this role\n"
+    '  Examples: "US citizenship required", "must be a U.S. person", "will not sponsor work visas", '
+    '"no visa sponsorship", "unable to provide sponsorship", "ITAR — U.S. person only"\n'
+    "- false when sponsorship/citizenship is not mentioned (ambiguous → false)\n"
+    "- false when the posting explicitly offers or mentions visa sponsorship\n"
+    "- Do NOT infer from company name or industry alone"
 )
 
 

@@ -52,6 +52,8 @@ class DashboardJobOut(BaseModel):
     benefits: list[str] = Field(default_factory=list)
     sponsorship_status: str = "unclear"
     sponsorship_confidence: str = "low"
+    requires_clearance: bool = False
+    requires_citizenship: bool = False
     h1b_sponsorship: H1BSponsorshipInfo | None = None
     company_info: CompanyEnrichmentOut | None = None
 

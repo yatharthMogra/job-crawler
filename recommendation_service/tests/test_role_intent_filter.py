@@ -85,30 +85,20 @@ def test_role_intent_filter_uses_default_when_unset() -> None:
     assert len(filters) >= 1
 
 
-def test_clearance_filter_when_enabled_and_no_clearance() -> None:
+def test_clearance_filter_when_user_lacks_clearance() -> None:
     profile = _profile(constraints={"has_clearance": False})
-    with_clearance = build_constraint_filters(
-        profile,
-        Settings(clearance_filter_enabled=True),
-    )
-    without_clearance = build_constraint_filters(
-        profile,
-        Settings(clearance_filter_enabled=False),
-    )
-    assert len(with_clearance) == len(without_clearance) + 1
+    without = _profile(constraints={"has_clearance": True})
+    assert len(build_constraint_filters(profile, Settings())) == len(
+        build_constraint_filters(without, Settings())
+    ) + 1
 
 
 def test_clearance_filter_skipped_when_user_has_clearance() -> None:
     profile = _profile(constraints={"has_clearance": True})
-    with_flag = build_constraint_filters(
-        profile,
-        Settings(clearance_filter_enabled=True),
-    )
-    without_flag = build_constraint_filters(
-        profile,
-        Settings(clearance_filter_enabled=False),
-    )
-    assert len(with_flag) == len(without_flag)
+    without_clearance = _profile(constraints={"has_clearance": False})
+    assert len(build_constraint_filters(profile, Settings())) == len(
+        build_constraint_filters(without_clearance, Settings())
+    ) - 1
 
 
 def test_both_filters_stack() -> None:
@@ -121,7 +111,6 @@ def test_both_filters_stack() -> None:
         profile,
         Settings(
             role_intent_filter_enabled=True,
-            clearance_filter_enabled=True,
             domain_filter_enabled=True,
         ),
     )
@@ -129,7 +118,6 @@ def test_both_filters_stack() -> None:
         profile,
         Settings(
             role_intent_filter_enabled=False,
-            clearance_filter_enabled=False,
             domain_filter_enabled=False,
         ),
     )

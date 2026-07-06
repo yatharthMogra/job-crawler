@@ -13,6 +13,7 @@ from app.ingestion.constants import EventCategory, EventSeverity, EventType, Fai
 from app.ingestion.events import write_event
 from app.ingestion.gemini_error_log import record_gemini_error
 from app.ingestion.extractor.deterministic import extract_deterministic_fields
+from app.ingestion.extractor.eligibility import apply_eligibility_signals
 from app.ingestion.extractor.llm import DEFAULT_ENRICHMENT, enrich_job_text
 from app.ingestion.extractor.text_cleaner import clean_job_description
 from app.ingestion.job_freshness import FreshnessVerdict, classify_posted_at
@@ -163,7 +164,7 @@ async def reprocess_jobs(
                     title=normalized.title,
                     employment_type=normalized.employment_type,
                 )
-                enrichment = llm_result.output
+                enrichment = apply_eligibility_signals(llm_result.output, clean_text)
                 failure_reason = None
                 status = "success"
                 input_tokens = llm_result.input_tokens
@@ -214,6 +215,7 @@ async def reprocess_jobs(
                 "job_domain": enrichment.job_domain,
                 "job_secondary_domain": enrichment.job_secondary_domain,
                 "requires_clearance": enrichment.requires_clearance,
+                "requires_citizenship": enrichment.requires_citizenship,
                 "role_intent": enrichment.role_intent,
                 "salary_min": enrichment.salary_min,
                 "salary_max": enrichment.salary_max,
@@ -271,6 +273,7 @@ async def reprocess_jobs(
             normalized.job_domain = recommendation_fields.get("job_domain")
             normalized.job_secondary_domain = recommendation_fields.get("job_secondary_domain")
             normalized.requires_clearance = recommendation_fields.get("requires_clearance", False)
+            normalized.requires_citizenship = recommendation_fields.get("requires_citizenship", False)
             normalized.role_intent = recommendation_fields.get("role_intent")
             normalized.salary_min = recommendation_fields.get("salary_min")
             normalized.salary_max = recommendation_fields.get("salary_max")

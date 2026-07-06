@@ -199,11 +199,12 @@ ENRICHMENT_SYSTEM_PROMPT = (
 
 class _ClearanceRoleIntentMixin(BaseModel):
     requires_clearance: bool = False
+    requires_citizenship: bool = False
     role_intent: str = "other"
 
-    @field_validator("requires_clearance", mode="before")
+    @field_validator("requires_clearance", "requires_citizenship", mode="before")
     @classmethod
-    def _coerce_requires_clearance(cls, value: object) -> bool:
+    def _coerce_eligibility_flag(cls, value: object) -> bool:
         if isinstance(value, bool):
             return value
         if value is None:
@@ -423,6 +424,7 @@ DEFAULT_ENRICHMENT = JobEnrichment(
     preferred_qualifications=[],
     benefits=[],
     requires_clearance=False,
+    requires_citizenship=False,
     role_intent="other",
 )
 

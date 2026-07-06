@@ -105,6 +105,8 @@ def _job_to_out(
         benefits=list(job.benefits or []),
         sponsorship_status=job.sponsorship_status,
         sponsorship_confidence=job.sponsorship_confidence,
+        requires_clearance=job.requires_clearance,
+        requires_citizenship=job.requires_citizenship,
         h1b_sponsorship=h1b_sponsorship,
         company_info=company_info,
     )

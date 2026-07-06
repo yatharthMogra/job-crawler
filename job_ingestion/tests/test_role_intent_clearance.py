@@ -11,7 +11,7 @@ from app.ingestion.extractor.llm import (
 def test_role_intent_prompt_in_system_prompt() -> None:
     assert "role_intent:" in ENRICHMENT_SYSTEM_PROMPT
     assert "requires_clearance:" in ENRICHMENT_SYSTEM_PROMPT
-    assert "clearance sponsorship available" in ENRICHMENT_SYSTEM_PROMPT
+    assert "requires_citizenship:" in ENRICHMENT_SYSTEM_PROMPT
 
 
 def test_coerce_role_intent_valid() -> None:
@@ -81,10 +81,12 @@ def test_job_enrichment_includes_new_fields() -> None:
             "sponsorship_confidence": "low",
             "remote_type": "unclear",
             "requires_clearance": True,
+            "requires_citizenship": True,
             "role_intent": "engineer",
         }
     )
     assert parsed.requires_clearance is True
+    assert parsed.requires_citizenship is True
     assert parsed.role_intent == "engineer"
 
 

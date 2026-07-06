@@ -107,6 +107,7 @@ async def upsert_job_archive_from_normalized(
             "job_domain": normalized.job_domain,
             "job_secondary_domain": normalized.job_secondary_domain,
             "requires_clearance": normalized.requires_clearance,
+            "requires_citizenship": normalized.requires_citizenship,
             "role_intent": normalized.role_intent,
         }
     )
@@ -127,6 +128,7 @@ async def upsert_job_archive_from_normalized(
             "job_domain": normalized.job_domain,
             "job_secondary_domain": normalized.job_secondary_domain,
             "requires_clearance": normalized.requires_clearance,
+            "requires_citizenship": normalized.requires_citizenship,
             "role_intent": normalized.role_intent,
         }
     )
@@ -159,6 +161,7 @@ async def update_job_archive_after_enrichment(
     job_domain: Optional[str] = None,
     job_secondary_domain: Optional[str] = None,
     requires_clearance: bool = False,
+    requires_citizenship: bool = False,
     role_intent: Optional[str] = None,
 ) -> None:
     await db.execute(
@@ -177,6 +180,7 @@ async def update_job_archive_after_enrichment(
             job_domain=job_domain,
             job_secondary_domain=job_secondary_domain,
             requires_clearance=requires_clearance,
+            requires_citizenship=requires_citizenship,
             role_intent=role_intent,
         )
     )
@@ -202,5 +206,6 @@ async def update_job_archive_from_normalized_fields(
         job_domain=normalized.job_domain,
         job_secondary_domain=normalized.job_secondary_domain,
         requires_clearance=normalized.requires_clearance,
+        requires_citizenship=normalized.requires_citizenship,
         role_intent=normalized.role_intent,
     )

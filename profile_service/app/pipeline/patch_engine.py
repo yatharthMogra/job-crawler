@@ -20,6 +20,7 @@ from app.pipeline.diff_engine import compute_proposed_operations
 from app.pipeline.extractor import extract_text
 from app.pipeline.llm_parser import extract_resume_evidence
 from app.storage import get_resume_storage
+from app.utils.constraints import normalize_constraints
 from app.utils.text_utils import (
     default_constraints,
     default_education,
@@ -324,6 +325,7 @@ async def commit_patch(
         constraints=constraints,
         education=education,
     )
+    constraints = normalize_constraints(constraints)
 
     if current_profile:
         await db.execute(
@@ -425,6 +427,7 @@ async def write_profile_section(
         constraints=constraints,
         education=education,
     )
+    constraints = normalize_constraints(constraints)
 
     if current_profile:
         await db.execute(

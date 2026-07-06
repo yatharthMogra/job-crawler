@@ -96,6 +96,8 @@ def _competition_label(job: NormalizedJob) -> str:
 
 
 def _visa_signal_label(job: NormalizedJob) -> str:
+    if getattr(job, "requires_citizenship", False):
+        return "High"
     status = (job.sponsorship_status or "").lower()
     if status == "yes":
         return "Low"

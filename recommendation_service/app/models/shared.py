@@ -97,6 +97,7 @@ class NormalizedJob(Base):
     job_domain: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     job_secondary_domain: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     requires_clearance: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    requires_citizenship: Mapped[bool] = mapped_column(Boolean, nullable=False)
     role_intent: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     salary_min: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     salary_max: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)

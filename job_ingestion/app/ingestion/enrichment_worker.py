@@ -14,6 +14,7 @@ from app.database import AsyncSessionLocal
 from app.ingestion.constants import EventCategory, EventSeverity, EventType, FailureReason, ProcessingState
 from app.ingestion.events import write_event
 from app.ingestion.notification_events import enqueue_notification_job_events
+from app.ingestion.extractor.eligibility import apply_eligibility_signals
 from app.ingestion.extractor.llm import (
     BatchJobEnrichment,
     DEFAULT_ENRICHMENT,
@@ -613,6 +614,7 @@ def _apply_enrichment_to_job(
     normalized.job_domain = enrichment.job_domain
     normalized.job_secondary_domain = enrichment.job_secondary_domain
     normalized.requires_clearance = enrichment.requires_clearance
+    normalized.requires_citizenship = enrichment.requires_citizenship
     normalized.role_intent = enrichment.role_intent
     sections = _jd_section_fields(enrichment)
     normalized.responsibilities = sections["responsibilities"]
@@ -654,6 +656,7 @@ def _apply_waas_sponsorship_hint(normalized: NormalizedJob, raw_job: RawJob) -> 
     elif visa is False:
         normalized.sponsorship_status = "no"
         normalized.sponsorship_confidence = "high"
+        normalized.requires_citizenship = True
 
 
 def _recommendation_fields_from_enrichment(
@@ -690,6 +693,7 @@ def _recommendation_fields_from_enrichment(
         "job_domain": enrichment.job_domain,
         "job_secondary_domain": enrichment.job_secondary_domain,
         "requires_clearance": enrichment.requires_clearance,
+        "requires_citizenship": enrichment.requires_citizenship,
         "role_intent": enrichment.role_intent,
         "salary_min": enrichment.salary_min,
         "salary_max": enrichment.salary_max,
@@ -872,6 +876,8 @@ async def _process_batch(
                 )
                 continue
 
+            enrichment = apply_eligibility_signals(enrichment, row.clean_text)
+
             if enrichment_missing_skill_fields(
                 enrichment.tech_stack,
                 enrichment.skills,
@@ -937,6 +943,7 @@ async def _process_batch(
                     job_domain=enrichment.job_domain,
                     job_secondary_domain=enrichment.job_secondary_domain,
                     requires_clearance=enrichment.requires_clearance,
+                    requires_citizenship=enrichment.requires_citizenship,
                     role_intent=enrichment.role_intent,
                 )
             recommendation_fields = _recommendation_fields_from_enrichment(
