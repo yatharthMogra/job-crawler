@@ -14,6 +14,15 @@ class DigestFiltersIn(BaseModel):
     employment_type: Optional[Literal["internship", "fulltime"]] = None
 
 
+class TierEntitlementsOut(BaseModel):
+    max_companies: int
+    cadence_min_minutes: int
+    cadence_max_minutes: int
+    delivery: Literal["batched", "instant"]
+    max_emails_per_day_cap: int
+    default_max_emails_per_day: int
+
+
 class NotificationPreferencesOut(BaseModel):
     candidate_id: uuid.UUID
     digest_enabled: bool
@@ -23,6 +32,13 @@ class NotificationPreferencesOut(BaseModel):
     digest_filters: Optional[dict[str, Any]] = None
     last_digest_sent_at: Optional[datetime] = None
     next_digest_due_at: Optional[datetime] = None
+    company_watch_cadence_minutes: int
+    max_emails_per_day: int
+    last_company_watch_batch_at: Optional[datetime] = None
+    next_company_watch_due_at: Optional[datetime] = None
+    plan_tier: str
+    entitlements: TierEntitlementsOut
+    emails_sent_today: int
 
 
 class NotificationPreferencesUpdateIn(BaseModel):
@@ -31,6 +47,8 @@ class NotificationPreferencesUpdateIn(BaseModel):
     cadence_hours: Optional[int] = None
     top_k: Optional[int] = None
     digest_filters: Optional[DigestFiltersIn] = None
+    company_watch_cadence_minutes: Optional[int] = None
+    max_emails_per_day: Optional[int] = None
 
 
 class CompanyWatchItemOut(BaseModel):
@@ -43,6 +61,8 @@ class CompanyWatchItemOut(BaseModel):
 class CompanyWatchListOut(BaseModel):
     candidate_id: uuid.UUID
     companies: list[CompanyWatchItemOut]
+    plan_tier: str
+    max_companies: int
 
 
 class CompanyWatchUpdateIn(BaseModel):

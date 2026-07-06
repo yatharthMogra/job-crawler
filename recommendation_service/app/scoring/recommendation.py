@@ -51,15 +51,15 @@ def score_job(
         job.seniority, constraints
     )
 
-    needs_sponsorship = bool(constraints.get("sponsorship_required"))
-    use_sponsorship = settings.sponsorship_score_enabled and needs_sponsorship
+    # Eligibility exclusion is enforced in retrieval filters; do not re-rank via H-1B history.
+    use_sponsorship = False
 
     if use_sponsorship:
         pool_family = pool_family_from_roles(job.normalized_roles or [])
         sponsorship_score = compute_sponsorship_score(
             job.company_id,
             pool_family,
-            needs_sponsorship,
+            False,
             h1b_lookup,
         )
         base_score = (

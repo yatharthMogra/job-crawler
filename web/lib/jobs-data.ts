@@ -41,6 +41,8 @@ export interface Job {
   benefits: string[]
   sponsorship_status: SponsorshipStatus
   sponsorship_confidence: string
+  requires_clearance: boolean
+  requires_citizenship: boolean
   h1b_sponsorship: H1BSponsorshipInfo | null
   company_info: CompanyEnrichmentInfo | null
   about_summary: string | null
@@ -227,6 +229,8 @@ export const ALL_JOBS: Job[] = Array.from({ length: TOTAL }).map((_, i) => {
     benefits: ["Competitive compensation", "Equity", "Flexible work environment"],
     sponsorship_status: "unclear",
     sponsorship_confidence: "low",
+    requires_clearance: false,
+    requires_citizenship: false,
     h1b_sponsorship: null,
     company_info: mockCompanyInfo(company),
     about_summary: `${company} is looking for a ${role.title} to join our team. You'll work on high-impact systems and collaborate closely with product and design.`,

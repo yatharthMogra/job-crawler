@@ -9,12 +9,14 @@ interface CompanyWatchPickerProps {
   selectedCompanyIds: string[]
   onChange: (companyIds: string[]) => void
   disabled?: boolean
+  maxCompanies?: number
 }
 
 export function CompanyWatchPicker({
   selectedCompanyIds,
   onChange,
   disabled = false,
+  maxCompanies = 5,
 }: CompanyWatchPickerProps) {
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<CompanySearchResult[]>([])
@@ -51,10 +53,11 @@ export function CompanyWatchPicker({
   const addCompany = useCallback(
     (company: CompanySearchResult) => {
       if (selectedCompanyIds.includes(company.id)) return
+      if (selectedCompanyIds.length >= maxCompanies) return
       onChange([...selectedCompanyIds, company.id])
       setQuery("")
     },
-    [onChange, selectedCompanyIds],
+    [onChange, selectedCompanyIds, maxCompanies],
   )
 
   const removeCompany = useCallback(
@@ -90,6 +93,12 @@ export function CompanyWatchPicker({
       ) : (
         <p className="text-sm text-muted-foreground">No companies watched yet.</p>
       )}
+      {!disabled && selectedCompanyIds.length >= maxCompanies ? (
+        <p className="text-xs text-muted-foreground">
+          You&apos;ve reached your plan limit of {maxCompanies} companies. Job Scout Plus ($4.99/month)
+          supports up to 25.
+        </p>
+      ) : null}
 
       {!disabled ? (
         <>

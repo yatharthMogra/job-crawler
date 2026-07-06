@@ -25,7 +25,7 @@ const SKILL_CATEGORY_LABELS: Record<string, string> = {
 
 function formatConstraintLabel(key: string): string {
   const labels: Record<string, string> = {
-    sponsorship_required: "Sponsorship Required",
+    sponsorship_required: "Exclude restricted eligibility",
     visa_type: "Visa Type",
     work_authorization: "Work Authorization",
     internship_only: "Internship Only",

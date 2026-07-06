@@ -241,8 +241,7 @@ export function ProfileCommandPage({
                       Equal employment opportunity
                     </h2>
                     <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-                      Voluntary self-identification used for compliance and to match roles that fit
-                      your work authorization and sponsorship needs.
+                      Voluntary self-identification used for compliance reporting.
                     </p>
                   </div>
                   <button

@@ -38,6 +38,8 @@ export function mapApplicationToUi(application: UserApplicationApi): Job & { rol
     benefits: description.benefits,
     sponsorship_status: "unclear",
     sponsorship_confidence: "low",
+    requires_clearance: false,
+    requires_citizenship: false,
     h1b_sponsorship: null,
     company_info: null,
     about_summary: description.about,

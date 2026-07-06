@@ -19,10 +19,16 @@ pnpm install
 ```bash
 ./scripts/dev-profile-service.sh           # :8001
 ./scripts/dev-recommendation-service.sh    # :8002
-./scripts/dev-web.sh                       # :3000
+./scripts/dev-web.sh                       # :3002
 ```
 
-Mock mode: `NEXT_PUBLIC_USE_MOCK_DATA=true` in `.env.local`
+**Mock-only UI preview** (optional, local development):
+
+1. Set `NEXT_PUBLIC_USE_MOCK_DATA=true` in `.env.local`
+2. Restart the dev server
+3. Open `/emails` — uses in-memory mock data with the Free plan (5 companies)
+
+In production, `/emails` loads preferences from the recommendation API. Job Scout Plus ($4.99/month, 25 companies) is shown as a waitlist upsell until billing is enabled.
 
 ## Navigation
 
@@ -32,8 +38,10 @@ Mock mode: `NEXT_PUBLIC_USE_MOCK_DATA=true` in `.env.local`
 | `/jobs/liked` | Saved/liked jobs |
 | `/jobs/applied` | Applied jobs |
 | `/resume` | Resume library |
+| `/emails` | Email alerts, company watch, digest preferences |
 | `/profile` | Tabbed profile (Personal, Education, Experience, Skills, EEO) |
 | `/filters` | Full job criteria editor |
+| `/settings` | Account, login, and subscriptions |
 | `/onboarding` | Signup |
 | `/profile/upload` → `/profile/review` → `/profile/job-intent` → `/jobs/recommended` | Onboarding flow |
 

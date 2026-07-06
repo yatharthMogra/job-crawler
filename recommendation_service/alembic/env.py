@@ -7,7 +7,7 @@ from sqlalchemy import engine_from_config, pool
 
 from app.config import get_settings
 from app.database import Base
-from app.models import notification, subscription  # noqa: F401
+from app.models import company_watch, company_watch_pending, notification, notification_preferences, subscription  # noqa: F401
 
 config = context.config
 settings = get_settings()

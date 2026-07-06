@@ -30,7 +30,7 @@ export function RecommendationsFilterPanel({
   onClose: () => void
   onApplied: (state: JobFiltersState) => void
 }) {
-  const { candidateId, candidate } = useSession()
+  const { candidateId } = useSession()
   const mockMode = useMockData()
   const { rawProfile, profileHome, loadProfileHome } = useProfileFlow()
   const { refreshJobs } = useJobs()
@@ -154,8 +154,6 @@ export function RecommendationsFilterPanel({
           ) : (
             <FiltersCommandPage
               state={state}
-              candidateName={candidate?.name ?? profileHome?.candidateName ?? "you"}
-              saving={saving}
               onChange={setState}
               onReset={() =>
                 setState(
@@ -165,7 +163,6 @@ export function RecommendationsFilterPanel({
                   ),
                 )
               }
-              onConfirm={() => void handleConfirm()}
             />
           )}
         </div>

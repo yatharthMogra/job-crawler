@@ -26,6 +26,8 @@ class CandidateResponse(BaseModel):
     google_sub: str | None = None
     avatar_url: str | None = None
     email_verified: bool = False
+    plan_tier: str = "free"
+    plan_expires_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
 

@@ -98,9 +98,8 @@ def _job_to_out(
 
 
 def _needs_sponsorship_data(user_profile: UserProfile | None) -> bool:
-    if user_profile is None:
-        return False
-    return bool((user_profile.constraints or {}).get("sponsorship_required"))
+    """H-1B company history is informational only; eligibility filtering uses explicit job flags."""
+    return False
 
 
 async def _load_job_enrichment_lookups(

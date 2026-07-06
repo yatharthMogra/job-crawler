@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import Settings
 from app.models.shared import NormalizedJob
 from app.scoring.recommendation import score_job
-from app.services.h1b_lookup import H1bLookup, load_h1b_summary_lookup
+from app.services.h1b_lookup import H1bLookup
 from app.services.profile_loader import UserProfile
 
 _WHITESPACE = re.compile(r"\s+")
@@ -87,9 +87,5 @@ async def rank_jobs_with_h1b(
     user_profile: UserProfile,
     settings: Settings,
 ) -> list[tuple[NormalizedJob, float]]:
-    h1b_lookup: H1bLookup | None = None
-    constraints = user_profile.constraints or {}
-    if settings.sponsorship_score_enabled and constraints.get("sponsorship_required"):
-        company_ids = {job.company_id for job in jobs}
-        h1b_lookup = await load_h1b_summary_lookup(db, company_ids)
-    return rank_jobs(jobs, user_profile, settings, h1b_lookup=h1b_lookup)
+    # H-1B company history is not used for ranking; eligibility uses explicit job flags in retrieval.
+    return rank_jobs(jobs, user_profile, settings, h1b_lookup=None)

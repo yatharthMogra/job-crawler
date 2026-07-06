@@ -19,6 +19,8 @@ class Candidate(Base):
     google_sub: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True, index=True)
     avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     email_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    plan_tier: Mapped[str] = mapped_column(String(16), nullable=False, default="free", server_default="free")
+    plan_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

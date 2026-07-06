@@ -17,7 +17,9 @@ from app.notification.filters import job_matches_location_constraints
 from app.notification.renderer import render_company_watch
 from app.notification.retrieval import build_constraint_filters
 from app.notification.sender import send_email
+from app.notification.spam_limiter import can_send_email
 from app.scoring.explainability import generate_explanations
+from app.services.entitlements import get_plan_tier, get_tier_limits
 from app.services.profile_loader import load_user_profile
 
 log = structlog.get_logger(__name__)
@@ -66,22 +68,32 @@ async def _already_notified(
     return bool(existing)
 
 
-async def _notify_watcher(
+async def _notify_watcher_instant(
     db: AsyncSession,
     *,
     candidate_id: uuid.UUID,
     job: NormalizedJob,
     company_name: str,
     settings: Settings,
+    prefs: NotificationPreferences,
 ) -> None:
     if await _already_notified(db, candidate_id, job.id):
         return
 
-    user_profile = await load_user_profile(db, candidate_id)
-    if user_profile is None:
+    if not await can_send_email(db, candidate_id, prefs.max_emails_per_day):
+        batch = NotificationBatch(
+            candidate_id=candidate_id,
+            triggered_at=_utcnow(),
+            status="skipped",
+            channel=CHANNEL_COMPANY_WATCH,
+            jobs_sent=0,
+            skip_reason="daily_cap_reached",
+        )
+        db.add(batch)
         return
 
-    if not await job_passes_preference_filters(db, job, user_profile, settings):
+    user_profile = await load_user_profile(db, candidate_id)
+    if user_profile is None:
         return
 
     explanations = generate_explanations(job, user_profile)
@@ -91,6 +103,7 @@ async def _notify_watcher(
         user_profile=user_profile,
         company_name=company_name,
         app_base_url=settings.app_base_url,
+        plan_tier="plus",
     )
 
     batch = NotificationBatch(
@@ -128,6 +141,47 @@ async def _notify_watcher(
         batch.skip_reason = "email_failed"
 
 
+async def _handle_watcher(
+    db: AsyncSession,
+    *,
+    candidate_id: uuid.UUID,
+    job: NormalizedJob,
+    company_name: str,
+    company_id: uuid.UUID,
+    settings: Settings,
+    prefs: NotificationPreferences,
+    plan_tier: str,
+) -> None:
+    user_profile = await load_user_profile(db, candidate_id)
+    if user_profile is None:
+        return
+
+    if not await job_passes_preference_filters(db, job, user_profile, settings):
+        return
+
+    limits = get_tier_limits(plan_tier)
+    if limits.delivery == "batched":
+        from app.notification.company_watch_batch import schedule_company_watch_batch
+
+        await schedule_company_watch_batch(
+            db,
+            candidate_id=candidate_id,
+            job_id=job.id,
+            company_id=company_id,
+            prefs=prefs,
+        )
+        return
+
+    await _notify_watcher_instant(
+        db,
+        candidate_id=candidate_id,
+        job=job,
+        company_name=company_name,
+        settings=settings,
+        prefs=prefs,
+    )
+
+
 async def process_company_watch_event(
     db: AsyncSession,
     event: NotificationJobEvent,
@@ -142,9 +196,9 @@ async def process_company_watch_event(
     company = await db.get(Company, event.company_id)
     company_name = company.name if company else job.company_name
 
-    watcher_ids = (
-        await db.scalars(
-            select(CompanyWatchSubscription.candidate_id)
+    watcher_rows = (
+        await db.execute(
+            select(CompanyWatchSubscription.candidate_id, NotificationPreferences)
             .join(
                 NotificationPreferences,
                 NotificationPreferences.candidate_id == CompanyWatchSubscription.candidate_id,
@@ -158,14 +212,18 @@ async def process_company_watch_event(
         )
     ).all()
 
-    for candidate_id in watcher_ids:
+    for candidate_id, prefs in watcher_rows:
         try:
-            await _notify_watcher(
+            plan_tier = await get_plan_tier(db, candidate_id)
+            await _handle_watcher(
                 db,
                 candidate_id=candidate_id,
                 job=job,
                 company_name=company_name,
+                company_id=event.company_id,
                 settings=settings,
+                prefs=prefs,
+                plan_tier=plan_tier,
             )
         except Exception as exc:
             log.error(
