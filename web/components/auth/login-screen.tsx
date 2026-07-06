@@ -5,10 +5,17 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowLeft, ShieldCheck } from "lucide-react"
 import { signIn } from "next-auth/react"
+import { OtpInput } from "@/components/auth/otp-input"
 import { Brand } from "@/components/profile/brand"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ApiError, createCandidate, lookupCandidateByEmail } from "@/lib/profile/api"
+import {
+  ApiError,
+  requestLoginOtp,
+  requestSignupOtp,
+  verifyLoginOtp,
+  verifySignupOtp,
+} from "@/lib/profile/api"
 import {
   MOCK_CANDIDATE_ID,
   setMockCandidateInfo,
@@ -40,12 +47,21 @@ function GoogleIcon() {
   )
 }
 
+type AuthMode = "signin" | "signup"
+type AuthStep = "credentials" | "otp"
+
 export function LoginScreen() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const mockMode = useMockData()
+  const [mode, setMode] = useState<AuthMode>("signin")
+  const [step, setStep] = useState<AuthStep>("credentials")
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [otp, setOtp] = useState("")
+  const [challengeToken, setChallengeToken] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
@@ -53,9 +69,27 @@ export function LoginScreen() {
 
   useEffect(() => {
     if (searchParams.get("error") === "exists") {
-      setError("An account with this email already exists. Sign in with Google or enter your email below.")
+      setError("An account with this email already exists. Sign in with Google or use email sign-in below.")
+    }
+    if (searchParams.get("mode") === "signup") {
+      setMode("signup")
     }
   }, [searchParams])
+
+  function resetOtpStep() {
+    setStep("credentials")
+    setOtp("")
+    setChallengeToken("")
+    setError(null)
+  }
+
+  function switchMode(nextMode: AuthMode) {
+    setMode(nextMode)
+    resetOtpStep()
+    setPassword("")
+    setConfirmPassword("")
+    setError(null)
+  }
 
   async function handleGoogleSignIn() {
     setGoogleLoading(true)
@@ -68,13 +102,35 @@ export function LoginScreen() {
     }
   }
 
-  async function handleEmailSubmit(e: React.FormEvent) {
+  async function handleCredentialsSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+
     if (!email.trim()) {
       setError("Please enter your email.")
       return
     }
+
+    if (!password) {
+      setError("Please enter your password.")
+      return
+    }
+
+    if (mode === "signup") {
+      if (!name.trim()) {
+        setError("Please enter your name.")
+        return
+      }
+      if (password !== confirmPassword) {
+        setError("Passwords do not match.")
+        return
+      }
+      if (password.length < 8) {
+        setError("Password must be at least 8 characters.")
+        return
+      }
+    }
+
     setLoading(true)
     try {
       if (mockMode) {
@@ -85,32 +141,63 @@ export function LoginScreen() {
         return
       }
 
-      try {
-        const existing = await lookupCandidateByEmail(email.trim())
-        setStoredCandidateId(existing.id)
-        const dest = await resolveBootDestination()
-        router.replace(dest)
-        return
-      } catch (lookupErr) {
-        if (!(lookupErr instanceof ApiError && lookupErr.status === 404)) {
-          throw lookupErr
-        }
-      }
+      const challenge =
+        mode === "signup"
+          ? await requestSignupOtp(name.trim(), email.trim(), password)
+          : await requestLoginOtp(email.trim(), password)
 
-      if (!name.trim()) {
-        setError("Please enter your name to create a new account.")
-        return
-      }
-
-      const candidate = await createCandidate(name.trim(), email.trim())
-      setStoredCandidateId(candidate.id)
-      router.replace("/profile/upload")
+      setChallengeToken(challenge.challenge_token)
+      setOtp("")
+      setStep("otp")
     } catch (err) {
-      if (err instanceof ApiError && err.status === 409) {
-        setError("An account with this email already exists. Sign in with Google or enter your email to continue.")
-      } else {
-        setError(err instanceof Error ? err.message : "Something went wrong. Please try again.")
+      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleOtpSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+
+    if (otp.length !== 6) {
+      setError("Please enter the 6-digit verification code.")
+      return
+    }
+
+    setLoading(true)
+    try {
+      const candidate =
+        mode === "signup"
+          ? await verifySignupOtp(email.trim(), otp, challengeToken)
+          : await verifyLoginOtp(email.trim(), otp, challengeToken)
+
+      setStoredCandidateId(candidate.id)
+      if (mode === "signup") {
+        router.replace("/profile/upload")
+        return
       }
+      const dest = await resolveBootDestination()
+      router.replace(dest)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleResendCode() {
+    setError(null)
+    setLoading(true)
+    try {
+      const challenge =
+        mode === "signup"
+          ? await requestSignupOtp(name.trim(), email.trim(), password)
+          : await requestLoginOtp(email.trim(), password)
+      setChallengeToken(challenge.challenge_token)
+      setOtp("")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to resend code. Please try again.")
     } finally {
       setLoading(false)
     }
@@ -151,60 +238,177 @@ export function LoginScreen() {
           </div>
 
           <div className="mt-8 rounded-2xl border border-border/80 bg-card p-6 shadow-lg shadow-primary/5">
-            <button
-              type="button"
-              onClick={() => void handleGoogleSignIn()}
-              disabled={googleLoading}
-              className="flex h-12 w-full items-center justify-center gap-3 rounded-full border border-border bg-background text-sm font-semibold transition-colors hover:bg-muted disabled:opacity-50"
-            >
-              <GoogleIcon />
-              {googleLoading ? "Redirecting..." : "Continue with Google"}
-            </button>
+            {step === "credentials" ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => void handleGoogleSignIn()}
+                  disabled={googleLoading}
+                  className="flex h-12 w-full items-center justify-center gap-3 rounded-full border border-border bg-background text-sm font-semibold transition-colors hover:bg-muted disabled:opacity-50"
+                >
+                  <GoogleIcon />
+                  {googleLoading ? "Redirecting..." : "Continue with Google"}
+                </button>
 
-            <div className="my-6 flex items-center gap-3">
-              <div className="h-px flex-1 bg-border" />
-              <span className="text-xs text-muted-foreground">or continue with email</span>
-              <div className="h-px flex-1 bg-border" />
-            </div>
+                <div className="my-6 flex items-center gap-3">
+                  <div className="h-px flex-1 bg-border" />
+                  <span className="text-xs text-muted-foreground">or continue with email</span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
 
-            <form onSubmit={(e) => void handleEmailSubmit(e)} className="space-y-4">
-              <div>
-                <label htmlFor="login-name" className="mb-1.5 block text-sm font-medium text-foreground">
-                  Full name <span className="text-muted-foreground">(new accounts only)</span>
-                </label>
-                <Input
-                  id="login-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Alex Rivera"
-                  autoComplete="name"
-                  className="h-12 rounded-xl border-border/80 bg-surface/50"
-                />
-              </div>
-              <div>
-                <label htmlFor="login-email" className="mb-1.5 block text-sm font-medium text-foreground">
-                  Email
-                </label>
-                <Input
-                  id="login-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  autoComplete="email"
-                  required
-                  className="h-12 rounded-xl border-border/80 bg-surface/50"
-                />
-              </div>
-              {error ? <p className="text-sm text-remove">{error}</p> : null}
-              <Button
-                type="submit"
-                className="btn-brand h-12 w-full rounded-full text-sm font-semibold"
-                disabled={loading}
-              >
-                {loading ? "Signing in..." : "Continue"}
-              </Button>
-            </form>
+                <form onSubmit={(e) => void handleCredentialsSubmit(e)} className="space-y-4">
+                  {mode === "signup" ? (
+                    <div>
+                      <label htmlFor="login-name" className="mb-1.5 block text-sm font-medium text-foreground">
+                        Full name
+                      </label>
+                      <Input
+                        id="login-name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Alex Rivera"
+                        autoComplete="name"
+                        className="h-12 rounded-xl border-border/80 bg-surface/50"
+                      />
+                    </div>
+                  ) : null}
+
+                  <div>
+                    <label htmlFor="login-email" className="mb-1.5 block text-sm font-medium text-foreground">
+                      Email
+                    </label>
+                    <Input
+                      id="login-email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      autoComplete="email"
+                      required
+                      className="h-12 rounded-xl border-border/80 bg-surface/50"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="login-password" className="mb-1.5 block text-sm font-medium text-foreground">
+                      Password
+                    </label>
+                    <Input
+                      id="login-password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder={mode === "signup" ? "At least 8 characters" : "Your password"}
+                      autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                      required
+                      className="h-12 rounded-xl border-border/80 bg-surface/50"
+                    />
+                  </div>
+
+                  {mode === "signup" ? (
+                    <div>
+                      <label
+                        htmlFor="login-confirm-password"
+                        className="mb-1.5 block text-sm font-medium text-foreground"
+                      >
+                        Confirm password
+                      </label>
+                      <Input
+                        id="login-confirm-password"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Re-enter your password"
+                        autoComplete="new-password"
+                        required
+                        className="h-12 rounded-xl border-border/80 bg-surface/50"
+                      />
+                    </div>
+                  ) : null}
+
+                  {error ? <p className="text-sm text-remove">{error}</p> : null}
+
+                  <Button
+                    type="submit"
+                    className="btn-brand h-12 w-full rounded-full text-sm font-semibold"
+                    disabled={loading}
+                  >
+                    {loading
+                      ? "Sending code..."
+                      : mode === "signup"
+                        ? "Sign up"
+                        : "Sign in"}
+                  </Button>
+                </form>
+
+                <p className="mt-4 text-center text-sm text-muted-foreground">
+                  {mode === "signin" ? (
+                    <>
+                      Don&apos;t have an account?{" "}
+                      <button
+                        type="button"
+                        onClick={() => switchMode("signup")}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        Sign up
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      Already have an account?{" "}
+                      <button
+                        type="button"
+                        onClick={() => switchMode("signin")}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        Sign in
+                      </button>
+                    </>
+                  )}
+                </p>
+              </>
+            ) : (
+              <form onSubmit={(e) => void handleOtpSubmit(e)} className="space-y-6">
+                <div className="text-center">
+                  <h2 className="text-lg font-semibold text-foreground">Check your email</h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    We sent a 6-digit verification code to{" "}
+                    <span className="font-medium text-foreground">{email}</span>.
+                  </p>
+                </div>
+
+                <OtpInput value={otp} onChange={setOtp} disabled={loading} />
+
+                {error ? <p className="text-center text-sm text-remove">{error}</p> : null}
+
+                <Button
+                  type="submit"
+                  className="btn-brand h-12 w-full rounded-full text-sm font-semibold"
+                  disabled={loading || otp.length !== 6}
+                >
+                  {loading ? "Verifying..." : mode === "signup" ? "Complete sign up" : "Complete sign in"}
+                </Button>
+
+                <div className="flex items-center justify-between text-sm">
+                  <button
+                    type="button"
+                    onClick={resetOtpStep}
+                    className="text-muted-foreground hover:text-foreground"
+                    disabled={loading}
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleResendCode()}
+                    className="font-medium text-primary hover:underline disabled:opacity-50"
+                    disabled={loading}
+                  >
+                    Resend code
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
 
           <p className="mt-6 text-center text-xs text-muted-foreground">

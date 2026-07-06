@@ -1,8 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import Link from "next/link"
 import { Brand } from "@/components/profile/brand"
-import { Button } from "@/components/ui/button"
 import {
   FlowPage,
   FlowPageContent,
@@ -10,55 +9,9 @@ import {
   FlowPageHero,
   FlowPanel,
 } from "@/components/ui/flow-page"
-import { Input } from "@/components/ui/input"
-import { ApiError, createCandidate } from "@/lib/profile/api"
-import {
-  MOCK_CANDIDATE_ID,
-  setMockCandidateInfo,
-  setStoredCandidateId,
-  useMockData,
-} from "@/lib/session"
 import { HandMetal, Sparkles, Target, Zap } from "lucide-react"
 
-interface OnboardingScreenProps {
-  onComplete: (candidateId: string) => void
-}
-
-export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
-  const mockMode = useMockData()
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setError(null)
-    if (!name.trim() || !email.trim()) {
-      setError("Please enter your name and email.")
-      return
-    }
-    setLoading(true)
-    try {
-      if (mockMode) {
-        setMockCandidateInfo(name.trim(), email.trim())
-        setStoredCandidateId(MOCK_CANDIDATE_ID)
-        onComplete(MOCK_CANDIDATE_ID)
-        return
-      }
-      const candidate = await createCandidate(name.trim(), email.trim())
-      onComplete(candidate.id)
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 409) {
-        setError("An account with this email already exists.")
-      } else {
-        setError(err instanceof Error ? err.message : "Something went wrong. Please try again.")
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
-
+export function OnboardingScreen() {
   return (
     <FlowPage>
       <FlowPageHeader>
@@ -93,39 +46,15 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
 
         <FlowPanel>
           <p className="mb-5 text-sm font-medium text-foreground">Create your account</p>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="name" className="mb-1.5 block text-sm font-medium text-foreground">
-                Full name
-              </label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Alex Rivera"
-                autoComplete="name"
-                className="h-11 border-border/80 bg-surface/50"
-              />
-            </div>
-            <div>
-              <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-foreground">
-                Email
-              </label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                autoComplete="email"
-                className="h-11 border-border/80 bg-surface/50"
-              />
-            </div>
-            {error ? <p className="text-sm text-remove">{error}</p> : null}
-            <Button type="submit" className="btn-brand h-11 w-full" disabled={loading}>
-              {loading ? "Creating profile..." : "Continue to resume upload"}
-            </Button>
-          </form>
+          <p className="mb-5 text-sm text-muted-foreground">
+            Sign up with email and password, then verify your address with a one-time code.
+          </p>
+          <Link
+            href="/login?mode=signup"
+            className="btn-brand inline-flex h-11 w-full items-center justify-center rounded-lg text-sm font-medium"
+          >
+            Continue to sign up
+          </Link>
         </FlowPanel>
       </FlowPageContent>
     </FlowPage>

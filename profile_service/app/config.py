@@ -21,6 +21,12 @@ class Settings(BaseSettings):
     supabase_storage_bucket: str = "resumes"
     log_level: str = "INFO"
     cors_origins: str = ""
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_use_tls: bool = True
+    smtp_username: str = ""
+    smtp_password: str = ""
+    email_from: str = "Job Scout <noreply@example.com>"
 
     model_config = SettingsConfigDict(
         env_file=".env",

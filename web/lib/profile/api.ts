@@ -63,12 +63,41 @@ export function createCandidate(name: string, email: string) {
   })
 }
 
-export function getCandidate(candidateId: string) {
-  return request<CandidateResponse>(`/candidates/${candidateId}`)
+export interface ChallengeResponse {
+  challenge_token: string
+  expires_in: number
 }
 
-export function lookupCandidateByEmail(email: string) {
-  return request<CandidateResponse>(`/candidates/lookup?email=${encodeURIComponent(email)}`)
+export function requestSignupOtp(name: string, email: string, password: string) {
+  return request<ChallengeResponse>("/auth/signup/request", {
+    method: "POST",
+    body: JSON.stringify({ name, email, password }),
+  })
+}
+
+export function verifySignupOtp(email: string, code: string, challengeToken: string) {
+  return request<CandidateResponse>("/auth/signup/verify", {
+    method: "POST",
+    body: JSON.stringify({ email, code, challenge_token: challengeToken }),
+  })
+}
+
+export function requestLoginOtp(email: string, password: string) {
+  return request<ChallengeResponse>("/auth/login/request", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  })
+}
+
+export function verifyLoginOtp(email: string, code: string, challengeToken: string) {
+  return request<CandidateResponse>("/auth/login/verify", {
+    method: "POST",
+    body: JSON.stringify({ email, code, challenge_token: challengeToken }),
+  })
+}
+
+export function getCandidate(candidateId: string) {
+  return request<CandidateResponse>(`/candidates/${candidateId}`)
 }
 
 export function uploadResume(candidateId: string, file: File) {

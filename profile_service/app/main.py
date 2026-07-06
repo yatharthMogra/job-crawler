@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.auth import router as auth_router
 from app.api.candidates import router as candidates_router
 from app.api.profiles import router as profiles_router
 from app.auth import require_api_key
@@ -30,6 +31,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router)
 app.include_router(candidates_router)
 app.include_router(profiles_router)
 

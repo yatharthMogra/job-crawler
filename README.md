@@ -80,6 +80,8 @@ cd recommendation_service && pytest
 
 See [`testing.md`](testing.md) for end-to-end recommendation testing and [`web/README.md`](web/README.md) for the user-facing frontend.
 
+See [`RECOMMENDATION_SYSTEM.md`](RECOMMENDATION_SYSTEM.md) for how personalized recommendations work end-to-end (architecture, filters, scoring, key files).
+
 See [`DEPLOYMENT.md`](DEPLOYMENT.md) for hybrid cloud + home machine deployment (Supabase, Cloud Run, Vercel, Tailscale).
 
 ## Frontend apps

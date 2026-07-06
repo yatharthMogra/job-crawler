@@ -16,6 +16,7 @@ from app.models.candidate import Candidate
 from app.models.resume import CandidateResume
 from app.pipeline.patch_engine import process_resume_upload
 from app.services.domain_sync import sync_candidate_domains
+from app.services.auth_crypto import normalize_email
 from app.storage import get_resume_storage
 from app.schemas.candidate import (
     CandidateCreate,
@@ -37,31 +38,32 @@ async def _get_candidate_or_404(db: AsyncSession, candidate_id: uuid.UUID) -> Ca
     return candidate
 
 
-@router.get("/lookup", response_model=CandidateResponse)
+@router.get("/lookup", response_model=CandidateResponse, deprecated=True)
 async def lookup_candidate(email: str, db: AsyncSession = Depends(get_db)) -> Candidate:
-    result = await db.execute(select(Candidate).where(Candidate.email == email))
-    candidate = result.scalar_one_or_none()
-    if candidate is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Candidate not found")
-    return candidate
+    raise HTTPException(
+        status_code=status.HTTP_410_GONE,
+        detail="Email lookup sign-in is no longer supported. Use /auth/login instead.",
+    )
 
 
 @router.post("/oauth", response_model=CandidateResponse)
 async def upsert_oauth_candidate(payload: CandidateOAuthCreate, db: AsyncSession = Depends(get_db)) -> Candidate:
+    normalized_email = normalize_email(str(payload.email))
     result = await db.execute(select(Candidate).where(Candidate.google_sub == payload.google_sub))
     candidate = result.scalar_one_or_none()
 
     if candidate is None:
-        result = await db.execute(select(Candidate).where(Candidate.email == payload.email))
+        result = await db.execute(select(Candidate).where(Candidate.email == normalized_email))
         candidate = result.scalar_one_or_none()
 
     if candidate is None:
         candidate = Candidate(
-            email=payload.email,
+            email=normalized_email,
             name=payload.name,
             google_sub=payload.google_sub,
             avatar_url=payload.avatar_url,
             email_verified=payload.email_verified,
+            signup_method="google",
         )
         db.add(candidate)
     else:
@@ -79,17 +81,12 @@ async def upsert_oauth_candidate(payload: CandidateOAuthCreate, db: AsyncSession
     return candidate
 
 
-@router.post("", response_model=CandidateResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=CandidateResponse, status_code=status.HTTP_201_CREATED, deprecated=True)
 async def create_candidate(payload: CandidateCreate, db: AsyncSession = Depends(get_db)) -> Candidate:
-    candidate = Candidate(email=payload.email, name=payload.name)
-    db.add(candidate)
-    try:
-        await db.commit()
-    except IntegrityError as exc:
-        await db.rollback()
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already exists") from exc
-    await db.refresh(candidate)
-    return candidate
+    raise HTTPException(
+        status_code=status.HTTP_410_GONE,
+        detail="Direct candidate creation is no longer supported. Use /auth/signup instead.",
+    )
 
 
 @router.get("/{candidate_id}", response_model=CandidateResponse)
