@@ -108,7 +108,17 @@ Rules:
 - evidence_keywords must be normalized technical/architectural signals, not raw bullet text.
 - Do NOT infer job search preferences, target roles, visa status, sponsorship needs, or location preferences.
 - Experience titles are historical job titles from the resume, not target roles the candidate wants to pursue.
-- duration_months: compute from date ranges if present. If only year given, estimate conservatively.
+- duration_months rules:
+  - Compute independently for EACH role from that role's own stated start and end dates.
+  - Roles frequently overlap (e.g. part-time research assistant while doing a summer internship).
+    Overlapping employment is normal — do NOT subtract one role's months from another.
+  - A 3-month summer internship does NOT shorten a concurrent 18-month research role.
+  - Extract each overlapping role as a separate experience entry with its full date-range duration.
+  - Use inclusive month counting (e.g. Jul 2024 through Dec 2025 ≈ 18 months; May 2025 through Aug 2025 = 4 months).
+  - If only a year is given, estimate conservatively for that role alone.
+  - Prefer the resume's explicit date range over inferring duration from overlapping roles.
+  - Example: "Research Assistant, NYU, Jul 2024 – Dec 2025" and "Intern, Cambium Assessment, May 2025 – Aug 2025"
+    → two entries with duration_months 18 and 4 respectively (not 14 or 4 for the RA).
 - education_entries: extract each degree separately (undergrad, masters, doctoral) with school, degree, graduation_date, and GPA when present.
 - contact: extract location, phone, linkedin, github, and email when explicitly present in the resume header or contact section.
 - education (legacy single object): populate with the most recent or highest degree when education_entries is empty.
