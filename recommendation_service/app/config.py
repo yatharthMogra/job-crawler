@@ -23,12 +23,8 @@ class Settings(BaseSettings):
     company_watch_batch_size: int = 50
     default_digest_cadence_hours: int = 24
     default_digest_top_k: int = 4
-    smtp_host: str = "smtp.gmail.com"
-    smtp_port: int = 587
-    smtp_use_tls: bool = True
-    smtp_username: str = ""
-    smtp_password: str = ""
-    email_from: str = "Career Match AI <noreply@example.com>"
+    resend_api_key: str = ""
+    email_from: str = "Job Scout <notifications@job-scout.dev>"
     score_capability_weight: float = 0.40
     score_skill_weight: float = 0.25
     score_location_weight: float = 0.20
@@ -58,6 +54,7 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        extra="ignore",
     )
 
     @model_validator(mode="after")

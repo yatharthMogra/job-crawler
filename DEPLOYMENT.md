@@ -40,7 +40,7 @@ flowchart TB
 | **recommendation_service API** | Cloud Run | Job feed, personal scoring, subscriptions (scheduler **off**) |
 | **web/** | Vercel | User-facing Next.js app |
 | **job_ingestion** | Home machine | Connectors, enrichment, global scoring, H1B, YC crawl, cleanup |
-| **recommendation_service worker** | Home machine | Scheduled email notifications via Gmail SMTP |
+| **recommendation_service worker** | Home machine | Scheduled email notifications via Resend |
 | **job-ingestion-dashboard** | Home machine (or Mac via tunnel) | Internal ops UI |
 
 **Remote access:** Mac connects to the Linux home machine over **Tailscale** (`100.111.129.27`) and SSH port-forwards to local APIs. See [`deploy/TAILSCALE.md`](deploy/TAILSCALE.md) and Phase 6.9.
@@ -62,7 +62,7 @@ Before starting, create accounts and gather credentials:
 | [Vercel](https://vercel.com) project | Host `web/` frontend |
 | [Google AI Studio](https://aistudio.google.com) | Gemini API key (enrichment + resume parsing) |
 | Google OAuth credentials | Login via NextAuth |
-| Gmail app password | SMTP for notification emails |
+| [Resend](https://resend.com) API key + verified `job-scout.dev` domain | Outgoing email (OTP + job notifications) |
 | [Tailscale](https://tailscale.com) (Mac + Linux home machine) | Secure SSH to home machine from anywhere |
 
 **Local tools:**
@@ -245,6 +245,9 @@ echo -n "https://[ref].supabase.co" | \
 
 echo -n "YOUR_SUPABASE_SERVICE_ROLE_KEY" | \
   gcloud secrets create supabase-service-role-key --data-file=-
+
+echo -n "YOUR_RESEND_API_KEY" | \
+  gcloud secrets create resend-api-key --data-file=-
 ```
 
 Grant Cloud Run's default service account access to secrets:
@@ -253,7 +256,7 @@ Grant Cloud Run's default service account access to secrets:
 PROJECT_NUMBER=$(gcloud projects describe $PROJECT --format='value(projectNumber)')
 SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
 
-for SECRET in database-url gemini-api-key profile-api-key supabase-url supabase-service-role-key; do
+for SECRET in database-url gemini-api-key profile-api-key supabase-url supabase-service-role-key resend-api-key; do
   gcloud secrets add-iam-policy-binding $SECRET \
     --member="serviceAccount:${SA}" \
     --role="roles/secretmanager.secretAccessor"
@@ -478,13 +481,12 @@ cp recommendation_service/.env.example recommendation_service/.env
 DATABASE_URL=postgresql+asyncpg://postgres.[ref]:[PASSWORD]@db.[ref].supabase.co:5432/postgres
 ENABLE_NOTIFICATION_SCHEDULER=true
 NOTIFICATION_CADENCE_HOURS=24
-SMTP_USERNAME=you@gmail.com
-SMTP_PASSWORD=your-gmail-app-password
-EMAIL_FROM=Career Match AI <you@gmail.com>
+RESEND_API_KEY=re_...
+EMAIL_FROM=Job Scout <notifications@job-scout.dev>
 APP_BASE_URL=https://your-app.vercel.app
 ```
 
-**Gmail app password:** Google Account → Security → 2-Step Verification → App passwords → generate one for "Mail".
+**Resend:** Verify `job-scout.dev` in the Resend dashboard (SPF/DKIM DNS records), then create an API key with send permission.
 
 #### 6.5 Start processes
 
@@ -910,7 +912,7 @@ If the consent screen is in **Testing** mode, add each pilot user's Gmail under 
 | Cloud Run `profile_service` | Pooler `:6543` | `RESUME_STORAGE_BACKEND=supabase`, API/storage secrets |
 | Cloud Run `recommendation_service` | Pooler `:6543` | `ENABLE_NOTIFICATION_SCHEDULER=false`, `CORS_ORIGINS` |
 | Home `job_ingestion` | Direct `:5432` | `FETCH_SCHEDULE_JSON` (optional), `GEMINI_API_KEYS` |
-| Home notification worker | Direct `:5432` | `ENABLE_NOTIFICATION_SCHEDULER=true`, SMTP vars, `APP_BASE_URL` |
+| Home notification worker | Direct `:5432` | `ENABLE_NOTIFICATION_SCHEDULER=true`, `RESEND_API_KEY`, `EMAIL_FROM`, `APP_BASE_URL` |
 | Vercel `web/` | N/A | Cloud Run URLs, OAuth creds, `AUTH_SECRET`, `PROFILE_API_KEY` |
 
 ---
@@ -947,8 +949,8 @@ The phases above expand these five areas:
 | `NOTIFICATION_CADENCE_MINUTES` | `720` | Optional; 12h example |
 | `NOTIFICATION_CADENCE_HOURS` | `24` | Fallback when minutes unset |
 | `JOB_MAX_AGE_DAYS` | `7` | Must match job_ingestion; limits jobs in email retrieval |
-| `SMTP_USERNAME` | Gmail address | |
-| `SMTP_PASSWORD` | Gmail app password | |
+| `RESEND_API_KEY` | `re_...` | Resend API key |
+| `EMAIL_FROM` | `Job Scout <notifications@job-scout.dev>` | Verified sender domain |
 | `APP_BASE_URL` | `https://your-app.vercel.app` | Links in emails |
 
 ### Cloud Run — profile_service
@@ -962,6 +964,8 @@ The phases above expand these five areas:
 | `SUPABASE_URL` | | |
 | `SUPABASE_SERVICE_ROLE_KEY` | | |
 | `SUPABASE_STORAGE_BUCKET` | `resumes` | |
+| `RESEND_API_KEY` | | Via Secret Manager — OTP emails |
+| `EMAIL_FROM` | `Job Scout <notifications@job-scout.dev>` | Verified sender in Resend |
 | `CORS_ORIGINS` | Vercel URL | |
 
 ### Cloud Run — recommendation_service API

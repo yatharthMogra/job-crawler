@@ -131,7 +131,7 @@ async def request_signup_otp(
 
     subject, html = render_otp_email(code=code, purpose="signup")
     sent = await send_email(to=normalized_email, subject=subject, html=html, settings=settings)
-    if not sent and settings.smtp_username:
+    if not sent and settings.resend_api_key:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Unable to send verification email. Please try again later.",
@@ -173,7 +173,7 @@ async def request_login_otp(
 
     subject, html = render_otp_email(code=code, purpose="login")
     sent = await send_email(to=normalized_email, subject=subject, html=html, settings=settings)
-    if not sent and settings.smtp_username:
+    if not sent and settings.resend_api_key:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Unable to send verification email. Please try again later.",

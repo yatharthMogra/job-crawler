@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-
 import structlog
+import resend
 
 from app.config import Settings
 
@@ -26,22 +23,20 @@ def render_otp_email(*, code: str, purpose: str) -> tuple[str, str]:
 
 
 async def send_email(*, to: str, subject: str, html: str, settings: Settings) -> bool:
-    if not settings.smtp_username or not settings.smtp_password:
-        log.warning("email_send_skipped", to=to, reason="smtp_not_configured")
+    if not settings.resend_api_key:
+        log.warning("email_send_skipped", to=to, reason="resend_not_configured")
         return False
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = settings.email_from
-    msg["To"] = to
-    msg.attach(MIMEText(html, "html"))
-
     try:
-        with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=30) as server:
-            if settings.smtp_use_tls:
-                server.starttls()
-            server.login(settings.smtp_username, settings.smtp_password)
-            server.sendmail(settings.email_from, [to], msg.as_string())
+        resend.api_key = settings.resend_api_key
+        resend.Emails.send(
+            {
+                "from": settings.email_from,
+                "to": to,
+                "subject": subject,
+                "html": html,
+            }
+        )
         return True
     except Exception as exc:
         log.error("email_send_failed", to=to, error=str(exc))

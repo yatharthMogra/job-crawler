@@ -5,7 +5,7 @@
 #   - gcloud CLI authenticated, billing enabled, APIs enabled
 #   - Docker running (Apple Silicon: builds linux/amd64 for Cloud Run)
 #   - Secrets in Secret Manager: database-url, gemini-api-key, profile-api-key,
-#     supabase-url, supabase-service-role-key
+#     supabase-url, supabase-service-role-key, resend-api-key
 #
 # Usage:
 #   GCP_PROJECT=your-project-id GCP_REGION=us-central1 ./scripts/deploy-cloud-run.sh
@@ -68,8 +68,8 @@ gcloud artifacts repositories describe "${REPO}" \
 gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
 
 deploy_service profile_service \
-  --set-secrets "DATABASE_URL=database-url:latest,GEMINI_API_KEY=gemini-api-key:latest,API_KEY=profile-api-key:latest,SUPABASE_URL=supabase-url:latest,SUPABASE_SERVICE_ROLE_KEY=supabase-service-role-key:latest" \
-  --set-env-vars "RESUME_STORAGE_BACKEND=supabase,SUPABASE_STORAGE_BUCKET=resumes,CORS_ORIGINS=${CORS_ORIGINS}"
+  --set-secrets "DATABASE_URL=database-url:latest,GEMINI_API_KEY=gemini-api-key:latest,API_KEY=profile-api-key:latest,SUPABASE_URL=supabase-url:latest,SUPABASE_SERVICE_ROLE_KEY=supabase-service-role-key:latest,RESEND_API_KEY=resend-api-key:latest" \
+  --set-env-vars "RESUME_STORAGE_BACKEND=supabase,SUPABASE_STORAGE_BUCKET=resumes,CORS_ORIGINS=${CORS_ORIGINS},EMAIL_FROM=Job Scout <notifications@job-scout.dev>"
 
 deploy_service recommendation_service \
   --set-secrets "DATABASE_URL=database-url:latest,GEMINI_API_KEY=gemini-api-key:latest" \
