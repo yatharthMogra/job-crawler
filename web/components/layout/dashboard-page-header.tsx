@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Bell, Settings } from "lucide-react"
+import { Bell } from "lucide-react"
 import { useSession } from "@/components/session-provider"
 import { cn } from "@/lib/utils"
 
@@ -51,13 +51,6 @@ export function DashboardPageHeader({
           >
             <Bell className="size-4" />
           </button>
-          <Link
-            href="/settings"
-            className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            aria-label="Settings"
-          >
-            <Settings className="size-4" />
-          </Link>
           <Link
             href="/profile"
             className="flex items-center gap-2 rounded-full py-1 pl-1 pr-3 transition-colors hover:bg-muted/60"

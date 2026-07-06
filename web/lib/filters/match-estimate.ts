@@ -59,8 +59,6 @@ export function filterJobsByState(
     if (!salaryMatches(job, minimumSalary, maximumSalary)) return false
     if (!remoteMatches(state.workModels, job.remote_type)) return false
     if (!seniorityMatches(state.experienceLevels, job.seniority_level)) return false
-    if (state.sponsorshipRequired && job.sponsorship_status !== "yes") return false
-    if (state.excludeUsCitizenOnly && job.sponsorship_status === "no") return false
     return true
   })
 }

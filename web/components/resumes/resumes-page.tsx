@@ -1,26 +1,23 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { Building2, FileText, Star } from "lucide-react"
+import { FileText, Star } from "lucide-react"
 import { useProfileFlow } from "@/components/profile/profile-flow-provider"
 import { useSession } from "@/components/session-provider"
 import { FeedSkeleton } from "@/components/card-skeleton"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { ResumeUploadButton, ResumeUploadZone } from "@/components/resumes/resume-upload"
+import { ResumeUploadButton } from "@/components/resumes/resume-upload"
 import { formatRelativeTime } from "@/lib/profile/map-profile"
 import {
   formatResumeFileSize,
   MAX_RESUME_SLOTS,
-  partitionResumes,
   sortResumesByUploadedAt,
 } from "@/lib/profile/resumes"
 import { cn } from "@/lib/utils"
 
 export function ResumesPage() {
   const { candidateId } = useSession()
-  const { profileHome, loadProfileHome, uploadResumeInline, handleResumeLabelSave } =
-    useProfileFlow()
+  const { profileHome, loadProfileHome, uploadResumeInline } = useProfileFlow()
   const [loadError, setLoadError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [uploadError, setUploadError] = useState<string | null>(null)
@@ -54,11 +51,6 @@ export function ResumesPage() {
     [profileHome],
   )
 
-  const { general, company } = useMemo(
-    () => partitionResumes(sortedResumes),
-    [sortedResumes],
-  )
-
   const resumeCount = profileHome?.resumeCount ?? 0
   const slotsRemaining = MAX_RESUME_SLOTS - resumeCount
   const canUploadMore = resumeCount < MAX_RESUME_SLOTS
@@ -73,8 +65,6 @@ export function ResumesPage() {
       throw err
     }
   }
-
-  const targetTitles = profileHome?.primaryRoles.join(", ") || "—"
 
   if (loading && !profileHome) {
     return (
@@ -118,19 +108,16 @@ export function ResumesPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Resumes</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Upload a general resume for matching, or tailor versions for specific companies.
-          </p>
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <p className="text-sm text-muted-foreground">
+          PDF only, up to 5MB. Uploads save immediately — no need to restart onboarding.
+        </p>
         <ResumeUploadButton
           className="btn-brand shrink-0"
           onUpload={handleUpload}
           disabled={!canUploadMore}
         >
-          Add resume
+          Upload resume
         </ResumeUploadButton>
       </div>
 
@@ -140,7 +127,7 @@ export function ResumesPage() {
           {resumeCount} of {MAX_RESUME_SLOTS} resume slots used
           {canUploadMore
             ? ` · ${slotsRemaining} remaining`
-            : " · remove or replace a resume to add another"}
+            : " · remove a resume to upload another"}
         </span>
       </div>
 
@@ -151,156 +138,48 @@ export function ResumesPage() {
       ) : null}
 
       {sortedResumes.length === 0 ? (
-        <div>
-          <ResumeUploadZone onUpload={handleUpload} disabled={!canUploadMore} />
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            Add company-specific versions later by labeling them &quot;for Google&quot;, &quot;for
-            Meta&quot;, etc.
+        <div className="mt-10 rounded-2xl border border-dashed border-border/80 bg-card px-6 py-12 text-center">
+          <p className="text-base font-semibold text-foreground">No resume uploaded yet</p>
+          <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
+            Choose a PDF from your computer. It will be added to your profile without sending you
+            back through setup.
           </p>
+          <ResumeUploadButton
+            className="btn-brand mt-6"
+            onUpload={handleUpload}
+            disabled={!canUploadMore}
+          >
+            Upload resume
+          </ResumeUploadButton>
         </div>
       ) : (
-        <div className="mt-8 space-y-10">
-          <ResumeSection
-            title="General resumes"
-            description="Used for profile extraction and broad job matching."
-            resumes={general}
-            targetTitles={targetTitles}
-            onSaveLabel={handleResumeLabelSave}
-            labelPlaceholder="e.g. Backend-focused version"
-            emptyMessage="No general resumes yet."
-          />
-
-          <ResumeSection
-            title="Company-specific resumes"
-            description='Label resumes as "for [Company]" to track tailored versions per employer.'
-            icon={Building2}
-            resumes={company}
-            targetTitles={targetTitles}
-            onSaveLabel={handleResumeLabelSave}
-            labelPlaceholder='e.g. for Google, for Stripe'
-            emptyMessage="No company-specific resumes yet. Add a label like “for Google” on any resume."
-          />
-        </div>
-      )}
-
-      {sortedResumes.length > 0 && canUploadMore ? (
-        <ResumeUploadButton
-          className="mt-6"
-          variant="secondary"
-          onUpload={handleUpload}
-        >
-          Upload another resume
-        </ResumeUploadButton>
-      ) : null}
-    </div>
-  )
-}
-
-function ResumeSection({
-  title,
-  description,
-  resumes,
-  targetTitles,
-  onSaveLabel,
-  labelPlaceholder,
-  emptyMessage,
-  icon: Icon = FileText,
-}: {
-  title: string
-  description: string
-  resumes: {
-    id: string
-    originalFilename: string
-    displayLabel: string | null
-    uploadedAt: string
-    fileSizeBytes: number
-  }[]
-  targetTitles: string
-  onSaveLabel: (resumeId: string, label: string | null) => Promise<void>
-  labelPlaceholder: string
-  emptyMessage: string
-  icon?: typeof FileText
-}) {
-  return (
-    <section>
-      <div className="mb-4 flex items-start gap-3">
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <Icon className="size-4" />
-        </div>
-        <div>
-          <h2 className="text-lg font-bold text-foreground">{title}</h2>
-          <p className="text-sm text-muted-foreground">{description}</p>
-        </div>
-      </div>
-
-      {resumes.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-border/70 px-4 py-6 text-center text-sm text-muted-foreground">
-          {emptyMessage}
-        </p>
-      ) : (
-        <div className="space-y-4">
-          {resumes.map((resume, index) => (
-            <ResumeCard
-              key={resume.id}
-              resume={resume}
-              isPrimary={index === 0}
-              targetTitles={targetTitles}
-              onSaveLabel={onSaveLabel}
-              labelPlaceholder={labelPlaceholder}
-            />
+        <div className="mt-8 space-y-4">
+          {sortedResumes.map((resume, index) => (
+            <ResumeCard key={resume.id} resume={resume} isLatest={index === 0} />
           ))}
         </div>
       )}
-    </section>
+    </div>
   )
 }
 
 function ResumeCard({
   resume,
-  isPrimary,
-  targetTitles,
-  onSaveLabel,
-  labelPlaceholder,
+  isLatest,
 }: {
   resume: {
     id: string
     originalFilename: string
-    displayLabel: string | null
     uploadedAt: string
     fileSizeBytes: number
   }
-  isPrimary: boolean
-  targetTitles: string
-  onSaveLabel: (resumeId: string, label: string | null) => Promise<void>
-  labelPlaceholder: string
+  isLatest: boolean
 }) {
-  const [label, setLabel] = useState(resume.displayLabel ?? "")
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
-
-  useEffect(() => {
-    setLabel(resume.displayLabel ?? "")
-  }, [resume.displayLabel, resume.id])
-
-  async function handleSaveLabel() {
-    setSaving(true)
-    try {
-      const trimmed = label.trim()
-      await onSaveLabel(resume.id, trimmed || null)
-      setSaved(true)
-      window.setTimeout(() => setSaved(false), 2000)
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const labelChanged = label.trim() !== (resume.displayLabel ?? "")
-
   return (
     <article
       className={cn(
         "rounded-2xl border bg-card p-5 shadow-sm transition-colors",
-        isPrimary ? "border-primary/25 shadow-primary/5" : "border-border/70",
+        isLatest ? "border-primary/25 shadow-primary/5" : "border-border/70",
       )}
     >
       <div className="flex items-start gap-4">
@@ -310,41 +189,18 @@ function ResumeCard({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <p className="truncate font-semibold text-foreground">{resume.originalFilename}</p>
-            {isPrimary ? (
+            {isLatest ? (
               <span className="inline-flex items-center gap-0.5 rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-primary">
                 <Star className="size-2.5 fill-current" />
                 Latest
               </span>
             ) : null}
           </div>
-          <p className="mt-0.5 truncate text-sm text-muted-foreground">
-            {resume.displayLabel ?? targetTitles}
-          </p>
           <p className="mt-2 text-xs text-muted-foreground">
             {formatResumeFileSize(resume.fileSizeBytes)} · uploaded{" "}
             {formatRelativeTime(resume.uploadedAt)}
           </p>
         </div>
-      </div>
-
-      <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-border/60 pt-4">
-        <label className="min-w-0 flex-1">
-          <span className="mb-1 block text-xs font-medium text-muted-foreground">Label</span>
-          <Input
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-            placeholder={labelPlaceholder}
-            className="text-sm"
-          />
-        </label>
-        <Button
-          size="sm"
-          variant="secondary"
-          disabled={saving || !labelChanged}
-          onClick={() => void handleSaveLabel()}
-        >
-          {saving ? "Saving..." : saved ? "Saved" : "Save label"}
-        </Button>
       </div>
     </article>
   )

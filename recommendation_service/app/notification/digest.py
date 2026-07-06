@@ -16,9 +16,15 @@ from app.notification.renderer import render_personalized_digest
 from app.notification.retrieval import build_constraint_filters, fetch_new_jobs_in_pools
 from app.notification.filters import build_digest_filters
 from app.notification.sender import send_email
+from app.notification.spam_limiter import can_send_email
 from app.models.notification import NotificationBatch, NotificationJobHistory
 from app.scoring.explainability import generate_explanations
 from app.services.profile_loader import load_user_profile
+from app.services.entitlements import (
+    default_company_watch_cadence_minutes,
+    default_max_emails_per_day,
+    get_plan_tier,
+)
 from app.services.subscriptions import get_active_pools
 
 log = structlog.get_logger(__name__)
@@ -60,12 +66,15 @@ async def get_or_create_preferences(
     if prefs is not None:
         return prefs
 
+    plan_tier = await get_plan_tier(db, candidate_id)
     prefs = NotificationPreferences(
         candidate_id=candidate_id,
         digest_enabled=True,
         company_watch_enabled=False,
         cadence_hours=settings.default_digest_cadence_hours,
         top_k=settings.default_digest_top_k,
+        company_watch_cadence_minutes=default_company_watch_cadence_minutes(plan_tier),
+        max_emails_per_day=default_max_emails_per_day(plan_tier),
         next_digest_due_at=_utcnow(),
     )
     db.add(prefs)
@@ -169,6 +178,10 @@ async def run_digest_for_user(
     for job, score in top_jobs:
         explanations = generate_explanations(job, user_profile)
         jobs_with_explanations.append((job, explanations, score))
+
+    if not await can_send_email(db, candidate_id, prefs.max_emails_per_day):
+        await _skip_batch(batch, "daily_cap_reached", db)
+        return
 
     html = render_personalized_digest(
         jobs_with_explanations=jobs_with_explanations,

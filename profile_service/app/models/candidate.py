@@ -21,6 +21,8 @@ class Candidate(Base):
     email_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     signup_method: Mapped[str] = mapped_column(String(16), nullable=False, default="email", server_default="email")
     password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    plan_tier: Mapped[str] = mapped_column(String(16), nullable=False, default="free", server_default="free")
+    plan_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

@@ -24,6 +24,7 @@ export default auth((req) => {
     pathname === "/profile" ||
     (pathname.startsWith("/profile/") && !isProfileFlowRoute(pathname)) ||
     pathname === "/resume" ||
+    pathname === "/emails" ||
     pathname === "/settings" ||
     pathname === "/filters" ||
     pathname.startsWith("/dashboard")
@@ -55,6 +56,7 @@ export const config = {
     "/profile",
     "/profile/:path*",
     "/resume",
+    "/emails",
     "/settings",
     "/filters",
     "/dashboard/:path*",

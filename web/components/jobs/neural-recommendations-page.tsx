@@ -47,7 +47,6 @@ function countAdvancedFilters(state: JobFiltersState | null): number {
   if (state.workModels.length > 0) count += 1
   if (state.experienceLevels.length > 0) count += 1
   if (state.sponsorshipRequired) count += 1
-  if (state.excludeUsCitizenOnly) count += 1
   if (state.fulltimeOnly || state.internshipOnly) count += 1
   return count
 }

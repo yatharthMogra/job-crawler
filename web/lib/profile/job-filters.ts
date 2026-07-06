@@ -21,8 +21,6 @@ export interface JobFiltersState {
   openToAllSalary: boolean
   minimumSalary: string
   sponsorshipRequired: boolean
-  hasClearance: boolean
-  excludeUsCitizenOnly: boolean
   roleIntents: string[]
   preferredIndustries: string[]
   excludedIndustries: string[]
@@ -48,8 +46,6 @@ export function emptyJobFilters(): JobFiltersState {
     openToAllSalary: true,
     minimumSalary: "",
     sponsorshipRequired: false,
-    hasClearance: false,
-    excludeUsCitizenOnly: false,
     roleIntents: ["engineer", "researcher"],
     preferredIndustries: [],
     excludedIndustries: [],
@@ -102,13 +98,6 @@ export function profileToJobFilters(profile: ProfileResponse): JobFiltersState {
     minimumSalary:
       constraints.minimum_salary != null ? String(constraints.minimum_salary) : "",
     sponsorshipRequired: Boolean(constraints.sponsorship_required),
-    hasClearance:
-      constraints.has_clearance != null
-        ? Boolean(constraints.has_clearance)
-        : constraints.exclude_security_clearance != null
-          ? !Boolean(constraints.exclude_security_clearance)
-          : false,
-    excludeUsCitizenOnly: Boolean(constraints.exclude_us_citizen_only),
     preferredIndustries: (preferences.preferred_industries as string[]) ?? [],
     excludedIndustries: (preferences.excluded_industries as string[]) ?? [],
     preferredSkills: (preferences.preferred_skills as string[]) ?? [],
@@ -145,8 +134,6 @@ export function jobFiltersToApiPayload(state: JobFiltersState): {
         : state.minimumSalary
           ? Number(state.minimumSalary)
           : null,
-      has_clearance: state.hasClearance,
-      exclude_us_citizen_only: state.excludeUsCitizenOnly,
       target_seniority: experienceLevelsToTargetSeniority(state.experienceLevels),
       eeo: eeoToApiPayload(state.eeo),
     },

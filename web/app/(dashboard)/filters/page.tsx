@@ -21,7 +21,7 @@ import { FeedSkeleton } from "@/components/card-skeleton"
 
 export default function FiltersPage() {
   const router = useRouter()
-  const { candidateId, candidate } = useSession()
+  const { candidateId } = useSession()
   const mockMode = useMockData()
   const { rawProfile, profileHome, loadProfileHome } = useProfileFlow()
   const { refreshJobs } = useJobs()
@@ -90,13 +90,22 @@ export default function FiltersPage() {
   }
 
   return (
-    <FiltersCommandPage
-      state={state}
-      candidateName={candidate?.name ?? profileHome?.candidateName ?? "you"}
-      saving={saving}
-      onChange={setState}
-      onReset={handleReset}
-      onConfirm={() => void handleConfirm()}
-    />
+    <div className="min-h-full bg-muted/30">
+      <FiltersCommandPage
+        state={state}
+        onChange={setState}
+        onReset={handleReset}
+      />
+      <div className="sticky bottom-0 border-t border-border/60 bg-background/95 px-5 py-4 backdrop-blur">
+        <button
+          type="button"
+          onClick={() => void handleConfirm()}
+          disabled={saving}
+          className="btn-brand w-full rounded-xl py-3 text-sm font-bold disabled:opacity-60"
+        >
+          {saving ? "Saving…" : "Confirm filters"}
+        </button>
+      </div>
+    </div>
   )
 }

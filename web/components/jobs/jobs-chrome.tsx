@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Bell, Search, Settings } from "lucide-react"
+import { Bell, Search } from "lucide-react"
 import { useJobs } from "@/components/jobs-provider"
 import { useSession } from "@/components/session-provider"
 import { Input } from "@/components/ui/input"
@@ -90,13 +90,6 @@ export function JobsChrome({
             >
               <Bell className="size-4" />
             </button>
-            <Link
-              href="/settings"
-              className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              aria-label="Settings"
-            >
-              <Settings className="size-4" />
-            </Link>
             <Link
               href="/profile"
               className="flex items-center gap-2 rounded-full py-1 pl-1 pr-3 transition-colors hover:bg-muted/60"

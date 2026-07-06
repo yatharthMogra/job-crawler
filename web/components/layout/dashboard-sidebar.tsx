@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Briefcase, FileText, LogOut } from "lucide-react"
+import { Briefcase, FileText, LogOut, Mail } from "lucide-react"
 import { signOut } from "next-auth/react"
 import { BrandMark } from "@/components/profile/brand"
 import { useSession } from "@/components/session-provider"
@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils"
 const NAV = [
   { href: "/jobs/recommended", label: "Jobs", icon: Briefcase },
   { href: "/resume", label: "Resume", icon: FileText },
+  { href: "/emails", label: "Emails", icon: Mail },
 ] as const
 
 function isNavActive(pathname: string, href: string): boolean {

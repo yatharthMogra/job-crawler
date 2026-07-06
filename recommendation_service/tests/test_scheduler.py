@@ -9,4 +9,4 @@ def test_scheduler_registers_digest_and_company_watch_jobs() -> None:
     )
     scheduler = create_scheduler(settings)
     job_ids = {job.id for job in scheduler.get_jobs()}
-    assert job_ids == {"digest_scheduler", "company_watch_processor"}
+    assert job_ids == {"digest_scheduler", "company_watch_processor", "company_watch_batch_processor"}

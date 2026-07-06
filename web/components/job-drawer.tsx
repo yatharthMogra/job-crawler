@@ -7,6 +7,7 @@ import { CompanyLogo } from "@/components/company-logo"
 import { MatchTag } from "@/components/badges"
 import { CompanyInfoCard } from "@/components/company-info-card"
 import { H1bSponsorshipSection, SponsorshipStatusPill } from "@/components/h1b-sponsorship-section"
+import { EligibilityBadges } from "@/components/jobs/eligibility-badges"
 import {
   JobDescriptionSectionsView,
   buildMatchedLabels,
@@ -256,6 +257,8 @@ export function JobDetailContent({
                 <CompanyInfoCard info={job.company_info} />
               </section>
             ) : null}
+
+            <EligibilityBadges job={job} className="mb-4" />
 
             <SponsorshipStatusPill
               status={job.sponsorship_status}

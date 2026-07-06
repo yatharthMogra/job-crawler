@@ -1,11 +1,9 @@
 "use client"
 
-import { useMemo, useState, type ReactNode } from "react"
-import { Check, Info } from "lucide-react"
+import { useState, type ReactNode } from "react"
+import { Check } from "lucide-react"
 import { RoleCascader, poolIdsForSelectedRoles } from "@/components/profile/role-cascader"
 import { SalaryRangeControl } from "@/components/filters/salary-range-control"
-import { FiltersMatchPanel } from "@/components/filters/filters-match-panel"
-import { useJobs } from "@/components/jobs-provider"
 import type { JobFiltersState } from "@/lib/profile/job-filters"
 import {
   DEFAULT_SALARY_MAX,
@@ -13,9 +11,6 @@ import {
   EXPERIENCE_TIERS,
   WORK_ARRANGEMENTS,
 } from "@/lib/filters/filter-options"
-import {
-  filterJobsByState,
-} from "@/lib/filters/match-estimate"
 import { cn } from "@/lib/utils"
 
 function FilterCard({
@@ -49,39 +44,20 @@ function FilterCard({
 
 interface FiltersCommandPageProps {
   state: JobFiltersState
-  candidateName: string
-  saving: boolean
   onChange: (next: JobFiltersState) => void
   onReset: () => void
-  onConfirm: () => void
 }
 
 export function FiltersCommandPage({
   state,
-  candidateName,
-  saving,
   onChange,
   onReset,
-  onConfirm,
 }: FiltersCommandPageProps) {
-  const { recommendedJobs, allKnownJobs } = useJobs()
   const [salaryMax, setSalaryMax] = useState(DEFAULT_SALARY_MAX)
 
   const salaryMin = state.openToAllSalary
     ? DEFAULT_SALARY_MIN
     : Number(state.minimumSalary || DEFAULT_SALARY_MIN)
-
-  const jobsPool = recommendedJobs.length > 0 ? recommendedJobs : allKnownJobs
-
-  const matchedJobs = useMemo(
-    () => filterJobsByState(jobsPool, state, salaryMax),
-    [jobsPool, state, salaryMax],
-  )
-
-  const matchCount = useMemo(() => {
-    if (jobsPool.length === 0) return 0
-    return matchedJobs.length
-  }, [jobsPool.length, matchedJobs.length])
 
   function update<K extends keyof JobFiltersState>(key: K, value: JobFiltersState[K]) {
     onChange({ ...state, [key]: value })
@@ -136,8 +112,7 @@ export function FiltersCommandPage({
 
   return (
     <div className="min-h-full bg-muted/30">
-      <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-6 xl:flex-row xl:items-start">
-        <div className="min-w-0 flex-1 space-y-5">
+      <div className="mx-auto max-w-[820px] space-y-5 px-5 py-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h1 className="text-xl font-bold text-foreground">Job search filters</h1>
@@ -197,7 +172,7 @@ export function FiltersCommandPage({
             </div>
           </FilterCard>
 
-          <FilterCard title="Compensation & sponsorship">
+          <FilterCard title="Compensation & eligibility">
             <div className="space-y-5">
               <div>
                 <div className="mb-3 flex items-center justify-between gap-3">
@@ -224,8 +199,7 @@ export function FiltersCommandPage({
               </div>
 
               <div className="border-t border-border/60 pt-5">
-                <p className="mb-3 text-sm font-medium text-foreground">Work authorization</p>
-                <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border/70 bg-muted/30 px-4 py-3">
+                <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border/70 px-4 py-3">
                   <input
                     type="checkbox"
                     checked={state.sponsorshipRequired}
@@ -234,32 +208,15 @@ export function FiltersCommandPage({
                   />
                   <span>
                     <span className="block text-sm font-medium text-foreground">
-                      H1B sponsorship required
+                      Exclude jobs with restricted eligibility
                     </span>
                     <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
-                      Show roles that explicitly offer sponsorship or come from companies with a
-                      recent history of sponsoring visas for similar positions.
+                      Hide postings that explicitly require security clearance, US citizenship, or
+                      state they will not sponsor visas. We do not filter on H-1B history — only
+                      what is clearly stated in the job description.
                     </span>
                   </span>
                 </label>
-              </div>
-
-              <div className="border-t border-border/60 pt-5">
-                <p className="mb-3 flex items-center gap-1.5 text-sm font-medium text-foreground">
-                  Exclude jobs with limitations
-                  <Info className="size-3.5 text-muted-foreground" aria-hidden="true" />
-                </p>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-border/70 px-3 py-2.5 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={state.excludeUsCitizenOnly}
-                      onChange={(e) => update("excludeUsCitizenOnly", e.target.checked)}
-                      className="size-4 rounded border-border accent-primary"
-                    />
-                    US citizen only
-                  </label>
-                </div>
               </div>
             </div>
           </FilterCard>
@@ -334,15 +291,6 @@ export function FiltersCommandPage({
               </div>
             </FilterCard>
           </div>
-        </div>
-
-        <FiltersMatchPanel
-          matchCount={matchCount}
-          candidateName={candidateName}
-          saving={saving}
-          onViewMatches={onConfirm}
-          className="xl:sticky xl:top-6"
-        />
       </div>
     </div>
   )
@@ -374,6 +322,5 @@ export function buildDefaultFiltersState(
     preferredIndustries: [],
     preferredSkills: [],
     sponsorshipRequired: base.sponsorshipRequired,
-    excludeUsCitizenOnly: base.excludeUsCitizenOnly,
   }
 }

@@ -4,6 +4,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from app.config import Settings
 from app.notification.company_watch import run_company_watch_processor
+from app.notification.company_watch_batch import run_company_watch_batch_processor
 from app.notification.digest import run_digest_scheduler
 
 
@@ -22,6 +23,14 @@ def create_scheduler(settings: Settings) -> AsyncIOScheduler:
         trigger="interval",
         minutes=settings.company_watch_poll_minutes,
         id="company_watch_processor",
+        replace_existing=True,
+        kwargs={"settings": settings},
+    )
+    scheduler.add_job(
+        run_company_watch_batch_processor,
+        trigger="interval",
+        minutes=settings.company_watch_poll_minutes,
+        id="company_watch_batch_processor",
         replace_existing=True,
         kwargs={"settings": settings},
     )

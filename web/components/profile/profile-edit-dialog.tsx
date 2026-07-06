@@ -75,9 +75,6 @@ export function ProfileEditDialog({
       })
     } else if (section === "constraints") {
       setValues({
-        sponsorship_required: String(initialValues.sponsorship_required ?? "false"),
-        visa_type: String(initialValues.visa_type ?? ""),
-        work_authorization: String(initialValues.work_authorization ?? ""),
         minimum_hourly_rate: String(initialValues.minimum_hourly_rate ?? ""),
       })
     } else {
@@ -120,9 +117,6 @@ export function ProfileEditDialog({
         payload.university = values.university || null
         payload.graduation_date = values.graduation_date || null
       } else if (section === "constraints") {
-        payload.sponsorship_required = values.sponsorship_required === "true"
-        payload.visa_type = values.visa_type || null
-        payload.work_authorization = values.work_authorization || null
         payload.minimum_hourly_rate = values.minimum_hourly_rate
           ? Number(values.minimum_hourly_rate)
           : null
@@ -196,19 +190,6 @@ export function ProfileEditDialog({
 
         {section === "constraints" ? (
           <div className="space-y-3">
-            <label className="block text-sm">
-              <span className="mb-1 block text-muted-foreground">Sponsorship required</span>
-              <select
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-                value={values.sponsorship_required ?? "false"}
-                onChange={(e) => setValues((s) => ({ ...s, sponsorship_required: e.target.value }))}
-              >
-                <option value="true">Yes</option>
-                <option value="false">No</option>
-              </select>
-            </label>
-            <Field label="Visa type" value={values.visa_type ?? ""} onChange={(v) => setValues((s) => ({ ...s, visa_type: v }))} />
-            <Field label="Work authorization" value={values.work_authorization ?? ""} onChange={(v) => setValues((s) => ({ ...s, work_authorization: v }))} />
             <Field label="Minimum hourly rate" value={values.minimum_hourly_rate ?? ""} onChange={(v) => setValues((s) => ({ ...s, minimum_hourly_rate: v }))} />
           </div>
         ) : null}

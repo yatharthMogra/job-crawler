@@ -64,6 +64,8 @@ export function mapApiJobToUi(
     benefits: description.benefits,
     sponsorship_status: job.sponsorship_status ?? "unclear",
     sponsorship_confidence: job.sponsorship_confidence ?? "low",
+    requires_clearance: job.requires_clearance ?? false,
+    requires_citizenship: job.requires_citizenship ?? false,
     h1b_sponsorship: job.h1b_sponsorship ?? null,
     company_info: job.company_info ?? null,
     about_summary: description.about,

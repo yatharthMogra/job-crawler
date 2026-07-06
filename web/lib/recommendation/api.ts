@@ -1,5 +1,12 @@
 const BASE_URL = process.env.NEXT_PUBLIC_RECOMMENDATION_API_URL ?? "http://localhost:8002"
 
+function useMockNotifications(): boolean {
+  if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") return true
+  if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === "false") return false
+  // Local dev: use in-memory notification mocks so Settings UI works without :8002
+  return process.env.NODE_ENV === "development"
+}
+
 export type SponsorshipStatus = "yes" | "no" | "unclear"
 
 export interface H1BSponsorshipInfo {
@@ -46,6 +53,8 @@ export interface DashboardJobApi {
   benefits: string[]
   sponsorship_status: SponsorshipStatus
   sponsorship_confidence: string
+  requires_clearance: boolean
+  requires_citizenship: boolean
   h1b_sponsorship: H1BSponsorshipInfo | null
   company_info: CompanyEnrichmentInfo | null
 }
@@ -148,6 +157,15 @@ export function createSubscriptions(candidateId: string, poolNames: string[]) {
   })
 }
 
+export interface TierEntitlementsApi {
+  max_companies: number
+  cadence_min_minutes: number
+  cadence_max_minutes: number
+  delivery: "batched" | "instant"
+  max_emails_per_day_cap: number
+  default_max_emails_per_day: number
+}
+
 export interface NotificationPreferencesApi {
   candidate_id: string
   digest_enabled: boolean
@@ -157,6 +175,13 @@ export interface NotificationPreferencesApi {
   digest_filters: Record<string, unknown> | null
   last_digest_sent_at: string | null
   next_digest_due_at: string | null
+  company_watch_cadence_minutes: number
+  max_emails_per_day: number
+  last_company_watch_batch_at: string | null
+  next_company_watch_due_at: string | null
+  plan_tier: "free" | "plus"
+  entitlements: TierEntitlementsApi
+  emails_sent_today: number
 }
 
 export interface CompanyWatchItemApi {
@@ -169,6 +194,8 @@ export interface CompanyWatchItemApi {
 export interface CompanyWatchListApi {
   candidate_id: string
   companies: CompanyWatchItemApi[]
+  plan_tier: "free" | "plus"
+  max_companies: number
 }
 
 export interface CompanySearchResult {
@@ -189,7 +216,30 @@ export const DIGEST_CADENCE_OPTIONS: { label: string; hours: DigestCadenceHours 
   { label: "Weekly (7 days)", hours: 168 },
 ]
 
+export const FREE_COMPANY_WATCH_CADENCE_OPTIONS = [
+  { label: "Every 6 hours", minutes: 360 },
+  { label: "Every 8 hours", minutes: 480 },
+  { label: "Every 10 hours", minutes: 600 },
+  { label: "Every 12 hours", minutes: 720 },
+] as const
+
+export const PLUS_COMPANY_WATCH_CADENCE_OPTIONS = [
+  { label: "Every 30 minutes", minutes: 30 },
+  { label: "Every 1 hour", minutes: 60 },
+  { label: "Every 2 hours", minutes: 120 },
+  { label: "Every 3 hours", minutes: 180 },
+] as const
+
+export function companyWatchCadenceOptions(planTier: "free" | "plus") {
+  return planTier === "plus" ? PLUS_COMPANY_WATCH_CADENCE_OPTIONS : FREE_COMPANY_WATCH_CADENCE_OPTIONS
+}
+
 export function fetchNotificationPreferences(candidateId: string) {
+  if (useMockNotifications()) {
+    return import("@/lib/recommendation/mock-notifications").then((m) =>
+      m.mockFetchNotificationPreferences(candidateId),
+    )
+  }
   return request<NotificationPreferencesApi>(`/notification-preferences/${candidateId}`)
 }
 
@@ -200,8 +250,15 @@ export function updateNotificationPreferences(
     company_watch_enabled: boolean
     cadence_hours: number
     top_k: number
+    company_watch_cadence_minutes: number
+    max_emails_per_day: number
   }>,
 ) {
+  if (useMockNotifications()) {
+    return import("@/lib/recommendation/mock-notifications").then((m) =>
+      m.mockUpdateNotificationPreferences(candidateId, payload),
+    )
+  }
   return request<NotificationPreferencesApi>(`/notification-preferences/${candidateId}`, {
     method: "PUT",
     body: JSON.stringify(payload),
@@ -209,10 +266,20 @@ export function updateNotificationPreferences(
 }
 
 export function fetchCompanyWatch(candidateId: string) {
+  if (useMockNotifications()) {
+    return import("@/lib/recommendation/mock-notifications").then((m) =>
+      m.mockFetchCompanyWatch(candidateId),
+    )
+  }
   return request<CompanyWatchListApi>(`/company-watch/${candidateId}`)
 }
 
 export function updateCompanyWatch(candidateId: string, companyIds: string[]) {
+  if (useMockNotifications()) {
+    return import("@/lib/recommendation/mock-notifications").then((m) =>
+      m.mockUpdateCompanyWatch(candidateId, companyIds),
+    )
+  }
   return request<CompanyWatchListApi>(`/company-watch/${candidateId}`, {
     method: "PUT",
     body: JSON.stringify({ company_ids: companyIds }),
@@ -220,6 +287,11 @@ export function updateCompanyWatch(candidateId: string, companyIds: string[]) {
 }
 
 export function searchCompanies(q = "", limit = 20) {
+  if (useMockNotifications()) {
+    return import("@/lib/recommendation/mock-notifications").then((m) =>
+      m.mockSearchCompanies(q, limit),
+    )
+  }
   const query = new URLSearchParams({ limit: String(limit) })
   if (q.trim()) query.set("q", q.trim())
   return request<CompanySearchResult[]>(`/companies/search?${query}`)

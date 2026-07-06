@@ -202,7 +202,9 @@ def build_constraint_filters(
         filters.extend(build_domain_filters(candidate_domains))
 
     if constraints.get("sponsorship_required"):
-        filters.append(NormalizedJob.requires_citizenship.is_(False))
+        # Explicit posting flags only — not inferred H-1B sponsor history.
+        filters.append(NormalizedJob.requires_clearance.is_(False))
+        filters.append(NormalizedJob.sponsorship_status != "no")
 
     if constraints.get("internship_only"):
         filters.append(NormalizedJob.is_internship.is_(True))

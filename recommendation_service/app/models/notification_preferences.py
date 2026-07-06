@@ -24,6 +24,10 @@ class NotificationPreferences(Base):
     digest_filters: Mapped[Optional[dict[str, Any]]] = mapped_column(JSONB, nullable=True)
     last_digest_sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     next_digest_due_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    company_watch_cadence_minutes: Mapped[int] = mapped_column(Integer, nullable=False, default=360)
+    max_emails_per_day: Mapped[int] = mapped_column(Integer, nullable=False, default=3)
+    last_company_watch_batch_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    next_company_watch_due_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

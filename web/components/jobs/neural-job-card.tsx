@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import { useJobs } from "@/components/jobs-provider"
 import { CompanyLogo } from "@/components/company-logo"
+import { EligibilityBadges } from "@/components/jobs/eligibility-badges"
 import { MatchGauge } from "@/components/ui/match-gauge"
 import { NotInterestedDialog } from "@/components/jobs/job-feedback-dialogs"
 import { matchTier } from "@/lib/recommendation/neural-display"
@@ -245,6 +246,7 @@ export function NeuralJobCard({ job, compact = false, feed = "recommended" }: Ne
                     H1-B friendly
                   </span>
                 ) : null}
+                <EligibilityBadges job={job} />
               </div>
               <h3
                 className={cn(
