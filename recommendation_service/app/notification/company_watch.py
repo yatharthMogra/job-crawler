@@ -10,16 +10,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import Settings, get_settings
 from app.database import AsyncSessionLocal
 from app.models.company_watch import CompanyWatchSubscription, NotificationJobEvent
-from app.models.notification import NotificationBatch, NotificationJobHistory
 from app.models.notification_preferences import NotificationPreferences
 from app.models.shared import Company, NormalizedJob
+from app.notification.company_watch_batch import schedule_company_watch_batch
+from app.notification.company_watch_watermark import (
+    get_company_watch_watermark,
+    job_reference_at_after_watermark,
+)
 from app.notification.filters import job_matches_location_constraints
-from app.notification.renderer import render_company_watch
 from app.notification.retrieval import build_constraint_filters
-from app.notification.sender import send_email
-from app.notification.spam_limiter import can_send_email
-from app.scoring.explainability import generate_explanations
-from app.services.entitlements import get_plan_tier, get_tier_limits
 from app.services.profile_loader import load_user_profile
 
 log = structlog.get_logger(__name__)
@@ -51,106 +50,14 @@ async def job_passes_preference_filters(
     return job_matches_location_constraints(job, user_profile)
 
 
-async def _already_notified(
-    db: AsyncSession,
-    candidate_id: uuid.UUID,
-    job_id: uuid.UUID,
-) -> bool:
-    existing = await db.scalar(
-        select(func.count())
-        .select_from(NotificationJobHistory)
-        .where(
-            NotificationJobHistory.candidate_id == candidate_id,
-            NotificationJobHistory.job_id == job_id,
-            NotificationJobHistory.channel == CHANNEL_COMPANY_WATCH,
-        )
-    )
-    return bool(existing)
-
-
-async def _notify_watcher_instant(
-    db: AsyncSession,
-    *,
-    candidate_id: uuid.UUID,
-    job: NormalizedJob,
-    company_name: str,
-    settings: Settings,
-    prefs: NotificationPreferences,
-) -> None:
-    if await _already_notified(db, candidate_id, job.id):
-        return
-
-    if not await can_send_email(db, candidate_id, prefs.max_emails_per_day):
-        batch = NotificationBatch(
-            candidate_id=candidate_id,
-            triggered_at=_utcnow(),
-            status="skipped",
-            channel=CHANNEL_COMPANY_WATCH,
-            jobs_sent=0,
-            skip_reason="daily_cap_reached",
-        )
-        db.add(batch)
-        return
-
-    user_profile = await load_user_profile(db, candidate_id)
-    if user_profile is None:
-        return
-
-    explanations = generate_explanations(job, user_profile)
-    html = render_company_watch(
-        job=job,
-        explanations=explanations,
-        user_profile=user_profile,
-        company_name=company_name,
-        app_base_url=settings.app_base_url,
-        plan_tier="plus",
-    )
-
-    batch = NotificationBatch(
-        candidate_id=candidate_id,
-        triggered_at=_utcnow(),
-        status="pending",
-        channel=CHANNEL_COMPANY_WATCH,
-        jobs_sent=1,
-    )
-    db.add(batch)
-    await db.flush()
-
-    delivered = await send_email(
-        to=user_profile.email,
-        subject=f"Career Match AI - New role at {company_name}",
-        html=html,
-        settings=settings,
-    )
-
-    db.add(
-        NotificationJobHistory(
-            candidate_id=candidate_id,
-            batch_id=batch.id,
-            job_id=job.id,
-            rank_in_batch=1,
-            recommendation_score=0.0,
-            explanation=explanations,
-            channel=CHANNEL_COMPANY_WATCH,
-        )
-    )
-    batch.sent_at = _utcnow()
-    batch.status = "sent" if delivered else "failed"
-    batch.email_delivered = delivered
-    if not delivered:
-        batch.skip_reason = "email_failed"
-
-
 async def _handle_watcher(
     db: AsyncSession,
     *,
     candidate_id: uuid.UUID,
     job: NormalizedJob,
-    company_name: str,
     company_id: uuid.UUID,
     settings: Settings,
     prefs: NotificationPreferences,
-    plan_tier: str,
 ) -> None:
     user_profile = await load_user_profile(db, candidate_id)
     if user_profile is None:
@@ -159,25 +66,20 @@ async def _handle_watcher(
     if not await job_passes_preference_filters(db, job, user_profile, settings):
         return
 
-    limits = get_tier_limits(plan_tier)
-    if limits.delivery == "batched":
-        from app.notification.company_watch_batch import schedule_company_watch_batch
-
-        await schedule_company_watch_batch(
-            db,
-            candidate_id=candidate_id,
-            job_id=job.id,
-            company_id=company_id,
-            prefs=prefs,
-        )
-        return
-
-    await _notify_watcher_instant(
+    watermark = await get_company_watch_watermark(
         db,
         candidate_id=candidate_id,
-        job=job,
-        company_name=company_name,
-        settings=settings,
+        company_id=company_id,
+        prefs=prefs,
+    )
+    if not job_reference_at_after_watermark(job, watermark):
+        return
+
+    await schedule_company_watch_batch(
+        db,
+        candidate_id=candidate_id,
+        job_id=job.id,
+        company_id=company_id,
         prefs=prefs,
     )
 
@@ -192,9 +94,6 @@ async def process_company_watch_event(
     if job is None or not job.is_active or job.processing_state != "success":
         event.processed_at = _utcnow()
         return
-
-    company = await db.get(Company, event.company_id)
-    company_name = company.name if company else job.company_name
 
     watcher_rows = (
         await db.execute(
@@ -214,16 +113,13 @@ async def process_company_watch_event(
 
     for candidate_id, prefs in watcher_rows:
         try:
-            plan_tier = await get_plan_tier(db, candidate_id)
             await _handle_watcher(
                 db,
                 candidate_id=candidate_id,
                 job=job,
-                company_name=company_name,
                 company_id=event.company_id,
                 settings=settings,
                 prefs=prefs,
-                plan_tier=plan_tier,
             )
         except Exception as exc:
             log.error(

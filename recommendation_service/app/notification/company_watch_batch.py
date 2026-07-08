@@ -13,11 +13,14 @@ from app.models.company_watch_pending import CompanyWatchPendingAlert
 from app.models.notification import NotificationBatch, NotificationJobHistory
 from app.models.notification_preferences import NotificationPreferences
 from app.models.shared import Company, NormalizedJob
+from app.notification.company_watch_watermark import (
+    get_company_watch_watermark,
+    job_reference_at_after_watermark,
+)
 from app.notification.renderer import render_company_watch_batch
 from app.notification.sender import send_email
 from app.notification.spam_limiter import can_send_email
 from app.scoring.explainability import generate_explanations
-from app.services.entitlements import get_plan_tier, get_tier_limits
 from app.services.profile_loader import load_user_profile
 
 log = structlog.get_logger(__name__)
@@ -68,6 +71,22 @@ async def schedule_company_watch_batch(
     company_id: uuid.UUID,
     prefs: NotificationPreferences,
 ) -> None:
+    if await _already_notified(db, candidate_id, job_id):
+        return
+
+    job = await db.get(NormalizedJob, job_id)
+    if job is None or not job.is_active or job.processing_state != "success":
+        return
+
+    watermark = await get_company_watch_watermark(
+        db,
+        candidate_id=candidate_id,
+        company_id=company_id,
+        prefs=prefs,
+    )
+    if not job_reference_at_after_watermark(job, watermark):
+        return
+
     pending = await db.scalar(
         select(CompanyWatchPendingAlert.id).where(
             CompanyWatchPendingAlert.candidate_id == candidate_id,
@@ -76,9 +95,6 @@ async def schedule_company_watch_batch(
         )
     )
     if pending is not None:
-        return
-
-    if await _already_notified(db, candidate_id, job_id):
         return
 
     db.add(
@@ -126,36 +142,65 @@ async def _send_batch_for_candidate(
     if user_profile is None:
         return
 
-    jobs_with_meta: list[tuple[NormalizedJob, list[str], str]] = []
-    included_row_ids: list[uuid.UUID] = []
-    stale_row_ids: list[uuid.UUID] = []
+    eligible: list[tuple[CompanyWatchPendingAlert, NormalizedJob, str]] = []
+    dropped_row_ids: list[uuid.UUID] = []
 
     for row in pending_rows:
         job = await db.get(NormalizedJob, row.job_id)
         if job is None or not job.is_active or job.processing_state != "success":
-            stale_row_ids.append(row.id)
+            dropped_row_ids.append(row.id)
             continue
+
+        watermark = await get_company_watch_watermark(
+            db,
+            candidate_id=candidate_id,
+            company_id=row.company_id,
+            prefs=prefs,
+        )
+        if not job_reference_at_after_watermark(job, watermark):
+            dropped_row_ids.append(row.id)
+            continue
+
         company = await db.get(Company, row.company_id)
         company_name = company.name if company else job.company_name
+        eligible.append((row, job, company_name))
+
+    for row_id in dropped_row_ids:
+        row = await db.get(CompanyWatchPendingAlert, row_id)
+        if row is not None:
+            await db.delete(row)
+
+    if not eligible:
+        return
+
+    eligible.sort(
+        key=lambda item: item[1].reference_at or datetime(1970, 1, 1, tzinfo=timezone.utc),
+        reverse=True,
+    )
+    max_jobs = settings.company_watch_max_jobs_per_email
+    selected = eligible[:max_jobs]
+    overflow = eligible[max_jobs:]
+
+    for row, _, _ in overflow:
+        await db.delete(row)
+
+    if overflow:
+        log.info(
+            "company_watch_batch_dropped_overflow",
+            candidate_id=str(candidate_id),
+            dropped=len(overflow),
+            cap=max_jobs,
+        )
+
+    jobs_with_meta: list[tuple[NormalizedJob, list[str], str]] = []
+    included_row_ids: list[uuid.UUID] = []
+
+    for row, job, company_name in selected:
         explanations = generate_explanations(job, user_profile)
         jobs_with_meta.append((job, explanations, company_name))
         included_row_ids.append(row.id)
 
     now = _utcnow()
-    for row_id in stale_row_ids:
-        row = await db.get(CompanyWatchPendingAlert, row_id)
-        if row is not None:
-            await db.delete(row)
-
-    if not jobs_with_meta:
-        prefs.last_company_watch_batch_at = now
-        prefs.next_company_watch_due_at = compute_next_company_watch_due_at(
-            last_batch_at=now,
-            cadence_minutes=prefs.company_watch_cadence_minutes,
-            now=now,
-        )
-        return
-
     html = render_company_watch_batch(
         jobs_with_explanations=jobs_with_meta,
         user_profile=user_profile,
@@ -234,11 +279,6 @@ async def run_company_watch_batch_processor(settings: Settings | None = None) ->
     for prefs in due_prefs:
         try:
             async with AsyncSessionLocal() as db:
-                plan_tier = await get_plan_tier(db, prefs.candidate_id)
-                limits = get_tier_limits(plan_tier)
-                if limits.delivery != "batched":
-                    continue
-
                 fresh_prefs = await db.get(NotificationPreferences, prefs.candidate_id)
                 if fresh_prefs is None or not fresh_prefs.company_watch_enabled:
                     continue

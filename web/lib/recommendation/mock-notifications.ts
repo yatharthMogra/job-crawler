@@ -19,7 +19,7 @@ const PLUS_ENTITLEMENTS: TierEntitlementsApi = {
   max_companies: 25,
   cadence_min_minutes: 30,
   cadence_max_minutes: 180,
-  delivery: "instant",
+  delivery: "batched",
   max_emails_per_day_cap: 20,
   default_max_emails_per_day: 10,
 }

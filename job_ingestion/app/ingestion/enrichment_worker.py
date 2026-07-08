@@ -925,6 +925,7 @@ async def _process_batch(
                 )
                 continue
 
+            was_already_success = row.normalized.processing_state == ProcessingState.SUCCESS
             _apply_enrichment_to_job(row.normalized, enrichment, settings, raw_job=row.raw_job)
             _apply_waas_sponsorship_hint(row.normalized, row.raw_job)
             if row.normalized.job_archive_id is not None:
@@ -994,7 +995,10 @@ async def _process_batch(
                 item.status = "success"
                 item.actual_input_tokens = input_tokens
                 item.actual_output_tokens = output_tokens
-            if row.normalized.processing_state == ProcessingState.SUCCESS:
+            if (
+                row.normalized.processing_state == ProcessingState.SUCCESS
+                and not was_already_success
+            ):
                 enriched_for_notifications.append((row.normalized.id, row.normalized.company_id))
 
         batch.status = "completed"

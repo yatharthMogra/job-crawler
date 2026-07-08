@@ -199,11 +199,7 @@ export function EmailsPage() {
         </div>
         <SettingRow
           title="Enable Company Watch"
-          description={
-            onPlus
-              ? "Get instant emails when a watched company posts a matching role."
-              : "Get batched emails every 6–12 hours when watched companies post matching roles."
-          }
+          description="Get batched emails at your chosen frequency when watched companies post new matching roles."
         >
           <Toggle
             checked={prefs.company_watch_enabled}

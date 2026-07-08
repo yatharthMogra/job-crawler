@@ -24,7 +24,7 @@ def test_free_tier_limits() -> None:
 def test_plus_tier_limits() -> None:
     limits = get_tier_limits("plus")
     assert limits.max_companies == 25
-    assert limits.delivery == "instant"
+    assert limits.delivery == "batched"
     assert limits.cadence_min_minutes == 30
     assert limits.cadence_max_minutes == 180
 

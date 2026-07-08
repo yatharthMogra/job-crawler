@@ -12,7 +12,7 @@ export const COMPANY_WATCH_PLANS = {
     tier: "plus" as const,
     name: "Job Scout Plus",
     maxCompanies: 25,
-    deliveryLabel: "Instant alerts within 30 minutes",
+    deliveryLabel: "Batched alerts every 30 min–3 hours",
     priceLabel: "$4.99/month",
   },
 } as const

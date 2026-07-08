@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     digest_scheduler_poll_minutes: int = 15
     company_watch_poll_minutes: int = 3
     company_watch_batch_size: int = 50
+    company_watch_max_jobs_per_email: int = 5
     default_digest_cadence_hours: int = 24
     default_digest_top_k: int = 4
     resend_api_key: str = ""

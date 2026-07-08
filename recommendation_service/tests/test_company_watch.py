@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import uuid
 
+from datetime import datetime, timezone
+
+from app.notification.company_watch_watermark import job_reference_at_after_watermark
 from app.notification.filters import build_digest_filters, job_matches_location_constraints
 from app.services.profile_loader import UserProfile
 
@@ -59,3 +62,22 @@ def test_job_matches_location_constraints_mismatch() -> None:
         skills={},
     )
     assert job_matches_location_constraints(job, profile) is False
+
+
+class _JobRefStub:
+    def __init__(self, reference_at: datetime | None) -> None:
+        self.reference_at = reference_at
+
+
+def test_job_reference_at_after_watermark_strictly_greater() -> None:
+    watermark = datetime(2026, 7, 1, 12, 0, tzinfo=timezone.utc)
+    assert job_reference_at_after_watermark(
+        _JobRefStub(datetime(2026, 7, 1, 12, 0, tzinfo=timezone.utc)),
+        watermark,
+    ) is False
+    assert job_reference_at_after_watermark(
+        _JobRefStub(datetime(2026, 7, 1, 12, 1, tzinfo=timezone.utc)),
+        watermark,
+    ) is True
+    assert job_reference_at_after_watermark(_JobRefStub(None), watermark) is False
+    assert job_reference_at_after_watermark(_JobRefStub(datetime(2026, 7, 2, tzinfo=timezone.utc)), None) is False

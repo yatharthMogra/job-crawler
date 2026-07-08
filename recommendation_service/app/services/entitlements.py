@@ -35,7 +35,7 @@ TIER_LIMITS: dict[PlanTier, TierLimits] = {
         max_companies=25,
         cadence_min_minutes=30,
         cadence_max_minutes=180,
-        delivery="instant",
+        delivery="batched",
         default_max_emails_per_day=10,
         max_emails_per_day_cap=20,
     ),

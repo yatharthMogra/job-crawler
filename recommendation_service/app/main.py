@@ -4,6 +4,7 @@ import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
+import structlog
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,6 +22,7 @@ from app.openapi import configure_openapi
 from app.scheduler import create_scheduler
 
 _scheduler: AsyncIOScheduler | None = None
+_log = structlog.get_logger(__name__)
 
 
 @asynccontextmanager
@@ -28,6 +30,11 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     global _scheduler
     settings = get_settings()
     if settings.enable_notification_scheduler:
+        _log.info(
+            "notification_worker_started",
+            app_base_url=settings.app_base_url,
+            company_watch_max_jobs_per_email=settings.company_watch_max_jobs_per_email,
+        )
         _scheduler = create_scheduler(settings)
         _scheduler.start()
     yield

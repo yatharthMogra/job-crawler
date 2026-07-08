@@ -79,17 +79,12 @@ def render_company_watch(
     user_profile: UserProfile,
     company_name: str,
     app_base_url: str | None = None,
-    plan_tier: str = "plus",
 ) -> str:
     template = _env.get_template("company_watch.html")
     base_url = (app_base_url or _DEFAULT_APP_BASE_URL).rstrip("/")
     candidate_id = str(user_profile.candidate_id)
     job_card = build_job_card(job, explanations, score=0.0, rank=1, total_jobs=1)
-    sla_message = (
-        "We notify you within 30 minutes of learning about new postings."
-        if plan_tier == "plus"
-        else "We batch company alerts and send them every 6–12 hours."
-    )
+    sla_message = "We batch company alerts and send them on your chosen schedule."
 
     return template.render(
         user_name=user_profile.name,

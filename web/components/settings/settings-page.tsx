@@ -81,7 +81,7 @@ export function SettingsPage() {
               <div className="mt-6 rounded-lg border border-border/60 bg-surface/50 p-4">
                 <p className="text-sm font-medium text-foreground">Job Scout Plus — coming soon</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  $4.99/month for up to 25 company watch alerts with instant delivery. Manage email
+                  $4.99/month for up to 25 watched companies with higher-frequency batched alerts. Manage email
                   alerts on the{" "}
                   <Link href="/emails" className="font-medium text-brand hover:underline">
                     Emails
