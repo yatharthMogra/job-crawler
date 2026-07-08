@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
+  <title>{% block title %}Job Scout{% endblock %}</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style>
+    html, body { margin:0 !important; padding:0 !important; height:100% !important; width:100% !important; }
+    * { -ms-text-size-adjust:100%; -webkit-text-size-adjust:100%; }
+    table, td { mso-table-lspace:0pt; mso-table-rspace:0pt; border-collapse:collapse; }
+    img { -ms-interpolation-mode:bicubic; border:0; height:auto; line-height:100%; outline:none; text-decoration:none; }
+    a { text-decoration:none; }
+    body, table, td, p, a { font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; }
+    @media only screen and (max-width:600px) {
+      .container { width:100% !important; }
+      .px { padding-left:16px !important; padding-right:16px !important; }
+      .h1 { font-size:22px !important; line-height:1.25 !important; }
+      .stat { display:block !important; width:100% !important; padding:0 0 8px 0 !important; }
+      .btn a { display:block !important; text-align:center !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f7;color:#0f1117;-webkit-font-smoothing:antialiased;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">{% block preheader %}{% endblock %}</div>
+  <div style="display:none;max-height:0;overflow:hidden;">&#8199;&#65279;&#847;&#8199;&#65279;&#847;&#8199;&#65279;&#847;&#8199;&#65279;&#847;&#8199;&#65279;&#847;</div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f7;">
+    <tr>
+      <td align="center" style="padding:28px 12px;">
+        <table role="presentation" width="600" class="container" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+          <!-- Brand header -->
+          <tr>
+            <td class="px" style="padding:2px 8px 20px 8px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td valign="middle">
+                    <table role="presentation" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td valign="middle" style="padding-right:10px;">
+                          <div style="width:30px;height:30px;border-radius:8px;background-color:#4f46e5;background-image:linear-gradient(135deg,#6366f1 0%,#4f46e5 100%);text-align:center;">
+                            <span style="display:inline-block;line-height:30px;font-size:15px;font-weight:800;color:#ffffff;">J</span>
+                          </div>
+                        </td>
+                        <td valign="middle" style="font-size:19px;font-weight:800;letter-spacing:-0.02em;color:#0f1117;">Job Scout</td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td align="right" valign="middle" style="font-size:12px;color:#9096a2;letter-spacing:0.04em;">{% block header_right %}{% endblock %}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Gradient accent bar -->
+          <tr>
+            <td style="padding:0 8px;">
+              <div style="height:4px;border-radius:999px;background-color:#4f46e5;background-image:linear-gradient(90deg,#6366f1 0%,#4f46e5 60%,#7c3aed 100%);font-size:0;line-height:4px;">&nbsp;</div>
+            </td>
+          </tr>
+
+          <tr><td style="height:18px;line-height:18px;font-size:18px;">&nbsp;</td></tr>
+
+          {% block content %}{% endblock %}
+
+          <!-- Footer -->
+          <tr>
+            <td class="px" style="padding:26px 24px 8px 24px;text-align:center;">
+              <table role="presentation" cellpadding="0" cellspacing="0" align="center">
+                <tr>
+                  <td valign="middle" style="padding-right:8px;">
+                    <div style="width:22px;height:22px;border-radius:6px;background-color:#4f46e5;background-image:linear-gradient(135deg,#6366f1 0%,#4f46e5 100%);text-align:center;">
+                      <span style="display:inline-block;line-height:22px;font-size:11px;font-weight:800;color:#ffffff;">J</span>
+                    </div>
+                  </td>
+                  <td valign="middle" style="font-size:15px;font-weight:800;letter-spacing:-0.02em;color:#0f1117;">Job Scout</td>
+                </tr>
+              </table>
+              <p style="margin:12px 0 14px 0;font-size:12px;line-height:1.5;color:#9096a2;">
+                {% block footer_links %}
+                <a href="{{ manage_prefs_url }}" style="color:#6b7280;text-decoration:none;">Manage preferences</a>
+                &nbsp;&middot;&nbsp;
+                <a href="{{ unsubscribe_url }}" style="color:#6b7280;text-decoration:none;">Unsubscribe</a>
+                {% endblock %}
+              </p>
+              <p style="margin:0 0 4px 0;font-size:11px;line-height:1.5;color:#b0b4bd;">
+                You're receiving this email because you signed up for job alerts on Job Scout.
+              </p>
+              <p style="margin:0;font-size:11px;line-height:1.5;color:#b0b4bd;">
+                &copy; {{ year }} Job Scout &middot; 2261 Market Street, San Francisco, CA 94114
+              </p>
+            </td>
+          </tr>
+
+          <tr><td style="height:8px;line-height:8px;font-size:8px;">&nbsp;</td></tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

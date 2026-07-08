@@ -13,7 +13,7 @@ import {
 import { useJobs } from "@/components/jobs-provider"
 import { useSession } from "@/components/session-provider"
 import type { ProfileHomeData } from "@/lib/profile/map-profile"
-import { MatchGauge } from "@/components/ui/match-gauge"
+import { MatchGauge, matchDescriptor } from "@/components/ui/match-gauge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -97,7 +97,7 @@ export function ProfileSidebar({ data, className }: ProfileSidebarProps) {
         <MatchGauge score={matchScore} />
         <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
           Your profile alignment for <strong className="text-foreground">{primaryRole}</strong> roles
-          is {matchScore >= 0.9 ? "exceptionally high" : "strong"}.
+          is {matchDescriptor(matchScore)}.
         </p>
       </div>
     </aside>

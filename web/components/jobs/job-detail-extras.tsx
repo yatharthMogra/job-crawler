@@ -40,9 +40,39 @@ export function mockHiringContact(job: JobWithRole) {
   }
 }
 
+/**
+ * Turn a raw "about" blob into a clean, readable intro. Description parsing can
+ * dump an entire posting into `about_summary` (glued bullets, boilerplate,
+ * equal-opportunity notices), which reads as a cluttered wall of text. We strip
+ * markup/bullet noise and clamp to the first few sentences.
+ */
+function sanitizeAboutText(raw: string, maxSentences = 3, maxChars = 360): string {
+  const cleaned = raw
+    .replace(/\s+/g, " ")
+    .replace(/[•●▪◦]/g, " ")
+    .replace(/\s*[-–—*]\s+/g, ". ")
+    .replace(/\s{2,}/g, " ")
+    .trim()
+
+  if (!cleaned) return ""
+
+  const sentences = cleaned.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [cleaned]
+  let out = ""
+  for (const sentence of sentences.slice(0, maxSentences)) {
+    const next = `${out}${sentence}`.trim()
+    if (next.length > maxChars && out.length > 0) break
+    out = next
+  }
+  out = out.trim()
+  if (!out) out = cleaned.slice(0, maxChars).trim()
+  if (out.length < cleaned.length && !/[.!?]$/.test(out)) out += "…"
+  return out
+}
+
 export function buildRoleAboutIntro(job: JobWithRole): string {
   if (job.about_summary?.trim()) {
-    return job.about_summary.trim()
+    const cleaned = sanitizeAboutText(job.about_summary)
+    if (cleaned) return cleaned
   }
   if (job.company_info?.one_line_description) {
     return job.company_info.one_line_description
