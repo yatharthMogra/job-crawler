@@ -133,6 +133,7 @@ export function JobDetailContent({
             company={job.company}
             size={64}
             shape="square"
+            logoUrl={job.company_info?.logo_url}
             website={job.company_info?.website}
           />
           <div className="min-w-0 flex-1">

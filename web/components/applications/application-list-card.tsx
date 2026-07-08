@@ -32,6 +32,7 @@ export function ApplicationListCard({
             company={job.company}
             size={56}
             shape="square"
+            logoUrl={job.company_info?.logo_url}
             website={job.company_info?.website}
             className="shrink-0 rounded-xl"
           />

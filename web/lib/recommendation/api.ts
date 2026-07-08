@@ -25,6 +25,7 @@ export interface CompanyEnrichmentInfo {
   website: string | null
   linkedin_url: string | null
   glassdoor_rating: number | null
+  logo_url: string | null
 }
 
 export interface DashboardJobApi {

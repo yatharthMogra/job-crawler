@@ -6,6 +6,8 @@ interface CompanyLogoProps {
   size?: number
   className?: string
   shape?: "square" | "circle"
+  /** Stored logo URL from API (preferred). */
+  logoUrl?: string | null
   /** Company website URL or hostname for precise logo lookup */
   website?: string | null
   domain?: string | null
@@ -16,6 +18,7 @@ export function CompanyLogo({
   size = 32,
   className = "",
   shape = "circle",
+  logoUrl,
   website,
   domain,
 }: CompanyLogoProps) {
@@ -30,6 +33,7 @@ export function CompanyLogo({
       shape={shape}
       className={className}
       domain={resolvedDomain}
+      logoUrl={logoUrl}
     />
   )
 }

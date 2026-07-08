@@ -12,6 +12,8 @@ interface BrandLogoProps {
   className?: string
   /** Prefer this domain when known (e.g. company_info.website host). */
   domain?: string | null
+  /** Stored logo URL from API — used before CDN fallbacks. */
+  logoUrl?: string | null
 }
 
 const COLORS = [
@@ -70,16 +72,17 @@ export function BrandLogo({
   shape = "square",
   className,
   domain,
+  logoUrl,
 }: BrandLogoProps) {
   const sources = useMemo(
-    () => getBrandLogoSources(name, variant, domain),
-    [name, variant, domain],
+    () => (logoUrl?.trim() ? [logoUrl.trim(), ...getBrandLogoSources(name, variant, domain)] : getBrandLogoSources(name, variant, domain)),
+    [name, variant, domain, logoUrl],
   )
   const [sourceIndex, setSourceIndex] = useState(0)
 
   useEffect(() => {
     setSourceIndex(0)
-  }, [name, variant, domain])
+  }, [name, variant, domain, logoUrl])
 
   const roundedClass = shape === "circle" ? "rounded-full" : "rounded-xl"
 

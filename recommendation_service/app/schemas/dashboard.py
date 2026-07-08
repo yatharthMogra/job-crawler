@@ -23,6 +23,7 @@ class CompanyEnrichmentOut(BaseModel):
     website: str | None = None
     linkedin_url: str | None = None
     glassdoor_rating: float | None = None
+    logo_url: str | None = None
 
 
 class DashboardJobOut(BaseModel):

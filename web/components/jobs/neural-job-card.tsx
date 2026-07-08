@@ -118,6 +118,7 @@ export function NeuralJobCard({ job, compact = false, feed = "recommended" }: Ne
                 company={job.company}
                 size={52}
                 shape="square"
+                logoUrl={job.company_info?.logo_url}
                 website={job.company_info?.website}
               />
               <div className="min-w-0 flex-1">
@@ -224,6 +225,7 @@ export function NeuralJobCard({ job, compact = false, feed = "recommended" }: Ne
               company={job.company}
               size={52}
               shape="square"
+              logoUrl={job.company_info?.logo_url}
               website={job.company_info?.website}
             />
             <div className="min-w-0 flex-1">

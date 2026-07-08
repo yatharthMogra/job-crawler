@@ -81,6 +81,13 @@ class Settings(BaseSettings):
     archive_dir: str = "data/archives"
     tesla_ingest_token: str = ""
     company_watch_events_enabled: bool = True
+    company_logo_storage_backend: Literal["local", "supabase"] = "local"
+    company_logo_local_dir: str = "../web/public/logos/companies"
+    company_logo_public_base_url: str = "/logos/companies"
+    supabase_url: str = ""
+    supabase_service_role_key: str = ""
+    supabase_storage_bucket: str = "company-logos"
+    company_logo_fetch_rate_per_second: float = 5.0
 
     yc_crawler_email: str = ""
     yc_crawler_password: str = ""
@@ -100,6 +107,13 @@ class Settings(BaseSettings):
         if normalized not in {"skip_tiers", "halt_all"}:
             raise ValueError("FETCH_BACKPRESSURE_MODE must be 'skip_tiers' or 'halt_all'")
         return normalized
+
+    @property
+    def company_logo_dir(self) -> Path:
+        path = Path(self.company_logo_local_dir)
+        if not path.is_absolute():
+            path = Path(__file__).resolve().parents[1] / path
+        return path
 
     @property
     def alerts_path(self) -> Path:

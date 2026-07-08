@@ -91,6 +91,7 @@ function mockCompanyInfo(company: string): CompanyEnrichmentInfo {
     website: `https://${domain}`,
     linkedin_url: null,
     glassdoor_rating: null,
+    logo_url: null,
   }
 }
 

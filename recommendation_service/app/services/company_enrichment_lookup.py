@@ -17,29 +17,40 @@ async def load_company_enrichment_lookup(
         return {}
 
     try:
-        from app.models.shared import CompanyEnrichment
+        from app.models.shared import Company, CompanyEnrichment
     except ImportError:
         return {}
 
     try:
-        rows = await db.scalars(
+        companies = await db.scalars(select(Company).where(Company.id.in_(company_ids)))
+        companies_by_id = {row.id: row for row in companies.all()}
+
+        enrichments = await db.scalars(
             select(CompanyEnrichment).where(CompanyEnrichment.company_id.in_(company_ids))
         )
+        enrichments_by_id = {row.company_id: row for row in enrichments.all()}
     except ProgrammingError as exc:
         if _is_missing_company_enrichment_table(exc):
             return {}
         raise
 
     lookup: dict[uuid.UUID, CompanyEnrichmentOut] = {}
-    for row in rows.all():
-        lookup[row.company_id] = CompanyEnrichmentOut(
-            founded_year=row.founded_year,
-            headquarters=row.headquarters,
-            employee_count_range=row.employee_count_range,
-            one_line_description=row.one_line_description,
-            website=row.website,
-            linkedin_url=row.linkedin_url,
-            glassdoor_rating=float(row.glassdoor_rating) if row.glassdoor_rating is not None else None,
+    for company_id in company_ids:
+        company = companies_by_id.get(company_id)
+        enrichment = enrichments_by_id.get(company_id)
+        if company is None and enrichment is None:
+            continue
+        lookup[company_id] = CompanyEnrichmentOut(
+            founded_year=enrichment.founded_year if enrichment else None,
+            headquarters=enrichment.headquarters if enrichment else None,
+            employee_count_range=enrichment.employee_count_range if enrichment else None,
+            one_line_description=enrichment.one_line_description if enrichment else None,
+            website=enrichment.website if enrichment else None,
+            linkedin_url=enrichment.linkedin_url if enrichment else None,
+            glassdoor_rating=float(enrichment.glassdoor_rating)
+            if enrichment and enrichment.glassdoor_rating is not None
+            else None,
+            logo_url=company.logo_url if company else None,
         )
     return lookup
 

@@ -121,7 +121,7 @@ export function JobCard({
         <div className="flex min-h-[160px]">
           <div className="flex min-w-0 flex-1 gap-3.5 p-4 sm:gap-4">
             <div className="flex w-12 shrink-0 items-start justify-center pt-0.5 sm:w-14">
-              <CompanyLogo company={job.company} size={52} website={job.company_info?.website} />
+              <CompanyLogo company={job.company} size={52} logoUrl={job.company_info?.logo_url} website={job.company_info?.website} />
             </div>
 
             <div className="flex min-w-0 flex-1 flex-col">

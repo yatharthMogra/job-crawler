@@ -119,6 +119,10 @@ class Company(Base):
     platform: Mapped[str] = mapped_column(String(64), nullable=False)
     board_token: Mapped[str] = mapped_column(String(255), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    logo_url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+    logo_domain: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    logo_status: Mapped[str] = mapped_column(String(16), nullable=False, default="pending")
+    logo_fetched_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class CompanyEnrichment(Base):

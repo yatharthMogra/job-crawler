@@ -26,6 +26,10 @@ class Company(Base):
     consecutive_fetch_failures: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     last_failure_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     last_successful_fetch_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    logo_url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+    logo_domain: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    logo_status: Mapped[str] = mapped_column(String(16), nullable=False, default="pending")
+    logo_fetched_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
