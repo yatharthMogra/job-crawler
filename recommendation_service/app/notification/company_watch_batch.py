@@ -13,15 +13,19 @@ from app.models.company_watch_pending import CompanyWatchPendingAlert
 from app.models.notification import NotificationBatch, NotificationJobHistory
 from app.models.notification_preferences import NotificationPreferences
 from app.models.shared import Company, NormalizedJob
+from app.notification.company_watch_eligibility import job_passes_company_watch_eligibility
 from app.notification.company_watch_watermark import (
     get_company_watch_watermark,
     job_reference_at_after_watermark,
 )
+from app.notification.ranker import _rank_sort_key
 from app.notification.renderer import render_company_watch_batch
 from app.notification.sender import send_email
 from app.notification.spam_limiter import can_send_email
 from app.scoring.explainability import generate_explanations
+from app.scoring.recommendation import score_job
 from app.services.profile_loader import load_user_profile
+from app.services.subscriptions import get_active_pools
 
 log = structlog.get_logger(__name__)
 
@@ -61,6 +65,17 @@ def compute_next_company_watch_due_at(
     if last_batch_at is None:
         return now + timedelta(minutes=cadence_minutes)
     return last_batch_at + timedelta(minutes=cadence_minutes)
+
+
+def select_company_watch_jobs(
+    scored: list[tuple[NormalizedJob, float]],
+    *,
+    min_score: float,
+    max_jobs: int,
+) -> list[tuple[NormalizedJob, float]]:
+    qualifying = [(job, score) for job, score in scored if score >= min_score]
+    qualifying.sort(key=_rank_sort_key, reverse=True)
+    return qualifying[:max_jobs]
 
 
 async def schedule_company_watch_batch(
@@ -113,6 +128,18 @@ async def schedule_company_watch_batch(
         )
 
 
+async def _advance_schedule_without_send(
+    prefs: NotificationPreferences,
+    *,
+    now: datetime,
+) -> None:
+    prefs.next_company_watch_due_at = compute_next_company_watch_due_at(
+        last_batch_at=prefs.last_company_watch_batch_at,
+        cadence_minutes=prefs.company_watch_cadence_minutes,
+        now=now,
+    )
+
+
 async def _send_batch_for_candidate(
     db: AsyncSession,
     *,
@@ -142,8 +169,9 @@ async def _send_batch_for_candidate(
     if user_profile is None:
         return
 
-    eligible: list[tuple[CompanyWatchPendingAlert, NormalizedJob, str]] = []
+    pools = await get_active_pools(db, candidate_id)
     dropped_row_ids: list[uuid.UUID] = []
+    eligible_for_scoring: list[tuple[CompanyWatchPendingAlert, NormalizedJob, str]] = []
 
     for row in pending_rows:
         job = await db.get(NormalizedJob, row.job_id)
@@ -161,27 +189,45 @@ async def _send_batch_for_candidate(
             dropped_row_ids.append(row.id)
             continue
 
+        if not pools or not await job_passes_company_watch_eligibility(
+            db, job, user_profile, settings, pools=pools
+        ):
+            dropped_row_ids.append(row.id)
+            continue
+
         company = await db.get(Company, row.company_id)
         company_name = company.name if company else job.company_name
-        eligible.append((row, job, company_name))
+        eligible_for_scoring.append((row, job, company_name))
+
+    scored: list[tuple[CompanyWatchPendingAlert, NormalizedJob, str, float]] = []
+    for row, job, company_name in eligible_for_scoring:
+        personal_score = score_job(job, user_profile, settings)
+        if personal_score < settings.company_watch_min_score:
+            dropped_row_ids.append(row.id)
+            continue
+        scored.append((row, job, company_name, personal_score))
 
     for row_id in dropped_row_ids:
         row = await db.get(CompanyWatchPendingAlert, row_id)
         if row is not None:
             await db.delete(row)
 
-    if not eligible:
+    if not scored:
+        now = _utcnow()
+        log.info(
+            "company_watch_batch_skipped_below_threshold",
+            candidate_id=str(candidate_id),
+            min_score=settings.company_watch_min_score,
+        )
+        await _advance_schedule_without_send(prefs, now=now)
         return
 
-    eligible.sort(
-        key=lambda item: item[1].reference_at or datetime(1970, 1, 1, tzinfo=timezone.utc),
-        reverse=True,
-    )
+    scored.sort(key=lambda item: _rank_sort_key((item[1], item[3])), reverse=True)
     max_jobs = settings.company_watch_max_jobs_per_email
-    selected = eligible[:max_jobs]
-    overflow = eligible[max_jobs:]
+    selected = scored[:max_jobs]
+    overflow = scored[max_jobs:]
 
-    for row, _, _ in overflow:
+    for row, _, _, _ in overflow:
         await db.delete(row)
 
     if overflow:
@@ -192,17 +238,17 @@ async def _send_batch_for_candidate(
             cap=max_jobs,
         )
 
-    jobs_with_meta: list[tuple[NormalizedJob, list[str], str]] = []
+    jobs_with_meta: list[tuple[NormalizedJob, list[str], str, float]] = []
     included_row_ids: list[uuid.UUID] = []
 
-    for row, job, company_name in selected:
+    for row, job, company_name, personal_score in selected:
         explanations = generate_explanations(job, user_profile)
-        jobs_with_meta.append((job, explanations, company_name))
+        jobs_with_meta.append((job, explanations, company_name, personal_score))
         included_row_ids.append(row.id)
 
     now = _utcnow()
     html = render_company_watch_batch(
-        jobs_with_explanations=jobs_with_meta,
+        jobs_with_explanations=[(job, explanations, company_name) for job, explanations, company_name, _ in jobs_with_meta],
         user_profile=user_profile,
         app_base_url=settings.app_base_url,
     )
@@ -229,14 +275,14 @@ async def _send_batch_for_candidate(
         settings=settings,
     )
 
-    for rank, (job, explanations, _company_name) in enumerate(jobs_with_meta, start=1):
+    for rank, (job, explanations, _company_name, personal_score) in enumerate(jobs_with_meta, start=1):
         db.add(
             NotificationJobHistory(
                 candidate_id=candidate_id,
                 batch_id=batch.id,
                 job_id=job.id,
                 rank_in_batch=rank,
-                recommendation_score=0.0,
+                recommendation_score=personal_score,
                 explanation=explanations,
                 channel=CHANNEL_COMPANY_WATCH,
             )

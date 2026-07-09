@@ -1,0 +1,3 @@
+(globalThis.TURBOPACK||(globalThis.TURBOPACK=[])).push(["chunks/0qwv_next_dist_esm_build_templates_edge-wrapper_019tbss.js",19839,(e,t,s)=>{self._ENTRIES||={};let l=Promise.resolve().then(()=>e.i(96756));l.catch(()=>{}),self._ENTRIES.middleware_middleware=new Proxy(l,{get(e,t){if("then"===t)return(t,s)=>e.then(t,s);let s=(...s)=>e.then(e=>(0,e[t])(...s));return s.then=(s,l)=>e.then(e=>e[t]).then(s,l),s}})}]);
+
+//# sourceMappingURL=0qwv_next_dist_esm_build_templates_edge-wrapper_019tbss.js.map

@@ -1,0 +1,3 @@
+module.exports=[9465,a=>{"use strict";var b=a.i(71049),c=a.i(13449),d=a.i(14775);function e(){let a=(0,d.useRouter)(),e=(0,d.useSearchParams)();return(0,c.useEffect)(()=>{let b=e.get("candidate_id");a.replace(b?`/jobs/recommended?candidate_id=${encodeURIComponent(b)}`:"/jobs/recommended")},[a,e]),(0,b.jsx)("div",{className:"flow-page-bg flex min-h-screen items-center justify-center text-sm text-muted-foreground",children:"Redirecting…"})}a.s(["default",0,function(){return(0,b.jsx)(c.Suspense,{fallback:(0,b.jsx)("div",{className:"flow-page-bg flex min-h-screen items-center justify-center text-sm text-muted-foreground",children:"Redirecting…"}),children:(0,b.jsx)(e,{})})}])}];
+
+//# sourceMappingURL=code_job-crawler_web_app_dashboard_page_tsx_0q1l61n._.js.map

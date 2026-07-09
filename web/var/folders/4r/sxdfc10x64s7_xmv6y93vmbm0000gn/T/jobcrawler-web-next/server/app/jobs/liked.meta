@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/(dashboard)/layout,_N_T_/(dashboard)/jobs/layout,_N_T_/(dashboard)/jobs/liked/layout,_N_T_/(dashboard)/jobs/liked/page,_N_T_/jobs/liked"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/!KGRhc2hib2FyZCk/jobs/liked/__PAGE__",
+    "/!KGRhc2hib2FyZCk/jobs/liked",
+    "/!KGRhc2hib2FyZCk/jobs",
+    "/!KGRhc2hib2FyZCk",
+    "/_index",
+    "/_head"
+  ]
+}

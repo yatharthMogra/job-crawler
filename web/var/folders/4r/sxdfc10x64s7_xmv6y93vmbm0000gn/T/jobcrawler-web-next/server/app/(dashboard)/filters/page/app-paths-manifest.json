@@ -1,0 +1,3 @@
+{
+  "/(dashboard)/filters/page": "app/(dashboard)/filters/page.js"
+}

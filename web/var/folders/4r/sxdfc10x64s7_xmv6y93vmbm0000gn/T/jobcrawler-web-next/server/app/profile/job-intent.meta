@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/(profile-flow)/layout,_N_T_/(profile-flow)/profile/layout,_N_T_/(profile-flow)/profile/job-intent/layout,_N_T_/(profile-flow)/profile/job-intent/page,_N_T_/profile/job-intent"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/!KHByb2ZpbGUtZmxvdyk/profile/job-intent/__PAGE__",
+    "/!KHByb2ZpbGUtZmxvdyk/profile/job-intent",
+    "/!KHByb2ZpbGUtZmxvdyk/profile",
+    "/!KHByb2ZpbGUtZmxvdyk",
+    "/_index",
+    "/_head"
+  ]
+}

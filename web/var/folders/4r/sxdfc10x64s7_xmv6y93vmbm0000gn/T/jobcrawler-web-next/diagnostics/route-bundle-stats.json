@@ -1,0 +1,486 @@
+[
+  {
+    "route": "/jobs/recommended",
+    "firstLoadUncompressedJsBytes": 806615,
+    "firstLoadChunkPaths": [
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/11jbgttdwa-2x.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/128o0rde9x70f.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0oo682..phgzz.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/162eqnsv37g-3.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/14qstr3~e7mi~.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0xm_klhyd-f_z.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0gnip1l0c9ka2.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0bktzs1bwtv65.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0aco17.oi9gb7.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/06x854vj7ke64.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w5fhkbuxetdr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/10wxy0gi32fax.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/138jbmt~jha9..js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0m0wwi20jkvx0.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0v~658h.tam0g.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/turbopack-05rahq.wfo97~.js"
+    ]
+  },
+  {
+    "route": "/jobs/liked",
+    "firstLoadUncompressedJsBytes": 776447,
+    "firstLoadChunkPaths": [
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/11jbgttdwa-2x.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/128o0rde9x70f.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0oo682..phgzz.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/162eqnsv37g-3.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/14qstr3~e7mi~.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0xm_klhyd-f_z.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0gnip1l0c9ka2.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0bktzs1bwtv65.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0lz5ak~w-zccj.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0aco17.oi9gb7.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w5fhkbuxetdr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/10wxy0gi32fax.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/138jbmt~jha9..js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0m0wwi20jkvx0.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0v~658h.tam0g.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/turbopack-05rahq.wfo97~.js"
+    ]
+  },
+  {
+    "route": "/profile",
+    "firstLoadUncompressedJsBytes": 765164,
+    "firstLoadChunkPaths": [
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/11jbgttdwa-2x.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/128o0rde9x70f.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0oo682..phgzz.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/162eqnsv37g-3.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/14qstr3~e7mi~.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0rpdql004sqmd.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0bktzs1bwtv65.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0gnip1l0c9ka2.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/142djm53ak0rn.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w5fhkbuxetdr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/10wxy0gi32fax.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/138jbmt~jha9..js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0m0wwi20jkvx0.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0v~658h.tam0g.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/turbopack-05rahq.wfo97~.js"
+    ]
+  },
+  {
+    "route": "/jobs/applied",
+    "firstLoadUncompressedJsBytes": 757421,
+    "firstLoadChunkPaths": [
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/11jbgttdwa-2x.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/128o0rde9x70f.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0oo682..phgzz.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/162eqnsv37g-3.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/14qstr3~e7mi~.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0xm_klhyd-f_z.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0gnip1l0c9ka2.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0bktzs1bwtv65.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0rdnzb9aruicr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w5fhkbuxetdr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/10wxy0gi32fax.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/138jbmt~jha9..js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0m0wwi20jkvx0.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0v~658h.tam0g.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/turbopack-05rahq.wfo97~.js"
+    ]
+  },
+  {
+    "route": "/jobs",
+    "firstLoadUncompressedJsBytes": 735775,
+    "firstLoadChunkPaths": [
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/11jbgttdwa-2x.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/128o0rde9x70f.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0oo682..phgzz.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/162eqnsv37g-3.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/14qstr3~e7mi~.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0xm_klhyd-f_z.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0gnip1l0c9ka2.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0bktzs1bwtv65.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w5fhkbuxetdr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/10wxy0gi32fax.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/138jbmt~jha9..js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0m0wwi20jkvx0.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0v~658h.tam0g.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/turbopack-05rahq.wfo97~.js"
+    ]
+  },
+  {
+    "route": "/jobs/all",
+    "firstLoadUncompressedJsBytes": 735775,
+    "firstLoadChunkPaths": [
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/11jbgttdwa-2x.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/128o0rde9x70f.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0oo682..phgzz.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/162eqnsv37g-3.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/14qstr3~e7mi~.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0xm_klhyd-f_z.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0gnip1l0c9ka2.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0bktzs1bwtv65.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w5fhkbuxetdr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/10wxy0gi32fax.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/138jbmt~jha9..js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0m0wwi20jkvx0.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0v~658h.tam0g.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/turbopack-05rahq.wfo97~.js"
+    ]
+  },
+  {
+    "route": "/profile/review",
+    "firstLoadUncompressedJsBytes": 701726,
+    "firstLoadChunkPaths": [
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/11jbgttdwa-2x.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/128o0rde9x70f.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/1045ig43a1xzr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/12lqu3_gnczr8.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/124q3wgj1z2og.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/10cf6x5aoyom0.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/162eqnsv37g-3.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0gnip1l0c9ka2.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w5fhkbuxetdr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/10wxy0gi32fax.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/138jbmt~jha9..js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0m0wwi20jkvx0.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0v~658h.tam0g.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/turbopack-05rahq.wfo97~.js"
+    ]
+  },
+  {
+    "route": "/emails",
+    "firstLoadUncompressedJsBytes": 671797,
+    "firstLoadChunkPaths": [
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/11jbgttdwa-2x.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/128o0rde9x70f.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0oo682..phgzz.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/162eqnsv37g-3.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/14qstr3~e7mi~.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/126ozk9gerjyu.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0j~vyhxd79v8-.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w5fhkbuxetdr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/10wxy0gi32fax.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/138jbmt~jha9..js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0m0wwi20jkvx0.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0v~658h.tam0g.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/turbopack-05rahq.wfo97~.js"
+    ]
+  },
+  {
+    "route": "/resume",
+    "firstLoadUncompressedJsBytes": 664634,
+    "firstLoadChunkPaths": [
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/11jbgttdwa-2x.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/128o0rde9x70f.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0oo682..phgzz.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/162eqnsv37g-3.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/14qstr3~e7mi~.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0v~d_8cp~wu.z.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w06jdzl.8ixl.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w5fhkbuxetdr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/10wxy0gi32fax.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/138jbmt~jha9..js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0m0wwi20jkvx0.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0v~658h.tam0g.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/turbopack-05rahq.wfo97~.js"
+    ]
+  },
+  {
+    "route": "/filters",
+    "firstLoadUncompressedJsBytes": 661176,
+    "firstLoadChunkPaths": [
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/11jbgttdwa-2x.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/128o0rde9x70f.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0oo682..phgzz.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/162eqnsv37g-3.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/14qstr3~e7mi~.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/120ssosqy7i9q.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w5fhkbuxetdr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/10wxy0gi32fax.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/138jbmt~jha9..js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0m0wwi20jkvx0.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0v~658h.tam0g.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/turbopack-05rahq.wfo97~.js"
+    ]
+  },
+  {
+    "route": "/settings",
+    "firstLoadUncompressedJsBytes": 657657,
+    "firstLoadChunkPaths": [
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/11jbgttdwa-2x.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/128o0rde9x70f.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0oo682..phgzz.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/162eqnsv37g-3.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/14qstr3~e7mi~.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0_crxayf66e~4.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w5fhkbuxetdr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/10wxy0gi32fax.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/138jbmt~jha9..js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0m0wwi20jkvx0.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0v~658h.tam0g.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/turbopack-05rahq.wfo97~.js"
+    ]
+  },
+  {
+    "route": "/applied",
+    "firstLoadUncompressedJsBytes": 640407,
+    "firstLoadChunkPaths": [
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/11jbgttdwa-2x.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/128o0rde9x70f.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0oo682..phgzz.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/162eqnsv37g-3.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/14qstr3~e7mi~.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w5fhkbuxetdr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/10wxy0gi32fax.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/138jbmt~jha9..js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0m0wwi20jkvx0.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0v~658h.tam0g.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/turbopack-05rahq.wfo97~.js"
+    ]
+  },
+  {
+    "route": "/preferences",
+    "firstLoadUncompressedJsBytes": 640407,
+    "firstLoadChunkPaths": [
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/11jbgttdwa-2x.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/128o0rde9x70f.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0oo682..phgzz.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/162eqnsv37g-3.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/14qstr3~e7mi~.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w5fhkbuxetdr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/10wxy0gi32fax.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/138jbmt~jha9..js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0m0wwi20jkvx0.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0v~658h.tam0g.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/turbopack-05rahq.wfo97~.js"
+    ]
+  },
+  {
+    "route": "/recommended",
+    "firstLoadUncompressedJsBytes": 640407,
+    "firstLoadChunkPaths": [
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/11jbgttdwa-2x.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/128o0rde9x70f.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0oo682..phgzz.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/162eqnsv37g-3.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/14qstr3~e7mi~.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w5fhkbuxetdr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/10wxy0gi32fax.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/138jbmt~jha9..js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0m0wwi20jkvx0.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0v~658h.tam0g.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/turbopack-05rahq.wfo97~.js"
+    ]
+  },
+  {
+    "route": "/saved",
+    "firstLoadUncompressedJsBytes": 640407,
+    "firstLoadChunkPaths": [
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/11jbgttdwa-2x.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/128o0rde9x70f.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0oo682..phgzz.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/162eqnsv37g-3.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/14qstr3~e7mi~.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w5fhkbuxetdr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/10wxy0gi32fax.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/138jbmt~jha9..js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0m0wwi20jkvx0.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0v~658h.tam0g.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/turbopack-05rahq.wfo97~.js"
+    ]
+  },
+  {
+    "route": "/profile/job-intent",
+    "firstLoadUncompressedJsBytes": 639663,
+    "firstLoadChunkPaths": [
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/11jbgttdwa-2x.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/128o0rde9x70f.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/1045ig43a1xzr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/12lqu3_gnczr8.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0bdfhe28-a1k5.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/162eqnsv37g-3.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/124q3wgj1z2og.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w5fhkbuxetdr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/10wxy0gi32fax.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/138jbmt~jha9..js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0m0wwi20jkvx0.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0v~658h.tam0g.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/turbopack-05rahq.wfo97~.js"
+    ]
+  },
+  {
+    "route": "/",
+    "firstLoadUncompressedJsBytes": 618287,
+    "firstLoadChunkPaths": [
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/11jbgttdwa-2x.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/128o0rde9x70f.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0ri8v~2ze52r7.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/162eqnsv37g-3.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/04osigsj3dm50.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w5fhkbuxetdr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/10wxy0gi32fax.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/138jbmt~jha9..js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0m0wwi20jkvx0.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0v~658h.tam0g.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/turbopack-05rahq.wfo97~.js"
+    ]
+  },
+  {
+    "route": "/profile/upload",
+    "firstLoadUncompressedJsBytes": 615729,
+    "firstLoadChunkPaths": [
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/11jbgttdwa-2x.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/128o0rde9x70f.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/1045ig43a1xzr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/12lqu3_gnczr8.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0r.ma6y8b2x_r.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/162eqnsv37g-3.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w5fhkbuxetdr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/10wxy0gi32fax.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/138jbmt~jha9..js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0m0wwi20jkvx0.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0v~658h.tam0g.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/turbopack-05rahq.wfo97~.js"
+    ]
+  },
+  {
+    "route": "/profile/processing",
+    "firstLoadUncompressedJsBytes": 615492,
+    "firstLoadChunkPaths": [
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/11jbgttdwa-2x.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/128o0rde9x70f.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/1045ig43a1xzr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/12lqu3_gnczr8.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0_56ehkw70205.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/162eqnsv37g-3.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w5fhkbuxetdr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/10wxy0gi32fax.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/138jbmt~jha9..js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0m0wwi20jkvx0.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0v~658h.tam0g.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/turbopack-05rahq.wfo97~.js"
+    ]
+  },
+  {
+    "route": "/login",
+    "firstLoadUncompressedJsBytes": 608813,
+    "firstLoadChunkPaths": [
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/11jbgttdwa-2x.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/128o0rde9x70f.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0dee4tk.f95x-.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0fq-5-u-w215~.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w_97lkov9als.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/162eqnsv37g-3.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w5fhkbuxetdr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/10wxy0gi32fax.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/138jbmt~jha9..js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0m0wwi20jkvx0.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0v~658h.tam0g.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/turbopack-05rahq.wfo97~.js"
+    ]
+  },
+  {
+    "route": "/profile/confirm",
+    "firstLoadUncompressedJsBytes": 570404,
+    "firstLoadChunkPaths": [
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/11jbgttdwa-2x.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/128o0rde9x70f.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/1045ig43a1xzr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/12lqu3_gnczr8.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0ori5ys1jwf7..js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w5fhkbuxetdr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/10wxy0gi32fax.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/138jbmt~jha9..js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0m0wwi20jkvx0.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0v~658h.tam0g.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/turbopack-05rahq.wfo97~.js"
+    ]
+  },
+  {
+    "route": "/onboarding",
+    "firstLoadUncompressedJsBytes": 570112,
+    "firstLoadChunkPaths": [
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/11jbgttdwa-2x.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/128o0rde9x70f.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/1045ig43a1xzr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/12lqu3_gnczr8.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w5fhkbuxetdr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/10wxy0gi32fax.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/138jbmt~jha9..js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0m0wwi20jkvx0.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0v~658h.tam0g.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/turbopack-05rahq.wfo97~.js"
+    ]
+  },
+  {
+    "route": "/unsubscribe",
+    "firstLoadUncompressedJsBytes": 540210,
+    "firstLoadChunkPaths": [
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/11jbgttdwa-2x.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/128o0rde9x70f.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/06d1uppw04b1j.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w5fhkbuxetdr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/10wxy0gi32fax.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/138jbmt~jha9..js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0m0wwi20jkvx0.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0v~658h.tam0g.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/turbopack-05rahq.wfo97~.js"
+    ]
+  },
+  {
+    "route": "/app",
+    "firstLoadUncompressedJsBytes": 531346,
+    "firstLoadChunkPaths": [
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/11jbgttdwa-2x.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/128o0rde9x70f.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0tch4woqeuw4_.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w5fhkbuxetdr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/10wxy0gi32fax.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/138jbmt~jha9..js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0m0wwi20jkvx0.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0v~658h.tam0g.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/turbopack-05rahq.wfo97~.js"
+    ]
+  },
+  {
+    "route": "/dashboard",
+    "firstLoadUncompressedJsBytes": 530158,
+    "firstLoadChunkPaths": [
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/11jbgttdwa-2x.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/128o0rde9x70f.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0_itm1wzhekze.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w5fhkbuxetdr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/10wxy0gi32fax.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/138jbmt~jha9..js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0m0wwi20jkvx0.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0v~658h.tam0g.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/turbopack-05rahq.wfo97~.js"
+    ]
+  },
+  {
+    "route": "/_not-found",
+    "firstLoadUncompressedJsBytes": 529373,
+    "firstLoadChunkPaths": [
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/11jbgttdwa-2x.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/128o0rde9x70f.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w5fhkbuxetdr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/10wxy0gi32fax.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/138jbmt~jha9..js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0m0wwi20jkvx0.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0v~658h.tam0g.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/turbopack-05rahq.wfo97~.js"
+    ]
+  },
+  {
+    "route": "/signup",
+    "firstLoadUncompressedJsBytes": 529373,
+    "firstLoadChunkPaths": [
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/11jbgttdwa-2x.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/128o0rde9x70f.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0w5fhkbuxetdr.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/10wxy0gi32fax.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/138jbmt~jha9..js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0m0wwi20jkvx0.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/0v~658h.tam0g.js",
+      "var/folders/4r/sxdfc10x64s7_xmv6y93vmbm0000gn/T/jobcrawler-web-next/static/chunks/turbopack-05rahq.wfo97~.js"
+    ]
+  }
+]

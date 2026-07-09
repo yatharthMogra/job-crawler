@@ -1,0 +1,12 @@
+{
+  "pages": {},
+  "app": {
+    "[project]/code/job-crawler/web/app/(dashboard)/jobs/applied/page": [
+      "static/media/caa3a2e1cccd8315-s.p.09~u27dqhyhd6.woff2",
+      "static/media/797e433ab948586e-s.p.08e28id.o-okb.woff2",
+      "static/media/a85fe84266768609-s.p.05b418i5bs~lg.woff2"
+    ]
+  },
+  "appUsingSizeAdjust": true,
+  "pagesUsingSizeAdjust": false
+}

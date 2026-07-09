@@ -1,0 +1,3 @@
+{
+  "/(dashboard)/recommended/page": "app/(dashboard)/recommended/page.js"
+}

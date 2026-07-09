@@ -1,0 +1,142 @@
+{
+  "app": {
+    "[project]/code/job-crawler/web/app/(auth)/login/page": [
+      "static/media/caa3a2e1cccd8315-s.p.09~u27dqhyhd6.woff2",
+      "static/media/797e433ab948586e-s.p.08e28id.o-okb.woff2",
+      "static/media/a85fe84266768609-s.p.05b418i5bs~lg.woff2"
+    ],
+    "[project]/code/job-crawler/web/app/(auth)/signup/page": [
+      "static/media/caa3a2e1cccd8315-s.p.09~u27dqhyhd6.woff2",
+      "static/media/797e433ab948586e-s.p.08e28id.o-okb.woff2",
+      "static/media/a85fe84266768609-s.p.05b418i5bs~lg.woff2"
+    ],
+    "[project]/code/job-crawler/web/app/(dashboard)/applied/page": [
+      "static/media/caa3a2e1cccd8315-s.p.09~u27dqhyhd6.woff2",
+      "static/media/797e433ab948586e-s.p.08e28id.o-okb.woff2",
+      "static/media/a85fe84266768609-s.p.05b418i5bs~lg.woff2"
+    ],
+    "[project]/code/job-crawler/web/app/(dashboard)/emails/page": [
+      "static/media/caa3a2e1cccd8315-s.p.09~u27dqhyhd6.woff2",
+      "static/media/797e433ab948586e-s.p.08e28id.o-okb.woff2",
+      "static/media/a85fe84266768609-s.p.05b418i5bs~lg.woff2"
+    ],
+    "[project]/code/job-crawler/web/app/(dashboard)/filters/page": [
+      "static/media/caa3a2e1cccd8315-s.p.09~u27dqhyhd6.woff2",
+      "static/media/797e433ab948586e-s.p.08e28id.o-okb.woff2",
+      "static/media/a85fe84266768609-s.p.05b418i5bs~lg.woff2"
+    ],
+    "[project]/code/job-crawler/web/app/(dashboard)/jobs/all/page": [
+      "static/media/caa3a2e1cccd8315-s.p.09~u27dqhyhd6.woff2",
+      "static/media/797e433ab948586e-s.p.08e28id.o-okb.woff2",
+      "static/media/a85fe84266768609-s.p.05b418i5bs~lg.woff2"
+    ],
+    "[project]/code/job-crawler/web/app/(dashboard)/jobs/applied/page": [
+      "static/media/caa3a2e1cccd8315-s.p.09~u27dqhyhd6.woff2",
+      "static/media/797e433ab948586e-s.p.08e28id.o-okb.woff2",
+      "static/media/a85fe84266768609-s.p.05b418i5bs~lg.woff2"
+    ],
+    "[project]/code/job-crawler/web/app/(dashboard)/jobs/liked/page": [
+      "static/media/caa3a2e1cccd8315-s.p.09~u27dqhyhd6.woff2",
+      "static/media/797e433ab948586e-s.p.08e28id.o-okb.woff2",
+      "static/media/a85fe84266768609-s.p.05b418i5bs~lg.woff2"
+    ],
+    "[project]/code/job-crawler/web/app/(dashboard)/jobs/page": [
+      "static/media/caa3a2e1cccd8315-s.p.09~u27dqhyhd6.woff2",
+      "static/media/797e433ab948586e-s.p.08e28id.o-okb.woff2",
+      "static/media/a85fe84266768609-s.p.05b418i5bs~lg.woff2"
+    ],
+    "[project]/code/job-crawler/web/app/(dashboard)/jobs/recommended/page": [
+      "static/media/caa3a2e1cccd8315-s.p.09~u27dqhyhd6.woff2",
+      "static/media/797e433ab948586e-s.p.08e28id.o-okb.woff2",
+      "static/media/a85fe84266768609-s.p.05b418i5bs~lg.woff2"
+    ],
+    "[project]/code/job-crawler/web/app/(dashboard)/preferences/page": [
+      "static/media/caa3a2e1cccd8315-s.p.09~u27dqhyhd6.woff2",
+      "static/media/797e433ab948586e-s.p.08e28id.o-okb.woff2",
+      "static/media/a85fe84266768609-s.p.05b418i5bs~lg.woff2"
+    ],
+    "[project]/code/job-crawler/web/app/(dashboard)/profile/page": [
+      "static/media/caa3a2e1cccd8315-s.p.09~u27dqhyhd6.woff2",
+      "static/media/797e433ab948586e-s.p.08e28id.o-okb.woff2",
+      "static/media/a85fe84266768609-s.p.05b418i5bs~lg.woff2"
+    ],
+    "[project]/code/job-crawler/web/app/(dashboard)/recommended/page": [
+      "static/media/caa3a2e1cccd8315-s.p.09~u27dqhyhd6.woff2",
+      "static/media/797e433ab948586e-s.p.08e28id.o-okb.woff2",
+      "static/media/a85fe84266768609-s.p.05b418i5bs~lg.woff2"
+    ],
+    "[project]/code/job-crawler/web/app/(dashboard)/resume/page": [
+      "static/media/caa3a2e1cccd8315-s.p.09~u27dqhyhd6.woff2",
+      "static/media/797e433ab948586e-s.p.08e28id.o-okb.woff2",
+      "static/media/a85fe84266768609-s.p.05b418i5bs~lg.woff2"
+    ],
+    "[project]/code/job-crawler/web/app/(dashboard)/saved/page": [
+      "static/media/caa3a2e1cccd8315-s.p.09~u27dqhyhd6.woff2",
+      "static/media/797e433ab948586e-s.p.08e28id.o-okb.woff2",
+      "static/media/a85fe84266768609-s.p.05b418i5bs~lg.woff2"
+    ],
+    "[project]/code/job-crawler/web/app/(dashboard)/settings/page": [
+      "static/media/caa3a2e1cccd8315-s.p.09~u27dqhyhd6.woff2",
+      "static/media/797e433ab948586e-s.p.08e28id.o-okb.woff2",
+      "static/media/a85fe84266768609-s.p.05b418i5bs~lg.woff2"
+    ],
+    "[project]/code/job-crawler/web/app/(marketing)/page": [
+      "static/media/caa3a2e1cccd8315-s.p.09~u27dqhyhd6.woff2",
+      "static/media/797e433ab948586e-s.p.08e28id.o-okb.woff2",
+      "static/media/a85fe84266768609-s.p.05b418i5bs~lg.woff2"
+    ],
+    "[project]/code/job-crawler/web/app/(profile-flow)/onboarding/page": [
+      "static/media/caa3a2e1cccd8315-s.p.09~u27dqhyhd6.woff2",
+      "static/media/797e433ab948586e-s.p.08e28id.o-okb.woff2",
+      "static/media/a85fe84266768609-s.p.05b418i5bs~lg.woff2"
+    ],
+    "[project]/code/job-crawler/web/app/(profile-flow)/profile/confirm/page": [
+      "static/media/caa3a2e1cccd8315-s.p.09~u27dqhyhd6.woff2",
+      "static/media/797e433ab948586e-s.p.08e28id.o-okb.woff2",
+      "static/media/a85fe84266768609-s.p.05b418i5bs~lg.woff2"
+    ],
+    "[project]/code/job-crawler/web/app/(profile-flow)/profile/job-intent/page": [
+      "static/media/caa3a2e1cccd8315-s.p.09~u27dqhyhd6.woff2",
+      "static/media/797e433ab948586e-s.p.08e28id.o-okb.woff2",
+      "static/media/a85fe84266768609-s.p.05b418i5bs~lg.woff2"
+    ],
+    "[project]/code/job-crawler/web/app/(profile-flow)/profile/processing/page": [
+      "static/media/caa3a2e1cccd8315-s.p.09~u27dqhyhd6.woff2",
+      "static/media/797e433ab948586e-s.p.08e28id.o-okb.woff2",
+      "static/media/a85fe84266768609-s.p.05b418i5bs~lg.woff2"
+    ],
+    "[project]/code/job-crawler/web/app/(profile-flow)/profile/review/page": [
+      "static/media/caa3a2e1cccd8315-s.p.09~u27dqhyhd6.woff2",
+      "static/media/797e433ab948586e-s.p.08e28id.o-okb.woff2",
+      "static/media/a85fe84266768609-s.p.05b418i5bs~lg.woff2"
+    ],
+    "[project]/code/job-crawler/web/app/(profile-flow)/profile/upload/page": [
+      "static/media/caa3a2e1cccd8315-s.p.09~u27dqhyhd6.woff2",
+      "static/media/797e433ab948586e-s.p.08e28id.o-okb.woff2",
+      "static/media/a85fe84266768609-s.p.05b418i5bs~lg.woff2"
+    ],
+    "[project]/code/job-crawler/web/app/_not-found/page": [
+      "static/media/caa3a2e1cccd8315-s.p.09~u27dqhyhd6.woff2",
+      "static/media/797e433ab948586e-s.p.08e28id.o-okb.woff2",
+      "static/media/a85fe84266768609-s.p.05b418i5bs~lg.woff2"
+    ],
+    "[project]/code/job-crawler/web/app/app/page": [
+      "static/media/caa3a2e1cccd8315-s.p.09~u27dqhyhd6.woff2",
+      "static/media/797e433ab948586e-s.p.08e28id.o-okb.woff2",
+      "static/media/a85fe84266768609-s.p.05b418i5bs~lg.woff2"
+    ],
+    "[project]/code/job-crawler/web/app/dashboard/page": [
+      "static/media/caa3a2e1cccd8315-s.p.09~u27dqhyhd6.woff2",
+      "static/media/797e433ab948586e-s.p.08e28id.o-okb.woff2",
+      "static/media/a85fe84266768609-s.p.05b418i5bs~lg.woff2"
+    ],
+    "[project]/code/job-crawler/web/app/unsubscribe/page": [
+      "static/media/caa3a2e1cccd8315-s.p.09~u27dqhyhd6.woff2",
+      "static/media/797e433ab948586e-s.p.08e28id.o-okb.woff2",
+      "static/media/a85fe84266768609-s.p.05b418i5bs~lg.woff2"
+    ]
+  },
+  "appUsingSizeAdjust": true,
+  "pages": {},
+  "pagesUsingSizeAdjust": false
+}

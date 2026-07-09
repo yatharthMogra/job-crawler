@@ -4,22 +4,22 @@ import uuid
 from datetime import datetime, timezone
 
 import structlog
-from sqlalchemy import and_, func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import Settings, get_settings
 from app.database import AsyncSessionLocal
 from app.models.company_watch import CompanyWatchSubscription, NotificationJobEvent
 from app.models.notification_preferences import NotificationPreferences
-from app.models.shared import Company, NormalizedJob
+from app.models.shared import NormalizedJob
 from app.notification.company_watch_batch import schedule_company_watch_batch
+from app.notification.company_watch_eligibility import job_passes_company_watch_eligibility
 from app.notification.company_watch_watermark import (
     get_company_watch_watermark,
     job_reference_at_after_watermark,
 )
-from app.notification.filters import job_matches_location_constraints
-from app.notification.retrieval import build_constraint_filters
 from app.services.profile_loader import load_user_profile
+from app.services.subscriptions import get_active_pools
 
 log = structlog.get_logger(__name__)
 
@@ -28,26 +28,6 @@ CHANNEL_COMPANY_WATCH = "company_watch"
 
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
-
-
-async def job_passes_preference_filters(
-    db: AsyncSession,
-    job: NormalizedJob,
-    user_profile,
-    settings: Settings,
-) -> bool:
-    filters = build_constraint_filters(user_profile, settings)
-    if not filters:
-        return True
-
-    stmt = select(func.count()).select_from(NormalizedJob).where(
-        and_(NormalizedJob.id == job.id, *filters)
-    )
-    count = await db.scalar(stmt) or 0
-    if count == 0:
-        return False
-
-    return job_matches_location_constraints(job, user_profile)
 
 
 async def _handle_watcher(
@@ -63,7 +43,13 @@ async def _handle_watcher(
     if user_profile is None:
         return
 
-    if not await job_passes_preference_filters(db, job, user_profile, settings):
+    pools = await get_active_pools(db, candidate_id)
+    if not pools:
+        return
+
+    if not await job_passes_company_watch_eligibility(
+        db, job, user_profile, settings, pools=pools
+    ):
         return
 
     watermark = await get_company_watch_watermark(

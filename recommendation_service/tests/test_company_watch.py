@@ -4,6 +4,7 @@ import uuid
 
 from datetime import datetime, timezone
 
+from app.notification.company_watch_eligibility import job_matches_user_pools
 from app.notification.company_watch_watermark import job_reference_at_after_watermark
 from app.notification.filters import build_digest_filters, job_matches_location_constraints
 from app.services.profile_loader import UserProfile
@@ -81,3 +82,18 @@ def test_job_reference_at_after_watermark_strictly_greater() -> None:
     ) is True
     assert job_reference_at_after_watermark(_JobRefStub(None), watermark) is False
     assert job_reference_at_after_watermark(_JobRefStub(datetime(2026, 7, 2, tzinfo=timezone.utc)), None) is False
+
+
+class _PoolJobStub:
+    def __init__(self, retrieval_pools: list[str]) -> None:
+        self.retrieval_pools = retrieval_pools
+
+
+def test_job_matches_user_pools_no_overlap() -> None:
+    job = _PoolJobStub(["HARDWARE_ENGINEER_FULLTIME"])
+    assert job_matches_user_pools(job, ["SWE_FULLTIME"]) is False
+
+
+def test_job_matches_user_pools_with_overlap() -> None:
+    job = _PoolJobStub(["SWE_FULLTIME", "BACKEND_ENGINEER_FULLTIME"])
+    assert job_matches_user_pools(job, ["BACKEND_ENGINEER_FULLTIME"]) is True

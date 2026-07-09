@@ -1,0 +1,68 @@
+{
+  "sorted_middleware": [],
+  "middleware": {
+    "/": {
+      "files": [
+        "server/edge/chunks/0qwv_next_dist_esm_build_templates_edge-wrapper_019tbss.js",
+        "server/edge/chunks/[root-of-the-server]__0-w8g6_._.js",
+        "server/edge/chunks/08p~_next_dist_esm_build_templates_edge-wrapper_06aq94k.js"
+      ],
+      "name": "middleware",
+      "page": "/",
+      "entrypoint": "server/edge/chunks/08p~_next_dist_esm_build_templates_edge-wrapper_06aq94k.js",
+      "matchers": [
+        {
+          "regexp": "/:nextData(_next/data/[^/]{1,})?/jobs/:path*{(\\.json|\\.rsc|\\.segments/.+\\.segment\\.rsc)}?",
+          "originalSource": "/jobs/:path*"
+        },
+        {
+          "regexp": "/:nextData(_next/data/[^/]{1,})?/profile{(\\.json|\\.rsc|\\.segments/.+\\.segment\\.rsc)}?",
+          "originalSource": "/profile"
+        },
+        {
+          "regexp": "/:nextData(_next/data/[^/]{1,})?/profile/:path*{(\\.json|\\.rsc|\\.segments/.+\\.segment\\.rsc)}?",
+          "originalSource": "/profile/:path*"
+        },
+        {
+          "regexp": "/:nextData(_next/data/[^/]{1,})?/resume{(\\.json|\\.rsc|\\.segments/.+\\.segment\\.rsc)}?",
+          "originalSource": "/resume"
+        },
+        {
+          "regexp": "/:nextData(_next/data/[^/]{1,})?/emails{(\\.json|\\.rsc|\\.segments/.+\\.segment\\.rsc)}?",
+          "originalSource": "/emails"
+        },
+        {
+          "regexp": "/:nextData(_next/data/[^/]{1,})?/settings{(\\.json|\\.rsc|\\.segments/.+\\.segment\\.rsc)}?",
+          "originalSource": "/settings"
+        },
+        {
+          "regexp": "/:nextData(_next/data/[^/]{1,})?/filters{(\\.json|\\.rsc|\\.segments/.+\\.segment\\.rsc)}?",
+          "originalSource": "/filters"
+        },
+        {
+          "regexp": "/:nextData(_next/data/[^/]{1,})?/dashboard/:path*{(\\.json|\\.rsc|\\.segments/.+\\.segment\\.rsc)}?",
+          "originalSource": "/dashboard/:path*"
+        },
+        {
+          "regexp": "/:nextData(_next/data/[^/]{1,})?/login{(\\.json|\\.rsc|\\.segments/.+\\.segment\\.rsc)}?",
+          "originalSource": "/login"
+        },
+        {
+          "regexp": "/:nextData(_next/data/[^/]{1,})?/signup{(\\.json|\\.rsc|\\.segments/.+\\.segment\\.rsc)}?",
+          "originalSource": "/signup"
+        }
+      ],
+      "wasm": [],
+      "assets": [],
+      "env": {
+        "__NEXT_BUILD_ID": "1mNh65tk-5jnnW6rEwYWY",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "6piPhITll/kPapzrfYObKeePGvtpADKr2n5S7TDfi7I=",
+        "__NEXT_PREVIEW_MODE_ID": "5d023e5871f059e428386e67fd4bdf3c",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "936c84cde1409fdd16e8e2be16395330dbd3999131528190b7fb3ac523a13650",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "83cff6e994edaa5b77d72f442df7a9f3affcd597c912b493aaee9c4c40970bd0"
+      }
+    }
+  },
+  "instrumentation": null,
+  "functions": {}
+}

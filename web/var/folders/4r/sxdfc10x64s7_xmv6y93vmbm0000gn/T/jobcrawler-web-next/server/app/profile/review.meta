@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/(profile-flow)/layout,_N_T_/(profile-flow)/profile/layout,_N_T_/(profile-flow)/profile/review/layout,_N_T_/(profile-flow)/profile/review/page,_N_T_/profile/review"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/!KHByb2ZpbGUtZmxvdyk/profile/review/__PAGE__",
+    "/!KHByb2ZpbGUtZmxvdyk/profile/review",
+    "/!KHByb2ZpbGUtZmxvdyk/profile",
+    "/!KHByb2ZpbGUtZmxvdyk",
+    "/_index",
+    "/_head"
+  ]
+}
