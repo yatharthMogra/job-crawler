@@ -3,6 +3,10 @@ import { eeoFromApiPayload, eeoToApiPayload, emptyEeo, type EeoState } from "@/l
 import { poolIdsForRoles, sanitizeCatalogRoles } from "@/lib/profile/role-catalog"
 import { ensureLocations } from "@/lib/job-filters"
 import type { SeniorityLevel } from "@/lib/jobs-data"
+import {
+  targetSeniorityToUiSeniority,
+  uiSeniorityToTargetSeniority,
+} from "@/lib/profile/seniority"
 
 export interface JobIntentState {
   primaryRoles: string[]
@@ -63,7 +67,9 @@ export function profileToJobIntent(profile: ProfileResponse): JobIntentState {
     preferredLocations: ensureLocations((preferences.preferred_locations as string[]) ?? []),
     remotePreference: String(preferences.remote_preference ?? ""),
     preferredIndustries: (preferences.preferred_industries as string[]) ?? [],
-    experienceLevel: (preferences.experience_level as SeniorityLevel | "any" | null) ?? null,
+    experienceLevel:
+      (preferences.experience_level as SeniorityLevel | "any" | null) ??
+      targetSeniorityToUiSeniority(constraints.target_seniority as string[] | undefined),
     fullTimeExperienceYears:
       constraints.full_time_experience_years != null
         ? Number(constraints.full_time_experience_years)
@@ -93,6 +99,9 @@ export function jobIntentToApiPayload(state: JobIntentState): {
       full_time_experience_years: state.fullTimeExperienceYears,
       is_currently_enrolled: state.isCurrentlyEnrolled,
       expected_graduation_date: state.expectedGraduationDate || null,
+      ...(state.experienceLevel && state.experienceLevel !== "any"
+        ? { target_seniority: uiSeniorityToTargetSeniority(state.experienceLevel) }
+        : {}),
       // EEO is not used for job matching; keep empty payload for API compatibility.
       eeo: eeoToApiPayload(emptyEeo()),
     },

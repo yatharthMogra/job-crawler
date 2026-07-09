@@ -48,7 +48,6 @@ import {
 } from "@/lib/applications/pipeline-status"
 
 import type { EmploymentTypeFilter } from "@/lib/employment-type-filter"
-import type { SeniorityLevel } from "@/lib/jobs-data"
 import { DEFAULT_LOCATION } from "@/lib/job-filters"
 
 export interface Filters {
@@ -58,7 +57,6 @@ export interface Filters {
   salaryMin: number | null
   datePosted: string | null
   employmentType: EmploymentTypeFilter
-  experienceLevel: SeniorityLevel | "any" | null
 }
 
 const EMPTY_FILTERS: Filters = {
@@ -68,7 +66,6 @@ const EMPTY_FILTERS: Filters = {
   salaryMin: null,
   datePosted: null,
   employmentType: null,
-  experienceLevel: null,
 }
 
 interface JobsContextValue {

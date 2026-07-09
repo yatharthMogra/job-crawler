@@ -1,4 +1,4 @@
-import type { JobWithRole, SeniorityLevel } from "@/lib/jobs-data"
+import type { JobWithRole } from "@/lib/jobs-data"
 
 export const DEFAULT_LOCATION = "United States"
 
@@ -8,15 +8,6 @@ export const DATE_POSTED_OPTIONS = [
   { value: "3d", label: "Past 3 days" },
   { value: "1w", label: "Past week" },
 ] as const
-
-export const EXPERIENCE_LEVEL_OPTIONS: { value: SeniorityLevel | "any"; label: string }[] = [
-  { value: "any", label: "Any level" },
-  { value: "internship", label: "Internship" },
-  { value: "new_grad", label: "New Grad" },
-  { value: "mid", label: "Mid Level" },
-  { value: "senior", label: "Senior" },
-  { value: "staff", label: "Staff+" },
-]
 
 export function ensureLocations(locations: string[] | null | undefined): string[] {
   const cleaned = (locations ?? []).map((l) => l.trim()).filter(Boolean)
@@ -43,18 +34,4 @@ export function applyLocationFilter(job: JobWithRole, location: string | null): 
   }
   const needle = location.toLowerCase()
   return job.location.toLowerCase().includes(needle)
-}
-
-export function applyExperienceLevelFilter(
-  job: JobWithRole,
-  level: SeniorityLevel | "any" | null,
-): boolean {
-  if (!level || level === "any") return true
-  if (level === "staff") {
-    return job.seniority_level === "staff" || job.seniority_level === "senior"
-  }
-  if (level === "mid") {
-    return job.seniority_level === "mid" || job.seniority_level === "early_career" || job.seniority_level === "entry"
-  }
-  return job.seniority_level === level
 }

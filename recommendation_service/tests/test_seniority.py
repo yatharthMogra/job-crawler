@@ -18,14 +18,20 @@ def test_get_target_seniority_from_constraints() -> None:
     assert get_target_seniority({"target_seniority": ["mid", "SENIOR"]}) == ["MID", "SENIOR"]
 
 
-def test_seniority_retrieval_includes_unknown_and_senior() -> None:
+def test_seniority_retrieval_includes_unknown_excludes_untargeted() -> None:
     allowed = seniority_retrieval_values(["INTERN", "NEW_GRAD"])
     assert "UNKNOWN" in allowed
     assert "unclear" in allowed
-    assert "SENIOR" in allowed
-    assert "senior" in allowed
+    assert "SENIOR" not in allowed
+    assert "senior" not in allowed
     assert "MID" not in allowed
     assert "mid" not in allowed
+
+
+def test_seniority_retrieval_includes_explicit_target() -> None:
+    allowed = seniority_retrieval_values(["SENIOR"])
+    assert "SENIOR" in allowed
+    assert "senior" in allowed
 
 
 def test_seniority_hard_block_excludes_leadership() -> None:

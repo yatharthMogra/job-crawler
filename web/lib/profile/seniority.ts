@@ -1,3 +1,4 @@
+import type { SeniorityLevel } from "@/lib/jobs-data"
 import { EXPERIENCE_LEVELS } from "@/lib/profile/job-filters-constants"
 
 export const DEFAULT_TARGET_SENIORITY = ["INTERN", "NEW_GRAD", "ENTRY", "MID", "JUNIOR"] as const
@@ -16,6 +17,54 @@ for (const [experience, levels] of Object.entries(EXPERIENCE_TO_SENIORITY)) {
   for (const level of levels) {
     SENIORITY_TO_EXPERIENCE[level] = experience
   }
+}
+
+export const UI_SENIORITY_TO_TARGET: Record<SeniorityLevel, string[]> = {
+  internship: ["INTERN"],
+  new_grad: ["NEW_GRAD"],
+  early_career: ["ENTRY", "JUNIOR"],
+  entry: ["ENTRY", "JUNIOR"],
+  mid: ["MID"],
+  senior: ["SENIOR"],
+  staff: ["STAFF", "PRINCIPAL"],
+}
+
+export const JOB_INTENT_EXPERIENCE_LEVEL_OPTIONS: {
+  value: SeniorityLevel | "any"
+  label: string
+}[] = [
+  { value: "any", label: "Any level" },
+  { value: "internship", label: "Internship" },
+  { value: "new_grad", label: "New Grad" },
+  { value: "mid", label: "Mid Level" },
+  { value: "senior", label: "Senior" },
+  { value: "staff", label: "Staff+" },
+]
+
+export function uiSeniorityToTargetSeniority(level: SeniorityLevel): string[] {
+  return UI_SENIORITY_TO_TARGET[level] ?? []
+}
+
+export function targetSeniorityToUiSeniority(
+  targetSeniority: string[] | undefined,
+): SeniorityLevel | null {
+  if (!targetSeniority?.length) {
+    return null
+  }
+  const normalized = new Set(targetSeniority.map((level) => level.toUpperCase()))
+  if (
+    normalized.has("STAFF") ||
+    normalized.has("PRINCIPAL") ||
+    normalized.has("MANAGEMENT")
+  ) {
+    return "staff"
+  }
+  if (normalized.has("SENIOR")) return "senior"
+  if (normalized.has("MID")) return "mid"
+  if (normalized.has("INTERN")) return "internship"
+  if (normalized.has("NEW_GRAD")) return "new_grad"
+  if (normalized.has("ENTRY") || normalized.has("JUNIOR")) return "entry"
+  return null
 }
 
 export function experienceLevelsToTargetSeniority(experienceLevels: string[]): string[] {

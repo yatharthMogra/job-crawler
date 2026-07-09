@@ -5,10 +5,8 @@ import { useJobs } from "@/components/jobs-provider"
 import {
   DATE_POSTED_OPTIONS,
   DEFAULT_LOCATION,
-  EXPERIENCE_LEVEL_OPTIONS,
 } from "@/lib/job-filters"
 import type { EmploymentTypeFilter } from "@/lib/employment-type-filter"
-import type { SeniorityLevel } from "@/lib/jobs-data"
 import { cn } from "@/lib/utils"
 
 const LOCATION_OPTIONS = [
@@ -86,17 +84,6 @@ export function RecsFilterBar({
         value={filters.datePosted ?? "any"}
         onChange={(v) => setFilter("datePosted", v === "any" ? null : v)}
         options={DATE_POSTED_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
-      />
-      <CompactSelect
-        ariaLabel="Experience level"
-        value={filters.experienceLevel ?? "any"}
-        onChange={(v) =>
-          setFilter("experienceLevel", v === "any" ? null : (v as SeniorityLevel))
-        }
-        options={EXPERIENCE_LEVEL_OPTIONS.map((o) => ({
-          value: o.value,
-          label: o.label,
-        }))}
       />
       {onOpenAllFilters ? (
         <button

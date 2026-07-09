@@ -82,9 +82,7 @@ def get_target_seniority(constraints: dict) -> list[str]:
 
 def seniority_retrieval_values(target: list[str]) -> set[str]:
     target_set = {normalize_seniority(level) for level in target}
-    allowed = expand_seniority_aliases(target_set | {"UNKNOWN"})
-    allowed.update(expand_seniority_aliases(SOFT_PENALTY_SENIORITIES))
-    return allowed
+    return expand_seniority_aliases(target_set | {"UNKNOWN"})
 
 
 def seniority_hard_block_values(target: list[str]) -> set[str]:

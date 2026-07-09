@@ -13,11 +13,8 @@ import {
 import { Brand } from "@/components/profile/brand"
 import { RolePickerPanel } from "@/components/profile/role-picker-panel"
 import { Button } from "@/components/ui/button"
-import {
-  DEFAULT_LOCATION,
-  EXPERIENCE_LEVEL_OPTIONS,
-  ensureLocations,
-} from "@/lib/job-filters"
+import { DEFAULT_LOCATION, ensureLocations } from "@/lib/job-filters"
+import { JOB_INTENT_EXPERIENCE_LEVEL_OPTIONS } from "@/lib/profile/seniority"
 import type { SeniorityLevel } from "@/lib/jobs-data"
 import { cn } from "@/lib/utils"
 import {
@@ -394,7 +391,7 @@ export function JobIntentScreen({ state, onChange, onSubmit, saving }: JobIntent
                       )
                     }
                   >
-                    {EXPERIENCE_LEVEL_OPTIONS.map((o) => (
+                    {JOB_INTENT_EXPERIENCE_LEVEL_OPTIONS.map((o) => (
                       <option key={o.value} value={o.value}>
                         {o.label}
                       </option>

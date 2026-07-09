@@ -15,7 +15,6 @@ import { Button } from "@/components/ui/button"
 import { matchesEmploymentTypeFilter } from "@/lib/employment-type-filter"
 import {
   applyDatePostedFilter,
-  applyExperienceLevelFilter,
   applyLocationFilter,
   DEFAULT_LOCATION,
 } from "@/lib/job-filters"
@@ -103,7 +102,6 @@ export function NeuralRecommendationsPage() {
       .filter((j) => matchesEmploymentTypeFilter(j.employment_type, filters.employmentType))
       .filter((j) => applyDatePostedFilter(j, filters.datePosted))
       .filter((j) => applyLocationFilter(j, filters.location))
-      .filter((j) => applyExperienceLevelFilter(j, filters.experienceLevel))
 
     if (advancedFilters) {
       base = filterJobsByState(base, advancedFilters, DEFAULT_SALARY_MAX)
@@ -121,7 +119,6 @@ export function NeuralRecommendationsPage() {
     filters.employmentType,
     filters.datePosted,
     filters.location,
-    filters.experienceLevel,
     advancedFilters,
   ])
 
@@ -146,7 +143,6 @@ export function NeuralRecommendationsPage() {
     filters.employmentType,
     filters.datePosted,
     filters.location,
-    filters.experienceLevel,
     advancedFilters,
   ])
 
