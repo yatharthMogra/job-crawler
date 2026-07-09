@@ -72,3 +72,7 @@ class DashboardJobsResponse(BaseModel):
 class DashboardRecommendedJobsResponse(BaseModel):
     jobs: list[DashboardRecommendedJobOut]
     total: int
+    next_cursor: str | None = None
+    has_more: bool = False
+    scanned: int = 0
+    returned: int = 0

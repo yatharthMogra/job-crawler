@@ -13,7 +13,6 @@ from app.models.shared import NormalizedJob
 from app.notification.ranker import deduplicate_ranked_jobs, rank_jobs, select_diversified_jobs
 from app.notification.retrieval import (
     build_constraint_filters,
-    fetch_jobs_with_pool_floors,
     query_jobs_in_pools,
 )
 from app.scoring.explainability import generate_explanations
@@ -41,6 +40,7 @@ from app.services.company_enrichment_lookup import load_company_enrichment_looku
 from app.services.h1b_lookup import H1bLookup, load_h1b_summary_lookup
 from app.services.h1b_pool_family import pool_family_from_roles
 from app.services.profile_loader import UserProfile, load_user_profile
+from app.services.recommended_cursor import decode_recommended_cursor, encode_recommended_cursor
 from app.services.subscriptions import get_active_pools
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
@@ -213,50 +213,66 @@ async def get_dashboard_jobs(
 @router.get("/jobs/recommended", response_model=DashboardRecommendedJobsResponse)
 async def get_recommended_jobs(
     candidate_id: uuid.UUID = Query(...),
-    limit: int = Query(default=50, ge=1, le=200),
-    offset: int = Query(default=0, ge=0),
+    scan_batch: int = Query(default=200, ge=1, le=200),
+    cursor: Optional[str] = Query(default=None),
     db: AsyncSession = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ) -> DashboardRecommendedJobsResponse:
     pools = await get_active_pools(db, candidate_id)
     if not pools:
-        return DashboardRecommendedJobsResponse(jobs=[], total=0)
+        return DashboardRecommendedJobsResponse(jobs=[], total=0, has_more=False, scanned=0, returned=0)
 
     user_profile = await load_user_profile(db, candidate_id)
     if user_profile is None:
-        return DashboardRecommendedJobsResponse(jobs=[], total=0)
+        return DashboardRecommendedJobsResponse(jobs=[], total=0, has_more=False, scanned=0, returned=0)
+
+    scan_offset = 0
+    if cursor:
+        try:
+            scan_offset = decode_recommended_cursor(cursor)
+        except ValueError as exc:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid cursor") from exc
 
     filters = build_constraint_filters(user_profile, settings)
-    cap = settings.effective_retrieval_limit
-    all_jobs = await fetch_jobs_with_pool_floors(
+    batch_jobs = await query_jobs_in_pools(
         db,
         pools=pools,
         filters=filters,
-        cap=cap,
-        floor_ratio=settings.recommendation_pool_floor_ratio,
+        limit=scan_batch,
+        offset=scan_offset,
     )
+    scanned = len(batch_jobs)
+    has_more = scanned == scan_batch
+
+    if scanned == 0:
+        return DashboardRecommendedJobsResponse(
+            jobs=[],
+            total=0,
+            next_cursor=None,
+            has_more=False,
+            scanned=0,
+            returned=0,
+        )
 
     needs_sponsorship = _needs_sponsorship_data(user_profile)
     h1b_lookup, company_lookup = await _load_job_enrichment_lookups(
-        db, all_jobs, needs_sponsorship=needs_sponsorship
+        db, batch_jobs, needs_sponsorship=needs_sponsorship
     )
     scoring_lookup = h1b_lookup if settings.sponsorship_score_enabled and needs_sponsorship else None
     ranked = deduplicate_ranked_jobs(
-        rank_jobs(all_jobs, user_profile, settings, h1b_lookup=scoring_lookup)
+        rank_jobs(batch_jobs, user_profile, settings, h1b_lookup=scoring_lookup)
     )
     applied_counts = await applied_count_by_company(db, candidate_id)
     diversified = select_diversified_jobs(
         ranked,
-        cap,
+        len(ranked),
         applied_count_by_company=applied_counts,
         max_per_company=settings.recommendation_max_jobs_per_company,
         unlock_batch_size=settings.recommendation_company_unlock_batch,
     )
-    total = len(diversified)
-    page = diversified[offset : offset + limit]
 
     jobs_out: list[DashboardRecommendedJobOut] = []
-    for job, score in page:
+    for job, score in diversified:
         base = _enriched_job_out(
             job,
             h1b_lookup=h1b_lookup,
@@ -270,7 +286,17 @@ async def get_recommended_jobs(
                 match_reasons=generate_explanations(job, user_profile),
             )
         )
-    return DashboardRecommendedJobsResponse(jobs=jobs_out, total=total)
+
+    next_cursor = encode_recommended_cursor(scan_offset + scanned) if has_more else None
+    returned = len(jobs_out)
+    return DashboardRecommendedJobsResponse(
+        jobs=jobs_out,
+        total=returned,
+        next_cursor=next_cursor,
+        has_more=has_more,
+        scanned=scanned,
+        returned=returned,
+    )
 
 
 @router.get("/jobs/{job_id}", response_model=DashboardJobOut)

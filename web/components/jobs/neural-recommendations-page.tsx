@@ -27,6 +27,7 @@ import { useJobsSearch } from "@/app/(dashboard)/jobs/layout"
 import { cn } from "@/lib/utils"
 
 const BATCH = 8
+const LOAD_MORE_THRESHOLD = 10
 
 function matchesSearch(job: JobWithRole, q: string) {
   if (!q.trim()) return true
@@ -56,10 +57,13 @@ export function NeuralRecommendationsPage() {
     recommendedJobs,
     hiddenIds,
     recommendedLoading,
+    recommendedHasMore,
+    recommendedLoadingMore,
     error,
     filters,
     setFilter,
-    refreshJobs,
+    refreshRecommendedJobs,
+    loadMoreRecommendedJobs,
     selectedJobId,
     selectJob,
   } = useJobs()
@@ -70,6 +74,7 @@ export function NeuralRecommendationsPage() {
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [advancedFilters, setAdvancedFilters] = useState<JobFiltersState | null>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
+  const prevRankedLen = useRef(0)
   const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null)
   const onScrollRoot = useCallback((node: HTMLDivElement | null) => {
     setScrollRoot(node)
@@ -123,7 +128,8 @@ export function NeuralRecommendationsPage() {
   ])
 
   const visible = ranked.slice(0, visibleCount)
-  const hasMore = visibleCount < ranked.length
+  const hasMoreLocal = visibleCount < ranked.length
+  const hasMore = hasMoreLocal || recommendedHasMore
   const advancedFilterCount = countAdvancedFilters(advancedFilters)
 
   useEffect(() => {
@@ -133,6 +139,13 @@ export function NeuralRecommendationsPage() {
       selectJob(ranked[0]!.id)
     }
   }, [recommendedLoading, ranked, selectedJobId, selectJob])
+
+  useEffect(() => {
+    if (ranked.length > prevRankedLen.current) {
+      setVisibleCount((c) => Math.min(c + BATCH, ranked.length))
+    }
+    prevRankedLen.current = ranked.length
+  }, [ranked.length])
 
   useEffect(() => {
     setVisibleCount(BATCH)
@@ -147,26 +160,45 @@ export function NeuralRecommendationsPage() {
   ])
 
   useEffect(() => {
-    if (recommendedLoading || !hasMore || !scrollRoot) return
+    if (recommendedLoading || !scrollRoot) return
     const sentinel = sentinelRef.current
     if (!sentinel) return
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting) {
+        if (!entries[0]?.isIntersecting) return
+        if (visibleCount < ranked.length) {
           setVisibleCount((c) => Math.min(c + BATCH, ranked.length))
+          return
+        }
+        if (
+          recommendedHasMore &&
+          !recommendedLoadingMore &&
+          visibleCount >= ranked.length - LOAD_MORE_THRESHOLD
+        ) {
+          void loadMoreRecommendedJobs()
         }
       },
       { root: scrollRoot, rootMargin: "240px" },
     )
     observer.observe(sentinel)
     return () => observer.disconnect()
-  }, [recommendedLoading, hasMore, visible.length, detailOpen, ranked.length, scrollRoot])
+  }, [
+    recommendedLoading,
+    recommendedHasMore,
+    recommendedLoadingMore,
+    visibleCount,
+    ranked.length,
+    detailOpen,
+    scrollRoot,
+    loadMoreRecommendedJobs,
+  ])
 
   async function handleSync() {
     setSyncing(true)
     try {
-      await refreshJobs()
+      await refreshRecommendedJobs()
+      setVisibleCount(BATCH)
     } finally {
       setSyncing(false)
     }
@@ -201,15 +233,28 @@ export function NeuralRecommendationsPage() {
           {visible.map((job) => (
             <NeuralJobCard key={job.id} job={job} compact={detailOpen} />
           ))}
-          {hasMore ? <div ref={sentinelRef} className="h-8" aria-hidden="true" /> : null}
+          {hasMore || recommendedLoadingMore ? (
+            <div ref={sentinelRef} className="h-8" aria-hidden="true" />
+          ) : null}
           <div className="flex flex-col items-center gap-3 pt-4">
-            {hasMore ? (
+            {hasMoreLocal ? (
               <Button
                 variant="outline"
                 className="h-10 rounded-xl px-5"
                 onClick={() => setVisibleCount((c) => Math.min(c + BATCH, ranked.length))}
               >
                 Load more ({visible.length} of {ranked.length})
+              </Button>
+            ) : recommendedLoadingMore ? (
+              <p className="text-xs text-muted-foreground">Loading more matches…</p>
+            ) : recommendedHasMore ? (
+              <Button
+                variant="outline"
+                className="h-10 rounded-xl px-5"
+                disabled={recommendedLoadingMore}
+                onClick={() => void loadMoreRecommendedJobs()}
+              >
+                Load more matches
               </Button>
             ) : (
               <p className="text-xs text-muted-foreground">You&apos;ve seen all {ranked.length} matches.</p>
@@ -242,7 +287,11 @@ export function NeuralRecommendationsPage() {
             ) : null}
           </div>
           <p className="text-sm text-muted-foreground">
-            {recommendedLoading ? "Loading…" : `${ranked.length} matches`}
+            {recommendedLoading
+              ? "Loading…"
+              : recommendedHasMore
+                ? `${ranked.length}+ matches`
+                : `${ranked.length} matches`}
           </p>
         </div>
         <RecsFilterBar

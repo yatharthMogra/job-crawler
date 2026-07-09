@@ -32,7 +32,7 @@ export function RecommendationsFilterPanel({
   const { candidateId } = useSession()
   const mockMode = useMockData()
   const { rawProfile, profileHome, loadProfileHome } = useProfileFlow()
-  const { refreshJobs } = useJobs()
+  const { refreshRecommendedJobs } = useJobs()
   const [state, setState] = useState<JobFiltersState | null>(null)
   const [saving, setSaving] = useState(false)
   const [hydrated, setHydrated] = useState(false)
@@ -100,7 +100,7 @@ export function RecommendationsFilterPanel({
     }
     if (!mockMode && candidateId) {
       void loadProfileHome(candidateId).catch(() => undefined)
-      void refreshJobs()
+      void refreshRecommendedJobs()
     }
   }
 

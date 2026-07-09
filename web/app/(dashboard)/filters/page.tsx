@@ -23,7 +23,7 @@ export default function FiltersPage() {
   const { candidateId } = useSession()
   const mockMode = useMockData()
   const { rawProfile, profileHome, loadProfileHome } = useProfileFlow()
-  const { refreshJobs } = useJobs()
+  const { refreshRecommendedJobs } = useJobs()
   const [state, setState] = useState<ReturnType<typeof emptyJobFilters> | null>(null)
   const [saving, setSaving] = useState(false)
   const [hydrated, setHydrated] = useState(false)
@@ -64,7 +64,7 @@ export default function FiltersPage() {
       }
       await patchJobFilters(candidateId, payload)
       router.push("/jobs/recommended")
-      void refreshJobs()
+      void refreshRecommendedJobs()
       void loadProfileHome(candidateId).catch(() => undefined)
     } finally {
       setSaving(false)

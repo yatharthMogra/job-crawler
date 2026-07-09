@@ -97,6 +97,10 @@ interface JobsContextValue {
   setEmploymentTypeFilter: (value: EmploymentTypeFilter) => void
   selectJob: (id: string | null) => void
   refreshJobs: () => Promise<void>
+  refreshRecommendedJobs: () => Promise<void>
+  loadMoreRecommendedJobs: () => Promise<void>
+  recommendedHasMore: boolean
+  recommendedLoadingMore: boolean
 }
 
 const JobsContext = createContext<JobsContextValue | null>(null)
@@ -118,11 +122,90 @@ export function JobsProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
   const [hasProfile, setHasProfile] = useState(true)
   const [pendingApply, setPendingApplyState] = useState<PendingApply | null>(null)
+  const [recommendedNextCursor, setRecommendedNextCursor] = useState<string | null>(null)
+  const [recommendedHasMore, setRecommendedHasMore] = useState(false)
+  const [recommendedLoadingMore, setRecommendedLoadingMore] = useState(false)
+
+  const applyRecommendedResponse = useCallback(
+    (recommended: Awaited<ReturnType<typeof fetchRecommendedJobs>>, append: boolean) => {
+      const mapped = recommended.jobs.map((j) => mapRecommendedApiJob(j))
+      setRecommendedJobs((prev) => {
+        if (!append) return mapped
+        const ids = new Set(prev.map((j) => j.id))
+        return [...prev, ...mapped.filter((j) => !ids.has(j.id))]
+      })
+      setRecommendedNextCursor(recommended.next_cursor ?? null)
+      setRecommendedHasMore(recommended.has_more ?? false)
+    },
+    [],
+  )
+
+  const refreshRecommendedJobs = useCallback(async () => {
+    if (!candidateId) {
+      setRecommendedJobs([])
+      setRecommendedNextCursor(null)
+      setRecommendedHasMore(false)
+      setRecommendedLoading(false)
+      return
+    }
+
+    if (mockMode) {
+      setRecommendedJobs(
+        [...(ALL_JOBS as JobWithRole[])].sort((a, b) => b.personal_score - a.personal_score),
+      )
+      setRecommendedNextCursor(null)
+      setRecommendedHasMore(false)
+      setRecommendedLoading(false)
+      setHasProfile(true)
+      return
+    }
+
+    setRecommendedLoading(true)
+    setError(null)
+
+    try {
+      await syncSubscriptionsForCandidate(candidateId).catch(() => undefined)
+      const recommended = await fetchRecommendedJobs(candidateId)
+      applyRecommendedResponse(recommended, false)
+      setHasProfile((recommended.returned ?? recommended.jobs.length) > 0)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load recommendations")
+      setRecommendedJobs([])
+      setRecommendedNextCursor(null)
+      setRecommendedHasMore(false)
+    } finally {
+      setRecommendedLoading(false)
+    }
+  }, [candidateId, mockMode, applyRecommendedResponse])
+
+  const loadMoreRecommendedJobs = useCallback(async () => {
+    if (!candidateId || !recommendedNextCursor || recommendedLoadingMore || mockMode) return
+
+    setRecommendedLoadingMore(true)
+    try {
+      const recommended = await fetchRecommendedJobs(candidateId, {
+        cursor: recommendedNextCursor,
+      })
+      applyRecommendedResponse(recommended, true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load more recommendations")
+    } finally {
+      setRecommendedLoadingMore(false)
+    }
+  }, [
+    candidateId,
+    recommendedNextCursor,
+    recommendedLoadingMore,
+    mockMode,
+    applyRecommendedResponse,
+  ])
 
   const refreshJobs = useCallback(async () => {
     if (!candidateId) {
       setAllJobs([])
       setRecommendedJobs([])
+      setRecommendedNextCursor(null)
+      setRecommendedHasMore(false)
       setLoading(false)
       setRecommendedLoading(false)
       return
@@ -140,6 +223,8 @@ export function JobsProvider({ children }: { children: ReactNode }) {
       setRecommendedJobs(
         [...(ALL_JOBS as JobWithRole[])].sort((a, b) => b.personal_score - a.personal_score),
       )
+      setRecommendedNextCursor(null)
+      setRecommendedHasMore(false)
       setAppliedJobs(
         (ALL_JOBS as JobWithRole[])
           .filter((job) => mockApplied.has(job.id))
@@ -170,12 +255,12 @@ export function JobsProvider({ children }: { children: ReactNode }) {
 
       const [dashboard, recommended, applications] = await Promise.all([
         fetchDashboardJobs(candidateId, query),
-        fetchRecommendedJobs(candidateId, { limit: 200 }),
+        fetchRecommendedJobs(candidateId),
         fetchApplications(candidateId).catch(() => ({ applications: [], total: 0 })),
       ])
 
       setAllJobs(dashboard.jobs.map((j) => mapApiJobToUi(j)))
-      setRecommendedJobs(recommended.jobs.map((j) => mapRecommendedApiJob(j)))
+      applyRecommendedResponse(recommended, false)
       const serverApplied = applications.applications.map((app) => mapApplicationToUi(app))
       setAppliedJobs(serverApplied)
 
@@ -202,16 +287,20 @@ export function JobsProvider({ children }: { children: ReactNode }) {
         setAppliedJobs(refreshed.applications.map((app) => mapApplicationToUi(app)))
       }
       setAppliedIds(appliedIdSet)
-      setHasProfile(recommended.total > 0 || dashboard.total > 0)
+      setHasProfile(
+        (recommended.returned ?? recommended.jobs.length) > 0 || dashboard.total > 0,
+      )
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load jobs")
       setAllJobs([])
       setRecommendedJobs([])
+      setRecommendedNextCursor(null)
+      setRecommendedHasMore(false)
     } finally {
       setLoading(false)
       setRecommendedLoading(false)
     }
-  }, [candidateId, mockMode, filters.location, filters.remote, filters.salaryMin, filters.role])
+  }, [candidateId, mockMode, filters.location, filters.remote, filters.salaryMin, filters.role, applyRecommendedResponse])
 
   useEffect(() => {
     void refreshJobs()
@@ -478,6 +567,10 @@ export function JobsProvider({ children }: { children: ReactNode }) {
       setEmploymentTypeFilter,
       selectJob: setSelectedJobId,
       refreshJobs,
+      refreshRecommendedJobs,
+      loadMoreRecommendedJobs,
+      recommendedHasMore,
+      recommendedLoadingMore,
     }),
     [
       jobs,
@@ -507,6 +600,10 @@ export function JobsProvider({ children }: { children: ReactNode }) {
       clearFilter,
       setEmploymentTypeFilter,
       refreshJobs,
+      refreshRecommendedJobs,
+      loadMoreRecommendedJobs,
+      recommendedHasMore,
+      recommendedLoadingMore,
     ],
   )
 

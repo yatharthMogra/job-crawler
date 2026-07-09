@@ -73,6 +73,10 @@ export interface DashboardJobsResponse {
 export interface RecommendedJobsResponse {
   jobs: RecommendedJobApi[]
   total: number
+  next_cursor?: string | null
+  has_more?: boolean
+  scanned?: number
+  returned?: number
 }
 
 export interface SubscriptionOut {
@@ -122,11 +126,11 @@ export function fetchDashboardJobs(
 
 export function fetchRecommendedJobs(
   candidateId: string,
-  params: { limit?: number; offset?: number } = {},
+  params: { scanBatch?: number; cursor?: string } = {},
 ) {
   const query = new URLSearchParams({ candidate_id: candidateId })
-  if (params.limit != null) query.set("limit", String(params.limit))
-  if (params.offset != null) query.set("offset", String(params.offset))
+  if (params.scanBatch != null) query.set("scan_batch", String(params.scanBatch))
+  if (params.cursor) query.set("cursor", params.cursor)
   return request<RecommendedJobsResponse>(`/dashboard/jobs/recommended?${query}`)
 }
 
