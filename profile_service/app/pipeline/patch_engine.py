@@ -375,13 +375,85 @@ async def discard_patch(db: AsyncSession, *, candidate_id: uuid.UUID, patch_id: 
     await db.commit()
 
 
+def _merge_constraints(constraints: dict[str, Any], new_values: dict[str, Any]) -> dict[str, Any]:
+    if "eeo" in new_values and isinstance(new_values["eeo"], dict):
+        merged_eeo = dict(constraints.get("eeo") or {})
+        merged_eeo.update(new_values["eeo"])
+        updated = {**constraints, **{k: v for k, v in new_values.items() if k != "eeo"}}
+        updated["eeo"] = merged_eeo
+        return updated
+    return {**constraints, **new_values}
+
+
+async def write_profile_filters(
+    db: AsyncSession,
+    *,
+    candidate_id: uuid.UUID,
+    constraints_updates: dict[str, Any],
+    preferences_updates: dict[str, Any],
+) -> CandidateProfile:
+    """Atomically update constraints and preferences without LLM capability recompute."""
+    if not constraints_updates and not preferences_updates:
+        raise ValueError("No filter updates provided")
+
+    current_profile = await get_current_profile(db, candidate_id)
+    if current_profile:
+        constraints = dict(current_profile.constraints)
+        preferences = dict(current_profile.preferences)
+        education = dict(current_profile.education)
+        skills = dict(current_profile.skills)
+        current_version = current_profile.version
+    else:
+        constraints = default_constraints()
+        preferences = default_preferences()
+        education = default_education()
+        skills = default_skills()
+        current_version = 0
+
+    if constraints_updates:
+        constraints = _merge_constraints(constraints, constraints_updates)
+    if preferences_updates:
+        preferences = {**preferences, **preferences_updates}
+
+    constraints = await refresh_experience_tier_constraints(
+        db,
+        candidate_id=candidate_id,
+        constraints=constraints,
+        education=education,
+    )
+    constraints = normalize_constraints(constraints)
+
+    if current_profile:
+        await db.execute(
+            update(CandidateProfile)
+            .where(CandidateProfile.candidate_id == candidate_id, CandidateProfile.is_current.is_(True))
+            .values(is_current=False)
+        )
+
+    new_version = current_version + 1
+    new_profile = CandidateProfile(
+        candidate_id=candidate_id,
+        version=new_version,
+        is_current=True,
+        schema_version="v1",
+        constraints=constraints,
+        preferences=preferences,
+        skills=skills,
+        education=education,
+        patch_id=None,
+    )
+    db.add(new_profile)
+    await db.commit()
+    await db.refresh(new_profile)
+    return new_profile
+
+
 async def write_profile_section(
     db: AsyncSession,
     *,
     candidate_id: uuid.UUID,
     section: str,
     new_values: dict[str, Any],
-    settings: Settings,
 ) -> CandidateProfile:
     current_profile = await get_current_profile(db, candidate_id)
     if current_profile:
@@ -398,13 +470,7 @@ async def write_profile_section(
         current_version = 0
 
     if section == "constraints":
-        if "eeo" in new_values and isinstance(new_values["eeo"], dict):
-            merged_eeo = dict(constraints.get("eeo") or {})
-            merged_eeo.update(new_values["eeo"])
-            constraints = {**constraints, **{k: v for k, v in new_values.items() if k != "eeo"}}
-            constraints["eeo"] = merged_eeo
-        else:
-            constraints.update(new_values)
+        constraints = _merge_constraints(constraints, new_values)
     elif section == "preferences":
         preferences.update(new_values)
     elif section == "education":
@@ -451,6 +517,4 @@ async def write_profile_section(
     db.add(new_profile)
     await db.commit()
     await db.refresh(new_profile)
-
-    await recompute_capabilities(db, candidate_id=candidate_id, profile_version=new_version, settings=settings)
     return new_profile

@@ -15,9 +15,8 @@ import {
   jobFiltersToApiPayload,
   type JobFiltersState,
 } from "@/lib/profile/job-filters"
-import { patchConstraints, patchPreferences } from "@/lib/profile/api"
+import { patchJobFilters } from "@/lib/profile/api"
 import { useJobs } from "@/components/jobs-provider"
-import { syncSubscriptionsForCandidate } from "@/lib/recommendation/sync-subscriptions"
 import { FeedSkeleton } from "@/components/card-skeleton"
 import { cn } from "@/lib/utils"
 
@@ -92,16 +91,16 @@ export function RecommendationsFilterPanel({
     try {
       if (!mockMode) {
         const payload = jobFiltersToApiPayload(state)
-        await patchConstraints(candidateId, payload.constraints)
-        await patchPreferences(candidateId, payload.preferences)
-        await loadProfileHome(candidateId)
-        await syncSubscriptionsForCandidate(candidateId)
-        await refreshJobs()
+        await patchJobFilters(candidateId, payload)
       }
       onApplied(state)
       onClose()
     } finally {
       setSaving(false)
+    }
+    if (!mockMode && candidateId) {
+      void loadProfileHome(candidateId).catch(() => undefined)
+      void refreshJobs()
     }
   }
 

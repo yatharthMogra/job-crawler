@@ -17,6 +17,7 @@ from app.pipeline.patch_engine import (
     discard_patch,
     get_current_profile,
     get_pending_patch,
+    write_profile_filters,
     write_profile_section,
 )
 from app.schemas.patch import PatchCommitRequest, PatchCommitResponse, PendingPatchResponse
@@ -31,6 +32,7 @@ from app.schemas.profile import (
     PreferencesUpdate,
     ProfileResponse,
     ProfileVersionSummary,
+    JobFiltersUpdate,
 )
 from app.models.capability import CandidateCapability
 
@@ -169,13 +171,12 @@ async def patch_constraints(
     candidate_id: uuid.UUID,
     payload: ConstraintsUpdate,
     db: AsyncSession = Depends(get_db),
-    settings: Settings = Depends(get_settings),
 ) -> ProfileResponse:
     updates = payload.model_dump(exclude_none=True)
     if not updates:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No updates provided")
     profile = await write_profile_section(
-        db, candidate_id=candidate_id, section="constraints", new_values=updates, settings=settings
+        db, candidate_id=candidate_id, section="constraints", new_values=updates
     )
     return ProfileResponse.model_validate(profile)
 
@@ -185,7 +186,6 @@ async def patch_preferences(
     candidate_id: uuid.UUID,
     payload: PreferencesUpdate,
     db: AsyncSession = Depends(get_db),
-    settings: Settings = Depends(get_settings),
 ) -> ProfileResponse:
     updates = payload.model_dump(exclude_none=True)
     if not updates:
@@ -193,8 +193,32 @@ async def patch_preferences(
     if "role_intents" in updates:
         updates["primary_role_intents"] = updates.pop("role_intents")
     profile = await write_profile_section(
-        db, candidate_id=candidate_id, section="preferences", new_values=updates, settings=settings
+        db, candidate_id=candidate_id, section="preferences", new_values=updates
     )
+    return ProfileResponse.model_validate(profile)
+
+
+@router.patch("/profile/filters", response_model=ProfileResponse)
+async def patch_job_filters(
+    candidate_id: uuid.UUID,
+    payload: JobFiltersUpdate,
+    db: AsyncSession = Depends(get_db),
+) -> ProfileResponse:
+    constraints_updates = payload.constraints.model_dump(exclude_none=True)
+    preferences_updates = payload.preferences.model_dump(exclude_none=True)
+    if not constraints_updates and not preferences_updates:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No updates provided")
+    if "role_intents" in preferences_updates:
+        preferences_updates["primary_role_intents"] = preferences_updates.pop("role_intents")
+    try:
+        profile = await write_profile_filters(
+            db,
+            candidate_id=candidate_id,
+            constraints_updates=constraints_updates,
+            preferences_updates=preferences_updates,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return ProfileResponse.model_validate(profile)
 
 
@@ -203,12 +227,11 @@ async def patch_education(
     candidate_id: uuid.UUID,
     payload: EducationUpdate,
     db: AsyncSession = Depends(get_db),
-    settings: Settings = Depends(get_settings),
 ) -> ProfileResponse:
     updates = payload.model_dump(exclude_none=True)
     if not updates:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No updates provided")
     profile = await write_profile_section(
-        db, candidate_id=candidate_id, section="education", new_values=updates, settings=settings
+        db, candidate_id=candidate_id, section="education", new_values=updates
     )
     return ProfileResponse.model_validate(profile)

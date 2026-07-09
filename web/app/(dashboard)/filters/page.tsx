@@ -14,9 +14,8 @@ import {
   profileToJobFilters,
   jobFiltersToApiPayload,
 } from "@/lib/profile/job-filters"
-import { patchConstraints, patchPreferences } from "@/lib/profile/api"
+import { patchJobFilters } from "@/lib/profile/api"
 import { useJobs } from "@/components/jobs-provider"
-import { syncSubscriptionsForCandidate } from "@/lib/recommendation/sync-subscriptions"
 import { FeedSkeleton } from "@/components/card-skeleton"
 
 export default function FiltersPage() {
@@ -63,12 +62,10 @@ export default function FiltersPage() {
         router.push("/jobs/recommended")
         return
       }
-      await patchConstraints(candidateId, payload.constraints)
-      await patchPreferences(candidateId, payload.preferences)
-      await loadProfileHome(candidateId)
-      await syncSubscriptionsForCandidate(candidateId)
-      await refreshJobs()
+      await patchJobFilters(candidateId, payload)
       router.push("/jobs/recommended")
+      void refreshJobs()
+      void loadProfileHome(candidateId).catch(() => undefined)
     } finally {
       setSaving(false)
     }

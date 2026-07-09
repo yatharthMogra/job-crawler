@@ -156,6 +156,16 @@ export function patchPreferences(candidateId: string, updates: Record<string, un
   })
 }
 
+export function patchJobFilters(
+  candidateId: string,
+  payload: { constraints: Record<string, unknown>; preferences: Record<string, unknown> },
+) {
+  return request<ProfileResponse>(`/candidates/${candidateId}/profile/filters`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  })
+}
+
 export function patchEducation(candidateId: string, updates: Record<string, unknown>) {
   return request<ProfileResponse>(`/candidates/${candidateId}/profile/education`, {
     method: "PATCH",

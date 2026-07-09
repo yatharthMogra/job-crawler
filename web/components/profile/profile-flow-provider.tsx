@@ -28,6 +28,7 @@ import {
   listResumes,
   patchConstraints,
   patchEducation,
+  patchJobFilters,
   patchPreferences,
   patchResumeLabel,
   uploadResume,
@@ -276,10 +277,8 @@ export function ProfileFlowProvider({
 
       setSaving(true)
       try {
-        const { constraints, preferences } = jobIntentToApiPayload(jobIntent)
-        // Sequential: each PATCH creates a new profile version; parallel calls race on DB constraints.
-        await patchConstraints(candidateId, constraints)
-        await patchPreferences(candidateId, preferences)
+        const payload = jobIntentToApiPayload(jobIntent)
+        await patchJobFilters(candidateId, payload)
         // Navigate immediately; profile refresh + subscription sync continue in background.
         if (redirectTo === "profile") {
           router.push("/profile")

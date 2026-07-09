@@ -76,6 +76,11 @@ class PreferencesUpdate(BaseModel):
     primary_role_intents: list[str] | None = None
 
 
+class JobFiltersUpdate(BaseModel):
+    constraints: ConstraintsUpdate = Field(default_factory=ConstraintsUpdate)
+    preferences: PreferencesUpdate = Field(default_factory=PreferencesUpdate)
+
+
 class EducationContactUpdate(BaseModel):
     location: str | None = None
     phone: str | None = None
