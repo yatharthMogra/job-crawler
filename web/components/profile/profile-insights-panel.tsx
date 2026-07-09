@@ -5,7 +5,7 @@ import { useMemo } from "react"
 import { ChevronRight, Download, Shield, ShieldCheck, TrendingUp } from "lucide-react"
 import { useJobs } from "@/components/jobs-provider"
 import type { ProfileHomeData } from "@/lib/profile/map-profile"
-import { MatchGauge } from "@/components/ui/match-gauge"
+import { MatchGauge, matchDescriptor } from "@/components/ui/match-gauge"
 import { cn } from "@/lib/utils"
 
 export function ProfileInsightsPanel({
@@ -25,7 +25,6 @@ export function ProfileInsightsPanel({
   }, [recommendedJobs])
 
   const primaryRole = data.primaryRoles[0] ?? "your target roles"
-  const matchPct = Math.round(matchScore * 100)
   const salaryBand = useMemo(() => {
     const salaries = recommendedJobs
       .filter((j) => j.salary_min != null || j.salary_max != null)
@@ -54,7 +53,7 @@ export function ProfileInsightsPanel({
         <p className="mt-4 text-center text-sm leading-relaxed text-muted-foreground">
           Your profile alignment for{" "}
           <span className="font-semibold text-foreground">{primaryRole}</span> roles is{" "}
-          {matchPct >= 90 ? "exceptionally high" : "strong"}.
+          {matchDescriptor(matchScore)}.
         </p>
       </div>
 

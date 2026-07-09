@@ -49,12 +49,13 @@ def test_render_daily_briefing_includes_job_blocks() -> None:
         total_scanned=12,
     )
     assert "PERSONALIZED DIGEST" in html
+    assert "Job Scout" in html
     assert "Backend Engineer" in html
     assert "Acme" in html
-    assert "#01" in html
-    assert "APPLY NOW" in html
-    assert "PROFILE MATCH" in html
-    assert "Why only 1 jobs?" in html
+    assert "85% match" in html
+    assert "WHY IT FITS" in html
+    assert "View &amp; Apply" in html
+    assert "Why only 1 job?" in html
     assert f"/jobs/recommended?candidate_id={profile.candidate_id}" in html
     assert f"/emails?candidate_id={profile.candidate_id}" in html
     assert f"/unsubscribe?candidate_id={profile.candidate_id}" in html

@@ -11,6 +11,7 @@ from app.notification.briefing_content import (
     estimate_time_saved_minutes,
     estimate_total_review_minutes,
     format_briefing_date,
+    format_duration_minutes,
 )
 from app.services.profile_loader import UserProfile
 
@@ -57,6 +58,8 @@ def render_personalized_digest(
         build_job_card(job, explanations, score, rank=idx, total_jobs=jobs_sent)
         for idx, (job, explanations, score) in enumerate(jobs_with_explanations, start=1)
     ]
+    time_saved = estimate_time_saved_minutes(total_scanned, jobs_sent)
+    total_review = estimate_total_review_minutes(total_scanned)
 
     return template.render(
         user_name=user_profile.name,
@@ -64,8 +67,11 @@ def render_personalized_digest(
         jobs=jobs_payload,
         jobs_sent=jobs_sent,
         total_scanned=total_scanned,
-        time_saved_minutes=estimate_time_saved_minutes(total_scanned, jobs_sent),
-        total_review_minutes=estimate_total_review_minutes(total_scanned),
+        time_saved_minutes=time_saved,
+        time_saved_label=format_duration_minutes(time_saved),
+        total_review_minutes=total_review,
+        total_review_label=format_duration_minutes(total_review),
+        year=datetime.now(timezone.utc).year,
         manage_prefs_url=f"{base_url}/emails?candidate_id={candidate_id}",
         dashboard_url=f"{base_url}/jobs/recommended?candidate_id={candidate_id}",
         unsubscribe_url=f"{base_url}/unsubscribe?candidate_id={candidate_id}&channel=digest",
@@ -91,6 +97,7 @@ def render_company_watch(
         company_name=company_name,
         job=job_card,
         sla_message=sla_message,
+        year=datetime.now(timezone.utc).year,
         manage_prefs_url=f"{base_url}/emails?candidate_id={candidate_id}",
         unsubscribe_url=f"{base_url}/unsubscribe?candidate_id={candidate_id}&channel=company_watch",
     )
@@ -119,6 +126,7 @@ def render_company_watch_batch(
         user_name=user_profile.name,
         jobs=jobs_payload,
         jobs_sent=jobs_sent,
+        year=datetime.now(timezone.utc).year,
         manage_prefs_url=f"{base_url}/emails?candidate_id={candidate_id}",
         unsubscribe_url=f"{base_url}/unsubscribe?candidate_id={candidate_id}&channel=company_watch",
     )

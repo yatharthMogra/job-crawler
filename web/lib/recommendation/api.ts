@@ -235,13 +235,54 @@ export function companyWatchCadenceOptions(planTier: "free" | "plus") {
   return planTier === "plus" ? PLUS_COMPANY_WATCH_CADENCE_OPTIONS : FREE_COMPANY_WATCH_CADENCE_OPTIONS
 }
 
+const FALLBACK_ENTITLEMENTS: Record<"free" | "plus", TierEntitlementsApi> = {
+  free: {
+    max_companies: 5,
+    cadence_min_minutes: 360,
+    cadence_max_minutes: 720,
+    delivery: "batched",
+    max_emails_per_day_cap: 10,
+    default_max_emails_per_day: 3,
+  },
+  plus: {
+    max_companies: 25,
+    cadence_min_minutes: 30,
+    cadence_max_minutes: 180,
+    delivery: "instant",
+    max_emails_per_day_cap: 20,
+    default_max_emails_per_day: 10,
+  },
+}
+
+/**
+ * Older/deployed API builds may omit tier fields. Backfill safe defaults so the
+ * Emails UI never crashes on `prefs.entitlements.*`.
+ */
+function normalizeNotificationPreferences(
+  prefs: NotificationPreferencesApi,
+): NotificationPreferencesApi {
+  const planTier: "free" | "plus" = prefs.plan_tier === "plus" ? "plus" : "free"
+  const entitlements = prefs.entitlements ?? FALLBACK_ENTITLEMENTS[planTier]
+  return {
+    ...prefs,
+    plan_tier: planTier,
+    entitlements,
+    max_emails_per_day: prefs.max_emails_per_day ?? entitlements.default_max_emails_per_day,
+    company_watch_cadence_minutes:
+      prefs.company_watch_cadence_minutes ?? entitlements.cadence_min_minutes,
+    emails_sent_today: prefs.emails_sent_today ?? 0,
+  }
+}
+
 export function fetchNotificationPreferences(candidateId: string) {
   if (useMockNotifications()) {
     return import("@/lib/recommendation/mock-notifications").then((m) =>
       m.mockFetchNotificationPreferences(candidateId),
     )
   }
-  return request<NotificationPreferencesApi>(`/notification-preferences/${candidateId}`)
+  return request<NotificationPreferencesApi>(`/notification-preferences/${candidateId}`).then(
+    normalizeNotificationPreferences,
+  )
 }
 
 export function updateNotificationPreferences(
@@ -263,7 +304,7 @@ export function updateNotificationPreferences(
   return request<NotificationPreferencesApi>(`/notification-preferences/${candidateId}`, {
     method: "PUT",
     body: JSON.stringify(payload),
-  })
+  }).then(normalizeNotificationPreferences)
 }
 
 export function fetchCompanyWatch(candidateId: string) {

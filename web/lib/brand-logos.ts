@@ -369,12 +369,16 @@ export function getBrandLogoSources(
   const domain = resolveBrandDomain(name, variant, explicitDomain)
   const encoded = encodeURIComponent(domain)
 
-  // Google favicons first (most reliable); Clearbit is deprecated.
+  // Prefer real-logo providers that return a clean 404 when a brand is unknown,
+  // so the chain falls through to the branded letter avatar instead of a
+  // generic globe. Google's favicon service returns a 128px globe placeholder
+  // for unresolved domains, which passes the low-quality size check and looks
+  // like a "missing" logo — so it goes last.
   return [
-    `https://www.google.com/s2/favicons?domain=${encoded}&sz=128`,
-    `https://icons.duckduckgo.com/ip3/${domain}.ico`,
-    `https://unavatar.io/${encoded}`,
     `https://logo.clearbit.com/${domain}`,
+    `https://unavatar.io/${encoded}?fallback=false`,
+    `https://icons.duckduckgo.com/ip3/${domain}.ico`,
+    `https://www.google.com/s2/favicons?domain=${encoded}&sz=128`,
   ]
 }
 

@@ -18,6 +18,15 @@ export function matchLabel(score: number): string {
   return "LOW"
 }
 
+/** Human-readable descriptor consistent with the gauge band shown to the user. */
+export function matchDescriptor(score: number): string {
+  if (score >= 0.9) return "exceptionally high"
+  if (score >= 0.85) return "strong"
+  if (score >= 0.75) return "solid"
+  if (score >= 0.65) return "moderate"
+  return "still developing"
+}
+
 function ringColor(score: number) {
   if (score >= 0.85) return "text-add stroke-add"
   if (score >= 0.75) return "text-primary stroke-primary"

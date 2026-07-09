@@ -1,68 +1,35 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="color-scheme" content="dark">
-  <title>Career Match AI - Company Watch</title>
-</head>
-<body style="margin:0;padding:0;background-color:#07090b;font-family:Arial,Helvetica,sans-serif;color:#eeeeee;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#07090b;padding:24px 0;">
-    <tr>
-      <td align="center">
-        <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%;">
+{% extends "_email_base.html" %}
+{% import "_email_macros.html" as ui %}
 
-          <tr>
-            <td style="padding:8px 24px 20px 24px;">
-              <span style="display:inline-block;width:24px;height:24px;line-height:24px;text-align:center;background:#67bb6b;color:#030405;border-radius:6px;margin-right:10px;font-size:14px;font-weight:700;">C</span>
-              <span style="font-size:13px;font-weight:700;letter-spacing:0.1em;color:#eeeeee;">CAREER MATCH AI</span>
-            </td>
-          </tr>
+{% block title %}Job Scout - Company Watch{% endblock %}
+{% block preheader %}{{ jobs_sent }} new role{% if jobs_sent != 1 %}s{% endif %} from companies you're watching.{% endblock %}
 
-          <tr>
-            <td style="padding:0 24px 18px 24px;">
-              <p style="margin:0 0 8px 0;font-size:11px;font-weight:700;letter-spacing:0.16em;color:#67bb6b;">COMPANY WATCH</p>
-              <p style="margin:0 0 12px 0;font-size:26px;line-height:1.2;font-weight:700;color:#eeeeee;">
-                {{ jobs_sent }} new role{% if jobs_sent != 1 %}s{% endif %} from companies you're watching
-              </p>
-              <p style="margin:0;font-size:14px;line-height:1.5;color:#6e7278;">
-                Hi {{ user_name }}, here are matching roles from your watch list. Apply soon — these postings move fast.
-              </p>
-            </td>
-          </tr>
+{% block content %}
+  <!-- Hero -->
+  <tr>
+    <td class="px" style="background-color:#ffffff;border:1px solid #e6e8ec;border-radius:16px;box-shadow:0 1px 3px rgba(16,24,40,0.05);padding:26px;">
+      <p style="margin:0 0 12px 0;font-size:11px;font-weight:700;letter-spacing:0.14em;color:#4f46e5;">COMPANY WATCH</p>
+      <p class="h1" style="margin:0 0 8px 0;font-size:24px;line-height:1.25;font-weight:800;letter-spacing:-0.02em;color:#0f1117;">
+        {{ jobs_sent }} new role{% if jobs_sent != 1 %}s{% endif %} from companies you're watching
+      </p>
+      <p style="margin:0;font-size:14px;line-height:1.55;color:#6b7280;">
+        Hi {{ user_name }}, here are the latest matching roles from your watch list. These postings tend to move fast.
+      </p>
+    </td>
+  </tr>
 
-          {% for job in jobs %}
-          <tr>
-            <td style="padding:0 24px 14px 24px;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #2a2d33;background-color:#171a1f;">
-                <tr>
-                  <td style="padding:20px 22px;">
-                    <p style="margin:0 0 6px 0;font-size:18px;font-weight:700;color:#eeeeee;">{{ job.title }}</p>
-                    <p style="margin:0 0 14px 0;font-size:14px;color:#6e7278;">{{ job.company_name }} · {{ job.location }}</p>
-                    {% if job.profile_match_tags %}
-                    <p style="margin:0 0 14px 0;font-size:12px;color:#6e7278;">
-                      {% for reason in job.profile_match_tags %}{{ reason }}{% if not loop.last %} · {% endif %}{% endfor %}
-                    </p>
-                    {% endif %}
-                    <a href="{{ job.posting_url }}" style="font-size:12px;font-weight:700;letter-spacing:0.08em;color:#030405;text-decoration:none;background-color:#67bb6b;padding:10px 18px;display:inline-block;border-radius:4px;">View & Apply</a>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          {% endfor %}
+  <tr><td style="height:16px;line-height:16px;font-size:16px;">&nbsp;</td></tr>
 
-          <tr>
-            <td style="padding:0 24px 24px 24px;font-size:12px;color:#6e7278;">
-              <a href="{{ manage_prefs_url }}" style="color:#67bb6b;">Manage watch list</a>
-              ·
-              <a href="{{ unsubscribe_url }}" style="color:#6e7278;">Unsubscribe from Company Watch</a>
-            </td>
-          </tr>
+  {% for job in jobs %}
+  <tr>
+    <td>{{ ui.job_card(job, show_match=False, max_tags=3) }}</td>
+  </tr>
+  <tr><td style="height:14px;line-height:14px;font-size:14px;">&nbsp;</td></tr>
+  {% endfor %}
+{% endblock %}
 
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
+{% block footer_links %}
+<a href="{{ manage_prefs_url }}" style="color:#6b7280;text-decoration:none;">Manage watch list</a>
+&nbsp;&middot;&nbsp;
+<a href="{{ unsubscribe_url }}" style="color:#6b7280;text-decoration:none;">Unsubscribe from Company Watch</a>
+{% endblock %}
