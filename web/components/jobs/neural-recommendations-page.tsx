@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { RefreshCw, Sparkles } from "lucide-react"
 import { useJobs } from "@/components/jobs-provider"
 import { useProfileFlow } from "@/components/profile/profile-flow-provider"
@@ -71,6 +71,10 @@ export function NeuralRecommendationsPage() {
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [advancedFilters, setAdvancedFilters] = useState<JobFiltersState | null>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
+  const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null)
+  const onScrollRoot = useCallback((node: HTMLDivElement | null) => {
+    setScrollRoot(node)
+  }, [])
   const detailOpen = Boolean(selectedJobId)
 
   useEffect(() => {
@@ -147,20 +151,21 @@ export function NeuralRecommendationsPage() {
   ])
 
   useEffect(() => {
-    if (recommendedLoading || !hasMore) return
-    const el = sentinelRef.current
-    if (!el) return
+    if (recommendedLoading || !hasMore || !scrollRoot) return
+    const sentinel = sentinelRef.current
+    if (!sentinel) return
+
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting) {
-          setVisibleCount((c) => c + BATCH)
+          setVisibleCount((c) => Math.min(c + BATCH, ranked.length))
         }
       },
-      { rootMargin: "240px" },
+      { root: scrollRoot, rootMargin: "240px" },
     )
-    observer.observe(el)
+    observer.observe(sentinel)
     return () => observer.disconnect()
-  }, [recommendedLoading, hasMore, visible.length])
+  }, [recommendedLoading, hasMore, visible.length, detailOpen, ranked.length, scrollRoot])
 
   async function handleSync() {
     setSyncing(true)
@@ -201,10 +206,21 @@ export function NeuralRecommendationsPage() {
             <NeuralJobCard key={job.id} job={job} compact={detailOpen} />
           ))}
           {hasMore ? <div ref={sentinelRef} className="h-8" aria-hidden="true" /> : null}
-          <div className="flex justify-center pt-4">
+          <div className="flex flex-col items-center gap-3 pt-4">
+            {hasMore ? (
+              <Button
+                variant="outline"
+                className="h-10 rounded-xl px-5"
+                onClick={() => setVisibleCount((c) => Math.min(c + BATCH, ranked.length))}
+              >
+                Load more ({visible.length} of {ranked.length})
+              </Button>
+            ) : (
+              <p className="text-xs text-muted-foreground">You&apos;ve seen all {ranked.length} matches.</p>
+            )}
             <Button
-              variant="outline"
-              className="h-10 gap-2 rounded-xl px-5"
+              variant="ghost"
+              className="h-9 gap-2 rounded-xl px-4 text-muted-foreground"
               disabled={syncing}
               onClick={() => void handleSync()}
             >
@@ -241,6 +257,7 @@ export function NeuralRecommendationsPage() {
 
       <ResizeSplit
         enabled={detailOpen}
+        leftScrollRef={onScrollRoot}
         left={jobList}
         right={detailOpen ? <JobDrawer showMatch variant="inline" /> : null}
       />

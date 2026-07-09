@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
+import { useCallback, useEffect, useRef, useState, type ReactNode, type Ref } from "react"
 import { cn } from "@/lib/utils"
 
 /** Narrowest left pane — matches design; divider cannot move left of this. */
@@ -17,11 +17,14 @@ export function ResizeSplit({
   right,
   className,
   enabled = true,
+  leftScrollRef,
 }: {
   left: ReactNode
   right: ReactNode
   className?: string
   enabled?: boolean
+  /** Scroll container for the left pane — use as IntersectionObserver root for infinite scroll. */
+  leftScrollRef?: Ref<HTMLDivElement>
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const leftWidthRef = useRef(DEFAULT_LEFT_PX)
@@ -104,12 +107,20 @@ export function ResizeSplit({
   }, [applyWidth, endDrag])
 
   if (!enabled) {
-    return <div className={cn("flex min-h-0 flex-1 flex-col", className)}>{left}</div>
+    return (
+      <div
+        ref={leftScrollRef}
+        className={cn("min-h-0 flex-1 overflow-y-auto overflow-x-hidden", className)}
+      >
+        {left}
+      </div>
+    )
   }
 
   return (
     <div ref={containerRef} className={cn("flex min-h-0 flex-1 overflow-hidden", className)}>
       <div
+        ref={leftScrollRef}
         className="min-h-0 shrink-0 overflow-y-auto overflow-x-hidden border-r border-border/50 bg-muted/[0.18]"
         style={{ flex: `0 0 ${leftWidth}px`, width: leftWidth, minWidth: MIN_LIST_PX, maxWidth: MAX_LIST_PX }}
       >
