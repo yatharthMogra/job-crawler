@@ -786,13 +786,18 @@ def _extract_talentbrew(job: dict[str, Any]) -> dict[str, Any]:
 
 
 def _extract_apple_careers(job: dict[str, Any]) -> dict[str, Any]:
+    from app.ingestion.connectors.apple_careers import parse_apple_posted_date
+
+    posted_at = job.get("posted_at")
+    if posted_at is None:
+        posted_at = parse_apple_posted_date(job.get("posted_date"))
     return {
         "external_job_id": str(job["id"]),
         "title": job.get("title") or "",
         "location": job.get("location"),
         "department": None,
         "posting_url": job.get("externalLink"),
-        "posted_at": None,
+        "posted_at": posted_at,
         "employment_type": None,
         "raw_html": job.get("raw_html") or "",
     }

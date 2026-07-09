@@ -52,6 +52,7 @@ def test_parse_apple_careers_list_page() -> None:
         <a href="/en-us/details/200668721-3337/distributed-systems-engineer?team=SFTWR"
            aria-label="Distributed Systems Engineer 200668721">
         </a>
+        <span>May 07, 2026</span>
       </li>
     </body></html>
     """
@@ -63,6 +64,17 @@ def test_parse_apple_careers_list_page() -> None:
     assert summaries[0]["id"] == "200668721-3337"
     assert summaries[0]["title"] == "Distributed Systems Engineer"
     assert summaries[0]["externalLink"].startswith("https://jobs.apple.com/en-us/details/")
+    assert summaries[0]["posted_at"].year == 2026
+    assert summaries[0]["posted_at"].month == 5
+
+
+def test_parse_apple_posted_date() -> None:
+    from app.ingestion.connectors.apple_careers import parse_apple_posted_date
+
+    parsed = parse_apple_posted_date("May 07, 2026")
+    assert parsed is not None
+    assert parsed.year == 2026
+    assert parse_apple_posted_date("") is None
 
 
 def test_parse_apple_careers_detail_html() -> None:
@@ -75,6 +87,25 @@ def test_parse_apple_careers_detail_html() -> None:
     parsed = parse_apple_careers_detail_html(html)
     assert "Join our team." in parsed["raw_html"]
     assert "Minimum Qualifications" in parsed["raw_html"]
+
+
+def test_extract_apple_careers_fields() -> None:
+    from datetime import datetime, timezone
+
+    posted_at = datetime(2026, 5, 7, tzinfo=timezone.utc)
+    fields = extract_deterministic_fields(
+        {
+            "id": "200668721-3337",
+            "title": "Distributed Systems Engineer",
+            "location": "Cupertino",
+            "externalLink": "https://jobs.apple.com/en-us/details/200668721-3337/engineer",
+            "posted_at": posted_at,
+            "raw_html": "<p>Description</p>",
+        },
+        platform="apple_careers",
+    )
+    assert fields["external_job_id"] == "200668721-3337"
+    assert fields["posted_at"] == posted_at
 
 
 def test_extract_talentbrew_fields() -> None:

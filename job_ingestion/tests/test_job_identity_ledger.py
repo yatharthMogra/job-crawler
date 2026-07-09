@@ -98,10 +98,23 @@ async def test_process_company_raw_jobs_unchanged_when_ledger_hash_matches(monke
     monkeypatch.setattr(pipeline, "_latest_hashes_for_company", AsyncMock(return_value={}))
     monkeypatch.setattr(pipeline, "_normalized_map_for_company", AsyncMock(return_value={}))
     monkeypatch.setattr(pipeline, "fingerprint_exists", AsyncMock(return_value=False))
+    monkeypatch.setattr(
+        pipeline,
+        "upsert_job_archive_from_deterministic",
+        AsyncMock(return_value=uuid4()),
+    )
+    normalized = SimpleNamespace(id=uuid4(), job_archive_id=uuid4(), is_active=True)
+    monkeypatch.setattr(
+        pipeline,
+        "_upsert_normalized_core",
+        AsyncMock(return_value=normalized),
+    )
+    monkeypatch.setattr(pipeline, "queue_job_for_enrichment", AsyncMock())
     upsert_mock = AsyncMock()
     monkeypatch.setattr(pipeline, "upsert_ledger_entry", upsert_mock)
 
     db = MagicMock()
+    db.flush = AsyncMock()
     outcome = await pipeline.process_company_raw_jobs(
         db,
         company,
@@ -113,8 +126,8 @@ async def test_process_company_raw_jobs_unchanged_when_ledger_hash_matches(monke
     assert outcome.jobs_new == 0
     assert outcome.jobs_unchanged == 1
     assert outcome.jobs_ledger_skipped == 0
-    db.add.assert_not_called()
-    upsert_mock.assert_awaited_once()
+    db.add.assert_called_once()
+    assert upsert_mock.await_count >= 2
 
 
 @pytest.mark.asyncio
@@ -127,7 +140,15 @@ async def test_process_company_raw_jobs_guard_skips_changed_job(monkeypatch) -> 
 
     monkeypatch.setattr(pipeline, "load_ledger_hashes", AsyncMock(return_value={"job-1": content_hash}))
     monkeypatch.setattr(pipeline, "_latest_hashes_for_company", AsyncMock(return_value={"job-1": "stale-hash"}))
-    monkeypatch.setattr(pipeline, "_normalized_map_for_company", AsyncMock(return_value={}))
+    monkeypatch.setattr(
+        pipeline,
+        "_normalized_map_for_company",
+        AsyncMock(
+            return_value={
+                "job-1": SimpleNamespace(id=uuid4(), is_active=True, job_archive_id=uuid4())
+            }
+        ),
+    )
     monkeypatch.setattr(pipeline, "classify_jobs", lambda *args, **kwargs: classified)
     monkeypatch.setattr(pipeline, "fingerprint_exists", AsyncMock(return_value=False))
     upsert_mock = AsyncMock()

@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 import re
+from datetime import datetime, timezone
 from typing import Any, Optional
 from urllib.parse import urljoin
 
@@ -23,10 +24,15 @@ logger = structlog.get_logger(__name__) if structlog else logging.getLogger(__na
 
 DETAIL_CONCURRENCY = 4
 DETAIL_DELAY = 0.5
-REQUEST_TIMEOUT = 30.0
+DETAIL_MAX_ATTEMPTS = 2
+REQUEST_TIMEOUT = 45.0
 USER_AGENT = "Mozilla/5.0 (compatible; CareerMatchBot/1.0)"
 
 DETAIL_HREF_PATTERN = re.compile(r"/details/(\d{9}-\d{4})/")
+POSTED_DATE_PATTERN = re.compile(
+    r"\b(January|February|March|April|May|June|July|August|September|October|November|December)"
+    r"\s+\d{1,2},\s+\d{4}\b"
+)
 HYDRATION_PATTERN = re.compile(
     r'window\.__staticRouterHydrationData = JSON\.parse\("(.+?)"\)',
     re.DOTALL,
@@ -52,6 +58,54 @@ def _absolute_url(href: str) -> str:
     if href.startswith("http://") or href.startswith("https://"):
         return href
     return urljoin(SITE_ROOT + "/", href.lstrip("/"))
+
+
+def _format_fetch_error(exc: BaseException) -> str:
+    message = str(exc).strip()
+    name = type(exc).__name__
+    return f"{name}: {message}" if message else name
+
+
+def parse_apple_posted_date(value: object) -> datetime | None:
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        try:
+            return datetime.fromtimestamp(int(value) / 1000 if value > 10_000_000_000 else int(value), tz=timezone.utc)
+        except (TypeError, ValueError, OSError):
+            return None
+    if not isinstance(value, str):
+        return None
+    stripped = value.strip()
+    if not stripped:
+        return None
+    match = POSTED_DATE_PATTERN.search(stripped)
+    candidate = match.group(0) if match else stripped
+    try:
+        parsed = datetime.strptime(candidate, "%B %d, %Y")
+    except ValueError:
+        return None
+    return parsed.replace(tzinfo=timezone.utc)
+
+
+def _posted_date_from_card(card: BeautifulSoup) -> datetime | None:
+    if card is None:
+        return None
+    date_el = card.select_one("[class*='posting-date']") or card.select_one("[class*='posted']")
+    if date_el:
+        parsed = parse_apple_posted_date(date_el.get_text(" ", strip=True))
+        if parsed is not None:
+            return parsed
+    return parse_apple_posted_date(card.get_text(" ", strip=True))
+
+
+def _posted_date_from_hydration(posting: dict[str, Any], jobs_data: dict[str, Any]) -> datetime | None:
+    for key in ("postingDate", "postDate", "postedDate", "startDate"):
+        for source in (posting, jobs_data):
+            parsed = parse_apple_posted_date(source.get(key))
+            if parsed is not None:
+                return parsed
+    return None
 
 
 def _title_from_aria(aria: str) -> str:
@@ -102,6 +156,7 @@ def _parse_hydration_json(html: str) -> dict[str, Any] | None:
     return {
         "title": posting.get("postingTitle") or jobs_data.get("postingTitle"),
         "location": " | ".join(location_names) or None,
+        "posted_at": _posted_date_from_hydration(posting, jobs_data),
         "raw_html": "\n".join(sections),
     }
 
@@ -139,14 +194,16 @@ def parse_apple_careers_list_page(html: str, *, base_url: str) -> list[dict[str,
             if loc_el:
                 location = loc_el.get_text(" ", strip=True)
 
-        summaries.append(
-            {
-                "id": role_id,
-                "title": title,
-                "location": location or None,
-                "externalLink": _absolute_url(href),
-            }
-        )
+        posted_at = _posted_date_from_card(card) if card else None
+        summary: dict[str, Any] = {
+            "id": role_id,
+            "title": title,
+            "location": location or None,
+            "externalLink": _absolute_url(href),
+        }
+        if posted_at is not None:
+            summary["posted_at"] = posted_at
+        summaries.append(summary)
 
     return summaries
 
@@ -229,19 +286,41 @@ class AppleCareersConnector(BaseConnector):
                     self._fetch_job_detail(client, summary, semaphore)
                     for summary in summaries
                 ]
-                details = await asyncio.gather(*tasks)
+                details = await asyncio.gather(*tasks, return_exceptions=True)
         except ParseError:
             raise
         except Exception as exc:  # noqa: BLE001
             raise ConnectorFetchError(
-                f"Apple Careers fetch failed for {company.board_token}: {exc}"
+                f"Apple Careers fetch failed for {company.board_token}: {_format_fetch_error(exc)}"
             ) from exc
 
         jobs: list[dict[str, Any]] = []
+        detail_failures = 0
         for summary, detail in zip(summaries, details):
+            if isinstance(detail, BaseException):
+                detail_failures += 1
+                self._log_detail_fetch_failed(summary.get("id"), detail)
+                continue
             if detail is None:
                 continue
             jobs.append({**summary, **detail})
+        if detail_failures:
+            if structlog:
+                logger.warning(
+                    "apple_careers_partial_detail_failures",
+                    board_token=company.board_token,
+                    failed_count=detail_failures,
+                    succeeded_count=len(jobs),
+                    total_summaries=len(summaries),
+                )
+            else:
+                logger.warning(
+                    "apple_careers_partial_detail_failures board_token=%s failed=%s succeeded=%s total=%s",
+                    company.board_token,
+                    detail_failures,
+                    len(jobs),
+                    len(summaries),
+                )
         return jobs
 
     async def _fetch_all_summaries(
@@ -278,6 +357,25 @@ class AppleCareersConnector(BaseConnector):
 
         return all_summaries
 
+    @staticmethod
+    def _log_detail_fetch_failed(job_id: object, exc: BaseException) -> None:
+        job_id_str = str(job_id) if job_id is not None else "unknown"
+        error = _format_fetch_error(exc)
+        if structlog:
+            logger.warning(
+                "apple_careers_detail_fetch_failed",
+                job_id=job_id_str,
+                error=error,
+                exc_type=type(exc).__name__,
+            )
+        else:
+            logger.warning(
+                "apple_careers_detail_fetch_failed job_id=%s error=%s exc_type=%s",
+                job_id_str,
+                error,
+                type(exc).__name__,
+            )
+
     async def _fetch_job_detail(
         self,
         client: httpx.AsyncClient,
@@ -289,24 +387,29 @@ class AppleCareersConnector(BaseConnector):
         if not detail_url or not job_id:
             return None
 
-        async with semaphore:
-            try:
-                response = await client.get(detail_url)
-                if response.status_code == 404:
-                    return None
-                response.raise_for_status()
-                parsed = parse_apple_careers_detail_html(response.text)
-            except httpx.HTTPStatusError as exc:
-                if exc.response.status_code == 404:
-                    return None
-                raise ConnectorFetchError(
-                    f"Apple Careers detail failed for {job_id}: {exc}"
-                ) from exc
-            except Exception as exc:  # noqa: BLE001
-                raise ConnectorFetchError(
-                    f"Apple Careers detail failed for {job_id}: {exc}"
-                ) from exc
-            finally:
+        last_error: BaseException | None = None
+        for attempt in range(1, DETAIL_MAX_ATTEMPTS + 1):
+            async with semaphore:
+                try:
+                    response = await client.get(detail_url)
+                    if response.status_code == 404:
+                        return None
+                    response.raise_for_status()
+                    parsed = parse_apple_careers_detail_html(response.text)
+                    if summary.get("posted_at") and not parsed.get("posted_at"):
+                        parsed["posted_at"] = summary["posted_at"]
+                    return parsed
+                except httpx.HTTPStatusError as exc:
+                    if exc.response.status_code == 404:
+                        return None
+                    last_error = exc
+                except Exception as exc:  # noqa: BLE001
+                    last_error = exc
+                finally:
+                    await asyncio.sleep(self.detail_delay)
+            if attempt < DETAIL_MAX_ATTEMPTS:
                 await asyncio.sleep(self.detail_delay)
 
-        return parsed
+        if last_error is not None:
+            raise last_error
+        return None

@@ -317,7 +317,12 @@ async def process_company_raw_jobs(
     outcome.jobs_unchanged = len(classified.unchanged)
 
     new_external_ids = {str(job.get("id")) for job in classified.new}
-    changed_jobs = classified.new + classified.updated
+    ledger_only_unchanged = [
+        job
+        for job in classified.unchanged
+        if str(job.get("id")) not in normalized_by_external_id
+    ]
+    changed_jobs = classified.new + classified.updated + ledger_only_unchanged
     now = _utcnow()
     for job in changed_jobs:
         content_hash = compute_content_hash(job)
@@ -379,7 +384,11 @@ async def process_company_raw_jobs(
         deterministic_fields = clamp_deterministic_fields(deterministic_fields)
         external_id = deterministic_fields["external_job_id"]
         ledger_hash = ledger_hashes.get(external_id)
-        if ledger_hash is not None and ledger_hash == content_hash:
+        if (
+            ledger_hash is not None
+            and ledger_hash == content_hash
+            and external_id in normalized_by_external_id
+        ):
             outcome.jobs_ledger_skipped += 1
             if external_id in new_external_ids:
                 outcome.jobs_new -= 1
