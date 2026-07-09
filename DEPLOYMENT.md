@@ -30,20 +30,26 @@ flowchart TB
   AdminDash --> JobIngestion
 ```
 
+
+
+
+
 ### What runs where
 
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| **Supabase Postgres** | Cloud | Shared database for all services |
-| **Supabase Storage** | Cloud | Resume PDFs (`profile_service` on Cloud Run) |
-| **profile_service** | Cloud Run | OAuth-linked profiles, resume upload, constraints |
-| **recommendation_service API** | Cloud Run | Job feed, personal scoring, subscriptions (scheduler **off**) |
-| **web/** | Vercel | User-facing Next.js app |
-| **job_ingestion** | Home machine | Connectors, enrichment, global scoring, H1B, YC crawl, cleanup |
-| **recommendation_service worker** | Home machine | Scheduled email notifications via Resend |
-| **job-ingestion-dashboard** | Home machine (or Mac via tunnel) | Internal ops UI |
 
-**Remote access:** Mac connects to the Linux home machine over **Tailscale** (`100.111.129.27`) and SSH port-forwards to local APIs. See [`deploy/TAILSCALE.md`](deploy/TAILSCALE.md) and Phase 6.9.
+| Component                         | Location                         | Purpose                                                        |
+| --------------------------------- | -------------------------------- | -------------------------------------------------------------- |
+| **Supabase Postgres**             | Cloud                            | Shared database for all services                               |
+| **Supabase Storage**              | Cloud                            | Resume PDFs (`profile_service` on Cloud Run)                   |
+| **profile_service**               | Cloud Run                        | OAuth-linked profiles, resume upload, constraints              |
+| **recommendation_service API**    | Cloud Run                        | Job feed, personal scoring, subscriptions (scheduler **off**)  |
+| **web/**                          | Vercel                           | User-facing Next.js app                                        |
+| **job_ingestion**                 | Home machine                     | Connectors, enrichment, global scoring, H1B, YC crawl, cleanup |
+| **recommendation_service worker** | Home machine                     | Scheduled email notifications via Resend                       |
+| **job-ingestion-dashboard**       | Home machine (or Mac via tunnel) | Internal ops UI                                                |
+
+
+**Remote access:** Mac connects to the Linux home machine over **Tailscale** (`100.111.129.27`) and SSH port-forwards to local APIs. See `[deploy/TAILSCALE.md](deploy/TAILSCALE.md)` and Phase 6.9.
 
 ### When the home machine is off (~2h/day)
 
@@ -51,19 +57,23 @@ Users can still log in, browse existing jobs with personal scores, and edit prof
 
 ---
 
+
+
 ## Prerequisites
 
 Before starting, create accounts and gather credentials:
 
-| Requirement | Purpose |
-|---------------|---------|
-| [Supabase](https://supabase.com) project | Postgres + Storage for resumes |
-| [GCP](https://cloud.google.com) project with billing enabled | Cloud Run + Secret Manager (billing required even for free tier) |
-| [Vercel](https://vercel.com) project | Host `web/` frontend |
-| [Google AI Studio](https://aistudio.google.com) | Gemini API key (enrichment + resume parsing) |
-| Google OAuth credentials | Login via NextAuth |
-| [Resend](https://resend.com) API key + verified `job-scout.dev` domain | Outgoing email (OTP + job notifications) |
-| [Tailscale](https://tailscale.com) (Mac + Linux home machine) | Secure SSH to home machine from anywhere |
+
+| Requirement                                                            | Purpose                                                          |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| [Supabase](https://supabase.com) project                               | Postgres + Storage for resumes                                   |
+| [GCP](https://cloud.google.com) project with billing enabled           | Cloud Run + Secret Manager (billing required even for free tier) |
+| [Vercel](https://vercel.com) project                                   | Host `web/` frontend                                             |
+| [Google AI Studio](https://aistudio.google.com)                        | Gemini API key (enrichment + resume parsing)                     |
+| Google OAuth credentials                                               | Login via NextAuth                                               |
+| [Resend](https://resend.com) API key + verified `job-scout.dev` domain | Outgoing email (OTP + job notifications)                         |
+| [Tailscale](https://tailscale.com) (Mac + Linux home machine)          | Secure SSH to home machine from anywhere                         |
+
 
 **Local tools:**
 
@@ -83,7 +93,11 @@ Docker must be running before Cloud Run deploy.
 
 ---
 
+
+
 ## Step-by-step deployment guide
+
+
 
 ### Phase 0 — Local Python environment
 
@@ -96,7 +110,11 @@ source job-crawler/bin/activate
 
 ---
 
+
+
 ### Phase 1 — Supabase
+
+
 
 #### 1.1 Create project
 
@@ -130,11 +148,15 @@ If your password contains special characters (`@`, `#`, `%`, etc.), URL-encode t
 
 Save both URLs — you'll use them in different places:
 
-| Target | URL type |
-|--------|----------|
-| Alembic migrations | Direct `:5432` |
-| Home machine (`job_ingestion`, notification worker) | Direct `:5432` |
+
+| Target                                                  | URL type       |
+| ------------------------------------------------------- | -------------- |
+| Alembic migrations                                      | Direct `:5432` |
+| Home machine (`job_ingestion`, notification worker)     | Direct `:5432` |
 | Cloud Run (`profile_service`, `recommendation_service`) | Pooler `:6543` |
+
+
+
 
 #### 1.3 Run database migrations
 
@@ -168,7 +190,7 @@ pg_restore --clean --if-exists --no-owner \
   exports/your-dump.dump
 ```
 
-See [`snapshots/README.md`](snapshots/README.md) for dump variants.
+See `[snapshots/README.md](snapshots/README.md)` for dump variants.
 
 #### 1.5 Create Storage bucket
 
@@ -177,18 +199,26 @@ See [`snapshots/README.md`](snapshots/README.md) for dump variants.
 3. Set to **Private** (not public)
 4. No extra RLS policies needed for v1 — `profile_service` uses the service role key, which bypasses RLS
 
+
+
 #### 1.6 Note API credentials
 
 From **Project Settings → API**:
 
-| Value | Env var |
-|-------|---------|
-| Project URL (`https://[ref].supabase.co`) | `SUPABASE_URL` |
+
+| Value                                                  | Env var                     |
+| ------------------------------------------------------ | --------------------------- |
+| Project URL (`https://[ref].supabase.co`)              | `SUPABASE_URL`              |
 | `service_role` key (secret — never expose to frontend) | `SUPABASE_SERVICE_ROLE_KEY` |
+
 
 ---
 
+
+
 ### Phase 2 — Google Cloud + Cloud Run
+
+
 
 #### 2.1 Create GCP project
 
@@ -206,6 +236,8 @@ Enable billing on the project in the GCP Console, then link it:
 gcloud billing projects link YOUR_PROJECT_ID --billing-account=YOUR_BILLING_ACCOUNT_ID
 ```
 
+
+
 #### 2.2 Enable APIs
 
 ```bash
@@ -215,6 +247,8 @@ gcloud services enable \
   secretmanager.googleapis.com \
   cloudbuild.googleapis.com
 ```
+
+
 
 #### 2.3 Generate and store secrets
 
@@ -263,6 +297,8 @@ for SECRET in database-url gemini-api-key profile-api-key supabase-url supabase-
 done
 ```
 
+
+
 #### 2.4 Deploy both services
 
 From repo root (Docker must be running):
@@ -277,10 +313,10 @@ This script:
 
 1. Creates an Artifact Registry repo (if missing)
 2. Builds and pushes Docker images for `profile_service` and `recommendation_service`
-3. Deploys both to Cloud Run as **`profile-service`** and **`recommendation-service`** with:
-   - `min-instances=0`, `max-instances=3`
-   - `profile_service`: 1Gi memory, Supabase resume storage enabled
-   - `recommendation_service`: 512Mi memory, `ENABLE_NOTIFICATION_SCHEDULER=false`
+3. Deploys both to Cloud Run as `profile-service` and `recommendation-service` with:
+  - `min-instances=0`, `max-instances=3`
+  - `profile_service`: 1Gi memory, Supabase resume storage enabled
+  - `recommendation_service`: 512Mi memory, `ENABLE_NOTIFICATION_SCHEDULER=false`
 
 First deploy may take several minutes.
 
@@ -301,6 +337,8 @@ https://profile-service-xxxxx-uc.a.run.app
 https://recommendation-service-xxxxx-uc.a.run.app
 ```
 
+
+
 #### 2.6 Smoke test Cloud Run (before Vercel)
 
 ```bash
@@ -319,6 +357,8 @@ The codebase auto-detects Supabase pooler URLs and disables prepared statement c
 
 ---
 
+
+
 ### Phase 3 — Google OAuth
 
 Complete this before or immediately after the Vercel deploy — you need the final Vercel URL for redirect URIs.
@@ -330,19 +370,23 @@ Complete this before or immediately after the Vercel deploy — you need the fin
 3. Fill in app name, support email, developer contact
 4. Scopes: `email`, `profile`, `openid` (defaults are sufficient)
 
+
+
 #### 3.2 Create OAuth client
 
 1. **Credentials → Create credentials → OAuth client ID**
 2. Application type: **Web application**
 3. **Authorized redirect URIs** (add all that apply; keep legacy URI during transition):
-   ```text
+  ```text
    https://job-scout.dev/api/auth/callback/google
    https://carrier-match-gcp.vercel.app/api/auth/callback/google
    http://localhost:3000/api/auth/callback/google
    http://127.0.0.1:3002/api/auth/callback/google
-   ```
+  ```
    Without the `job-scout.dev` callback URI, Google OAuth cannot complete on that domain.
 4. Save the **Client ID** and **Client Secret**
+
+
 
 #### 3.3 Generate AUTH_SECRET
 
@@ -354,7 +398,11 @@ Use this for NextAuth on Vercel (`AUTH_SECRET`).
 
 ---
 
+
+
 ### Phase 4 — Vercel (frontend)
+
+
 
 #### 4.1 Connect repository
 
@@ -363,28 +411,32 @@ Use this for NextAuth on Vercel (`AUTH_SECRET`).
 3. Set **Root Directory** to `web`
 4. Framework preset: Next.js (auto-detected)
 
+
+
 #### 4.2 Set environment variables
 
 In Vercel → Project → **Settings → Environment Variables** (Production scope):
 
-| Variable | Value |
-|----------|-------|
+
+| Variable                             | Value                                |
+| ------------------------------------ | ------------------------------------ |
 | `NEXT_PUBLIC_RECOMMENDATION_API_URL` | Cloud Run recommendation service URL |
-| `PROFILE_API_URL` | Cloud Run profile service URL |
-| `PROFILE_API_KEY` | Same random key from Phase 2.3 |
-| `AUTH_SECRET` | Output of `openssl rand -base64 32` |
-| `AUTH_URL` | `https://job-scout.dev` |
-| `GOOGLE_CLIENT_ID` | From OAuth client |
-| `GOOGLE_CLIENT_SECRET` | From OAuth client |
-| `NEXT_PUBLIC_USE_MOCK_DATA` | `false` |
+| `PROFILE_API_URL`                    | Cloud Run profile service URL        |
+| `PROFILE_API_KEY`                    | Same random key from Phase 2.3       |
+| `AUTH_SECRET`                        | Output of `openssl rand -base64 32`  |
+| `AUTH_URL`                           | `https://job-scout.dev`              |
+| `GOOGLE_CLIENT_ID`                   | From OAuth client                    |
+| `GOOGLE_CLIENT_SECRET`               | From OAuth client                    |
+| `NEXT_PUBLIC_USE_MOCK_DATA`          | `false`                              |
+
 
 Do **not** set `NEXT_PUBLIC_PROFILE_API_URL` in production — profile calls are proxied server-side via `PROFILE_API_URL` and `PROFILE_API_KEY`.
 
-See also [`web/.env.example`](web/.env.example).
+See also `[web/.env.example](web/.env.example)`.
 
 #### 4.3 Deploy
 
-Deploy from Vercel. Custom domain: **`https://job-scout.dev`** (legacy: `https://carrier-match-gcp.vercel.app`).
+Deploy from Vercel. Custom domain: `https://job-scout.dev` (legacy: `https://carrier-match-gcp.vercel.app`).
 
 #### 4.4 Update OAuth redirect (if needed)
 
@@ -400,9 +452,11 @@ Keep during transition (remove after cutover):
 https://carrier-match-gcp.vercel.app/api/auth/callback/google
 ```
 
-Ensure `AUTH_URL` in Vercel is **`https://job-scout.dev`** (no trailing slash). It must match the domain users sign in from exactly.
+Ensure `AUTH_URL` in Vercel is `https://job-scout.dev` (no trailing slash). It must match the domain users sign in from exactly.
 
 ---
+
+
 
 ### Phase 5 — Wire CORS
 
@@ -426,13 +480,15 @@ gcloud run services update recommendation-service \
 
 ---
 
+
+
 ### Phase 6 — Home machine
 
 The home machine runs batch/async work (~22h/day uptime). When it is off, ingestion, enrichment, and emails pause — but the Vercel app and Cloud Run APIs remain available for existing data.
 
 #### 6.1 Tailscale (home machine network)
 
-Install Tailscale on the Linux home machine and your Mac (same account). See [`deploy/TAILSCALE.md`](deploy/TAILSCALE.md).
+Install Tailscale on the Linux home machine and your Mac (same account). See `[deploy/TAILSCALE.md](deploy/TAILSCALE.md)`.
 
 ```bash
 # Linux — after install
@@ -441,6 +497,8 @@ sudo systemctl enable tailscaled
 tailscale ip -4   # expect 100.111.129.27
 ```
 
+
+
 #### 6.2 Python environment
 
 ```bash
@@ -448,6 +506,8 @@ cd /path/to/job-crawler
 ./scripts/setup-env.sh
 source job-crawler/bin/activate
 ```
+
+
 
 #### 6.3 Configure `job_ingestion/.env`
 
@@ -507,6 +567,8 @@ curl http://localhost:8000/docs     # ingestion API (Swagger)
 curl http://localhost:8002/health # notification worker
 ```
 
+
+
 #### 6.6 Trigger first ingestion
 
 ```bash
@@ -529,7 +591,7 @@ Open `http://localhost:3000` on the machine running the dashboard (home machine 
 
 #### 6.8 Auto-restart with systemd (optional)
 
-Edit paths in [`deploy/systemd/job-ingestion.service`](deploy/systemd/job-ingestion.service) and [`deploy/systemd/recommendation-worker.service`](deploy/systemd/recommendation-worker.service), then:
+Edit paths in `[deploy/systemd/job-ingestion.service](deploy/systemd/job-ingestion.service)` and `[deploy/systemd/recommendation-worker.service](deploy/systemd/recommendation-worker.service)`, then:
 
 ```bash
 sudo cp deploy/systemd/*.service /etc/systemd/system/
@@ -543,9 +605,11 @@ Verify services on the Linux machine:
 ./scripts/verify-home-machine.sh
 ```
 
+
+
 #### 6.9 Remote ops from dev machine (Mac)
 
-Operate the home machine from your Mac over **Tailscale** — same workflow at home or away. Full reference: [`deploy/TAILSCALE.md`](deploy/TAILSCALE.md).
+Operate the home machine from your Mac over **Tailscale** — same workflow at home or away. Full reference: `[deploy/TAILSCALE.md](deploy/TAILSCALE.md)`.
 
 **Home machine Tailscale IP:** `100.111.129.27` (user `ram`, SSH alias `job-crawler-home`)
 
@@ -553,23 +617,18 @@ Operate the home machine from your Mac over **Tailscale** — same workflow at h
 
 1. Tailscale installed and signed in on **both** Mac and Linux (`sudo systemctl enable tailscaled` on Linux).
 2. SSH key installed via Tailscale:
-
-   ```bash
+  ```bash
    ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_jobcrawler -C "mac-to-job-crawler-home"
    ssh-copy-id -i ~/.ssh/id_ed25519_jobcrawler.pub ram@100.111.129.27
-   ```
-
-3. Append [`deploy/ssh/config.example`](deploy/ssh/config.example) to `~/.ssh/config`, then test:
-
-   ```bash
+  ```
+3. Append `[deploy/ssh/config.example](deploy/ssh/config.example)` to `~/.ssh/config`, then test:
+  ```bash
    ssh job-crawler-home 'echo ok'
-   ```
-
+  ```
 4. Copy remote ops config:
-
-   ```bash
+  ```bash
    cp deploy/home-remote.env.example deploy/home-remote.env
-   ```
+  ```
 
 **Daily workflow (from repo root on Mac)**
 
@@ -602,12 +661,18 @@ ssh job-crawler-home 'sudo journalctl -u recommendation-worker -f'
 
 ---
 
+
+
 ### Phase 7 — End-to-end verification
+
+
 
 #### Cloud layer
 
 - [ ] `GET /health` on both Cloud Run services returns `{"status":"ok"}`
 - [ ] `POST /notifications/run` on Cloud Run returns **404** (scheduler disabled)
+
+
 
 #### Auth and profile
 
@@ -615,17 +680,23 @@ ssh job-crawler-home 'sudo journalctl -u recommendation-worker -f'
 - [ ] Complete onboarding / upload a resume
 - [ ] Resume appears in Supabase → Storage → `resumes` bucket
 
+
+
 #### Jobs and recommendations
 
 - [ ] Home machine ingestion has run; rows exist in Supabase `normalized_jobs`
 - [ ] Vercel `/jobs/recommended` loads without CORS errors (check browser DevTools → Network)
 - [ ] Personal scores appear (requires profile, jobs, and pool subscriptions)
 
+
+
 #### Notifications (home machine must be running)
 
 - [ ] User has active pool subscriptions in the database
 - [ ] Manual trigger: `curl -X POST http://localhost:8002/notifications/run`
 - [ ] Email arrives; row appears in `notification_batches`
+
+
 
 #### Home machine offline
 
@@ -634,27 +705,33 @@ ssh job-crawler-home 'sudo journalctl -u recommendation-worker -f'
 
 ---
 
+
+
 ## Common gotchas
 
-| Problem | Likely cause | Fix |
-|---------|--------------|-----|
-| CORS error on job page | Missing `CORS_ORIGINS` on Cloud Run | Phase 5 |
-| Google login fails | Wrong redirect URI or `AUTH_URL` | Add `https://job-scout.dev/api/auth/callback/google` in GCP OAuth client; set Vercel `AUTH_URL=https://job-scout.dev` |
-| Profile API returns 401 | `PROFILE_API_KEY` mismatch | Same key in Vercel and GCP `profile-api-key` secret |
-| Resume upload fails on Cloud Run | Storage bucket or service role misconfigured | Check `resumes` bucket exists; verify Supabase secrets |
-| Cloud Run DB connection errors | Wrong URL type | Pooler `:6543` on Cloud Run; direct `:5432` on home machine |
-| No jobs in the app | Ingestion not run yet | `POST http://localhost:8000/pipeline/trigger` |
-| SSH fails in Cursor terminal | Cursor lacks Local Network access | System Settings → Privacy → Local Network → Cursor; or run tunnel in Terminal.app |
-| SSH `No route to host` | Tailscale not connected | Enable Tailscale on Mac and Linux; `ping 100.111.129.27` |
-| Alembic migration fails | Special characters in DB password | URL-encode the password in the connection string |
-| Migration FK errors | Wrong migration order | Run `profile_service` → `job_ingestion` → `recommendation_service` |
-| `exec format error` on Cloud Run | ARM64 image built on Apple Silicon Mac | Rebuild with `--platform linux/amd64` (see Troubleshooting) |
-| Cloud Run name rejected | Underscores in service name | Use `profile-service`, not `profile_service` |
-| Deploy script hangs with no output | `gcloud` waiting for `y/N` | Enable APIs with `gcloud services enable ...` first (non-interactive) |
-| `Billing account ... not found` | Billing not linked to GCP project | Link billing in GCP Console or `gcloud billing projects link` |
-| Root URL returns `Not Found` | No route at `/` | Expected — use `/health` instead |
+
+| Problem                            | Likely cause                                 | Fix                                                                                                                   |
+| ---------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| CORS error on job page             | Missing `CORS_ORIGINS` on Cloud Run          | Phase 5                                                                                                               |
+| Google login fails                 | Wrong redirect URI or `AUTH_URL`             | Add `https://job-scout.dev/api/auth/callback/google` in GCP OAuth client; set Vercel `AUTH_URL=https://job-scout.dev` |
+| Profile API returns 401            | `PROFILE_API_KEY` mismatch                   | Same key in Vercel and GCP `profile-api-key` secret                                                                   |
+| Resume upload fails on Cloud Run   | Storage bucket or service role misconfigured | Check `resumes` bucket exists; verify Supabase secrets                                                                |
+| Cloud Run DB connection errors     | Wrong URL type                               | Pooler `:6543` on Cloud Run; direct `:5432` on home machine                                                           |
+| No jobs in the app                 | Ingestion not run yet                        | `POST http://localhost:8000/pipeline/trigger`                                                                         |
+| SSH fails in Cursor terminal       | Cursor lacks Local Network access            | System Settings → Privacy → Local Network → Cursor; or run tunnel in Terminal.app                                     |
+| SSH `No route to host`             | Tailscale not connected                      | Enable Tailscale on Mac and Linux; `ping 100.111.129.27`                                                              |
+| Alembic migration fails            | Special characters in DB password            | URL-encode the password in the connection string                                                                      |
+| Migration FK errors                | Wrong migration order                        | Run `profile_service` → `job_ingestion` → `recommendation_service`                                                    |
+| `exec format error` on Cloud Run   | ARM64 image built on Apple Silicon Mac       | Rebuild with `--platform linux/amd64` (see Troubleshooting)                                                           |
+| Cloud Run name rejected            | Underscores in service name                  | Use `profile-service`, not `profile_service`                                                                          |
+| Deploy script hangs with no output | `gcloud` waiting for `y/N`                   | Enable APIs with `gcloud services enable ...` first (non-interactive)                                                 |
+| `Billing account ... not found`    | Billing not linked to GCP project            | Link billing in GCP Console or `gcloud billing projects link`                                                         |
+| Root URL returns `Not Found`       | No route at `/`                              | Expected — use `/health` instead                                                                                      |
+
 
 ---
+
+
 
 ## Troubleshooting — lessons from first deploy
 
@@ -690,6 +767,8 @@ gcloud billing projects link YOUR_PROJECT_ID --billing-account=YOUR_BILLING_ACCO
 gcloud services enable run.googleapis.com artifactregistry.googleapis.com secretmanager.googleapis.com
 ```
 
+
+
 ### gcloud hangs silently (interactive prompts)
 
 If a command prints nothing for minutes, it may be waiting for:
@@ -715,6 +794,8 @@ Your active project does not match the quota project in your Application Default
 ```bash
 gcloud auth application-default set-quota-project YOUR_PROJECT_ID
 ```
+
+
 
 ### Apple Silicon (M1/M2/M3) — build for `linux/amd64`
 
@@ -747,10 +828,12 @@ Same for `recommendation_service`. The deploy script passes this flag automatica
 Invalid resource name [profile_service]. The name must use only lowercase alphanumeric characters and dashes
 ```
 
-| Docker image folder | Cloud Run service name |
-|---------------------|------------------------|
-| `profile_service` | `profile-service` |
+
+| Docker image folder      | Cloud Run service name   |
+| ------------------------ | ------------------------ |
+| `profile_service`        | `profile-service`        |
 | `recommendation_service` | `recommendation-service` |
+
 
 Image paths in Artifact Registry can keep underscores; only the **Cloud Run service name** must use dashes.
 
@@ -759,7 +842,6 @@ Image paths in Artifact Registry can keep underscores; only the **Cloud Run serv
 If the script fails, deploy manually. Common script failures we hit:
 
 1. **Multiple secret flags** — `gcloud run deploy` allows only one of `--set-secrets` / `--update-secrets` per command. Merge all secrets into a single `--set-secrets` string.
-
 2. **Wrong project in env** — secrets and billing on `job-crawler-243-55` but `GCP_PROJECT=job-crawler-prod` in the command deploys to a project you do not control.
 
 **Manual deploy — profile-service** (after build + push):
@@ -815,12 +897,14 @@ URL-encode special characters in the password itself (`&` → `%26`, `,` → `%2
 
 ### Smoke tests — what responses mean
 
-| Request | Expected | Meaning |
-|---------|----------|---------|
-| `GET /health` | `{"status":"ok"}` | Service is up |
-| `GET /` (recommendation-service) | `{"detail":"Not Found"}` | Normal — no root route |
-| `POST /notifications/run` on Cloud Run | **404** | Scheduler correctly disabled |
-| `POST /notifications/run` on home worker | `{"status":"started"}` | Worker mode |
+
+| Request                                  | Expected                 | Meaning                      |
+| ---------------------------------------- | ------------------------ | ---------------------------- |
+| `GET /health`                            | `{"status":"ok"}`        | Service is up                |
+| `GET /` (recommendation-service)         | `{"detail":"Not Found"}` | Normal — no root route       |
+| `POST /notifications/run` on Cloud Run   | **404**                  | Scheduler correctly disabled |
+| `POST /notifications/run` on home worker | `{"status":"started"}`   | Worker mode                  |
+
 
 ```bash
 gcloud run services describe profile-service \
@@ -845,7 +929,7 @@ GCP_PROJECT=YOUR_PROJECT_ID GCP_REGION=us-central1 ./scripts/deploy-cloud-run.sh
 
 The script rebuilds and pushes both service images, then deploys with `--set-secrets` and `--set-env-vars`. It sets production CORS in `scripts/deploy-cloud-run.sh` (`CORS_ORIGINS` includes `https://job-scout.dev` and legacy `https://carrier-match-gcp.vercel.app`). The same URLs are in the default allow list in `profile_service/app/config.py` and `recommendation_service/app/config.py`. If your frontend URL changes, update all three before redeploying.
 
-Manual `gcloud run deploy` works for secret-only rotations (same image is fine), but **must still pass `CORS_ORIGINS`** — otherwise a redeploy can wipe the env var and the browser will only get localhost origins from an older image:
+Manual `gcloud run deploy` works for secret-only rotations (same image is fine), but **must still pass** `CORS_ORIGINS` — otherwise a redeploy can wipe the env var and the browser will only get localhost origins from an older image:
 
 ```bash
 CORS_ORIGINS="https://job-scout.dev,https://carrier-match-gcp.vercel.app"
@@ -899,23 +983,29 @@ You do not need a separate OAuth client for production. Add production URLs to t
 
 - **Primary redirect URI:** `https://job-scout.dev/api/auth/callback/google`
 - **Legacy (transition):** `https://carrier-match-gcp.vercel.app/api/auth/callback/google`
-- **`AUTH_URL` on Vercel:** `https://job-scout.dev` (must match exactly, no trailing slash)
+- `AUTH_URL` **on Vercel:** `https://job-scout.dev` (must match exactly, no trailing slash)
 
 If the consent screen is in **Testing** mode, add each pilot user's Gmail under test users until the app is published.
 
 ---
 
+
+
 ## Quick reference — which URL goes where
 
-| Deployment target | `DATABASE_URL` | Other critical vars |
-|-------------------|----------------|---------------------|
-| Cloud Run `profile_service` | Pooler `:6543` | `RESUME_STORAGE_BACKEND=supabase`, API/storage secrets |
-| Cloud Run `recommendation_service` | Pooler `:6543` | `ENABLE_NOTIFICATION_SCHEDULER=false`, `CORS_ORIGINS` |
-| Home `job_ingestion` | Direct `:5432` | `FETCH_SCHEDULE_JSON` (optional), `GEMINI_API_KEYS` |
-| Home notification worker | Direct `:5432` | `ENABLE_NOTIFICATION_SCHEDULER=true`, `RESEND_API_KEY`, `EMAIL_FROM`, `APP_BASE_URL` |
-| Vercel `web/` | N/A | Cloud Run URLs, OAuth creds, `AUTH_SECRET`, `PROFILE_API_KEY` |
+
+| Deployment target                  | `DATABASE_URL` | Other critical vars                                                                  |
+| ---------------------------------- | -------------- | ------------------------------------------------------------------------------------ |
+| Cloud Run `profile_service`        | Pooler `:6543` | `RESUME_STORAGE_BACKEND=supabase`, API/storage secrets                               |
+| Cloud Run `recommendation_service` | Pooler `:6543` | `ENABLE_NOTIFICATION_SCHEDULER=false`, `CORS_ORIGINS`                                |
+| Home `job_ingestion`               | Direct `:5432` | `FETCH_SCHEDULE_JSON` (optional), `GEMINI_API_KEYS`                                  |
+| Home notification worker           | Direct `:5432` | `ENABLE_NOTIFICATION_SCHEDULER=true`, `RESEND_API_KEY`, `EMAIL_FROM`, `APP_BASE_URL` |
+| Vercel `web/`                      | N/A            | Cloud Run URLs, OAuth creds, `AUTH_SECRET`, `PROFILE_API_KEY`                        |
+
 
 ---
+
+
 
 ## One-time setup (summary)
 
@@ -927,142 +1017,121 @@ The phases above expand these five areas:
 4. **Vercel** — deploy `web/`, set env vars, wire CORS on Cloud Run
 5. **Home machine** — `.env` files, `./scripts/run-job-ingestion-prod.sh`, `./scripts/run-notification-worker.sh`
 
+
+
 ## Environment variable reference
+
+
 
 ### Home — job_ingestion
 
-| Variable | Example | Notes |
-|----------|---------|-------|
-| `DATABASE_URL` | direct Supabase `:5432` | |
-| `FETCH_SCHEDULE_JSON` | (optional JSON blob) | Tiered fetch scheduler: tick interval, batch cap, per-platform/tier intervals, throttles. Built-in defaults when unset. Replaces legacy `FETCH_CADENCE_*`. |
-| `JOB_MAX_AGE_DAYS` | `7` | Fresh job window: Workday/Oracle fetch filter, active cleanup, and notification retrieval (must match recommendation service). |
-| `GEMINI_API_KEYS` | `key1,key2,...` | Comma-separated keys; one enrichment worker per key |
-| `GEMINI_API_KEY` | | Single-key fallback when `GEMINI_API_KEYS` unset |
-| `ENRICHMENT_WORKER_COUNT` | (optional) | Cap workers; defaults to key count. Throughput ≈ N × `ENRICHMENT_LLM_MAX_RPM` |
+
+| Variable                  | Example                 | Notes                                                                                                                                                      |
+| ------------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`            | direct Supabase `:5432` |                                                                                                                                                            |
+| `FETCH_SCHEDULE_JSON`     | (optional JSON blob)    | Tiered fetch scheduler: tick interval, batch cap, per-platform/tier intervals, throttles. Built-in defaults when unset. Replaces legacy `FETCH_CADENCE_*`. |
+| `JOB_MAX_AGE_DAYS`        | `7`                     | Fresh job window: Workday/Oracle fetch filter, active cleanup, and notification retrieval (must match recommendation service).                             |
+| `GEMINI_API_KEYS`         | `key1,key2,...`         | Comma-separated keys; one enrichment worker per key                                                                                                        |
+| `GEMINI_API_KEY`          |                         | Single-key fallback when `GEMINI_API_KEYS` unset                                                                                                           |
+| `ENRICHMENT_WORKER_COUNT` | (optional)              | Cap workers; defaults to key count. Throughput ≈ N × `ENRICHMENT_LLM_MAX_RPM`                                                                              |
+
+
+
 
 ### Home — recommendation worker
 
-| Variable | Example | Notes |
-|----------|---------|-------|
-| `DATABASE_URL` | direct Supabase `:5432` | |
-| `ENABLE_NOTIFICATION_SCHEDULER` | `true` | Must be true on home worker |
-| `NOTIFICATION_CADENCE_MINUTES` | `720` | Optional; 12h example |
-| `NOTIFICATION_CADENCE_HOURS` | `24` | Fallback when minutes unset |
-| `JOB_MAX_AGE_DAYS` | `7` | Must match job_ingestion; limits jobs in email retrieval |
-| `RESEND_API_KEY` | `re_...` | Resend API key |
-| `EMAIL_FROM` | `Job Scout <notifications@job-scout.dev>` | Verified sender domain |
-| `APP_BASE_URL` | `https://your-app.vercel.app` | Links in emails |
+
+| Variable                        | Example                                   | Notes                                                    |
+| ------------------------------- | ----------------------------------------- | -------------------------------------------------------- |
+| `DATABASE_URL`                  | direct Supabase `:5432`                   |                                                          |
+| `ENABLE_NOTIFICATION_SCHEDULER` | `true`                                    | Must be true on home worker                              |
+| `NOTIFICATION_CADENCE_MINUTES`  | `720`                                     | Optional; 12h example                                    |
+| `NOTIFICATION_CADENCE_HOURS`    | `24`                                      | Fallback when minutes unset                              |
+| `JOB_MAX_AGE_DAYS`              | `7`                                       | Must match job_ingestion; limits jobs in email retrieval |
+| `RESEND_API_KEY`                | `re_...`                                  | Resend API key                                           |
+| `EMAIL_FROM`                    | `Job Scout <notifications@job-scout.dev>` | Verified sender domain                                   |
+| `APP_BASE_URL`                  | `https://your-app.vercel.app`             | Links in emails                                          |
+
+
+
 
 ### Cloud Run — profile_service
 
-| Variable | Example | Notes |
-|----------|---------|-------|
-| `DATABASE_URL` | pooler `:6543` | Via Secret Manager |
-| `API_KEY` | | Via Secret Manager |
-| `GEMINI_API_KEY` | | Via Secret Manager |
-| `RESUME_STORAGE_BACKEND` | `supabase` | |
-| `SUPABASE_URL` | | |
-| `SUPABASE_SERVICE_ROLE_KEY` | | |
-| `SUPABASE_STORAGE_BUCKET` | `resumes` | |
-| `RESEND_API_KEY` | | Via Secret Manager — OTP emails |
-| `EMAIL_FROM` | `Job Scout <notifications@job-scout.dev>` | Verified sender in Resend |
-| `CORS_ORIGINS` | Vercel URL | |
+
+| Variable                    | Example                                   | Notes                           |
+| --------------------------- | ----------------------------------------- | ------------------------------- |
+| `DATABASE_URL`              | pooler `:6543`                            | Via Secret Manager              |
+| `API_KEY`                   |                                           | Via Secret Manager              |
+| `GEMINI_API_KEY`            |                                           | Via Secret Manager              |
+| `RESUME_STORAGE_BACKEND`    | `supabase`                                |                                 |
+| `SUPABASE_URL`              |                                           |                                 |
+| `SUPABASE_SERVICE_ROLE_KEY` |                                           |                                 |
+| `SUPABASE_STORAGE_BUCKET`   | `resumes`                                 |                                 |
+| `RESEND_API_KEY`            |                                           | Via Secret Manager — OTP emails |
+| `EMAIL_FROM`                | `Job Scout <notifications@job-scout.dev>` | Verified sender in Resend       |
+| `CORS_ORIGINS`              | Vercel URL                                |                                 |
+
+
+
 
 ### Cloud Run — recommendation_service API
 
-| Variable | Example | Notes |
-|----------|---------|-------|
-| `DATABASE_URL` | pooler `:6543` | Via Secret Manager |
-| `ENABLE_NOTIFICATION_SCHEDULER` | `false` | Critical — disables email batch |
-| `CORS_ORIGINS` | Vercel URL | Required for browser calls |
+
+| Variable                        | Example        | Notes                           |
+| ------------------------------- | -------------- | ------------------------------- |
+| `DATABASE_URL`                  | pooler `:6543` | Via Secret Manager              |
+| `ENABLE_NOTIFICATION_SCHEDULER` | `false`        | Critical — disables email batch |
+| `CORS_ORIGINS`                  | Vercel URL     | Required for browser calls      |
+
+
+
 
 ### Vercel — web/
 
-See [`web/.env.example`](web/.env.example).
+See `[web/.env.example](web/.env.example)`.
 
 ---
+
+
 
 ## Operational runbook
 
-| Action | Command |
-|--------|---------|
-| SSH tunnel (Mac → home machine via Tailscale) | `./scripts/tunnel-home-services.sh` |
-| Home machine Tailscale IP | `100.111.129.27` — see [`deploy/TAILSCALE.md`](deploy/TAILSCALE.md) |
-| Home machine status | `./scripts/home-health.sh` |
-| Verify Linux systemd + health | `./scripts/verify-home-machine.sh` (on Linux) |
-| Trigger ingestion manually | `./scripts/home-trigger-ingestion.sh` or `POST http://localhost:8000/pipeline/trigger` |
-| Trigger notification manually | `./scripts/home-trigger-notifications.sh` or `POST http://localhost:8002/notifications/run` |
-| Ops admin dashboard (Mac) | `./scripts/dev-ingestion-dashboard.sh` |
-| View pipeline runs | Admin dashboard → Pipeline tab, or `GET /pipeline/runs` |
-| Check recommendation API | `GET https://<reco-api>/health` |
-| Check profile API | `GET https://<profile-api>/health` |
+
+| Action                                        | Command                                                                                     |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| SSH tunnel (Mac → home machine via Tailscale) | `./scripts/tunnel-home-services.sh`                                                         |
+| Home machine Tailscale IP                     | `100.111.129.27` — see `[deploy/TAILSCALE.md](deploy/TAILSCALE.md)`                         |
+| Home machine status                           | `./scripts/home-health.sh`                                                                  |
+| Verify Linux systemd + health                 | `./scripts/verify-home-machine.sh` (on Linux)                                               |
+| Trigger ingestion manually                    | `./scripts/home-trigger-ingestion.sh` or `POST http://localhost:8000/pipeline/trigger`      |
+| Trigger notification manually                 | `./scripts/home-trigger-notifications.sh` or `POST http://localhost:8002/notifications/run` |
+| Ops admin dashboard (Mac)                     | `./scripts/dev-ingestion-dashboard.sh`                                                      |
+| View pipeline runs                            | Admin dashboard → Pipeline tab, or `GET /pipeline/runs`                                     |
+| Check recommendation API                      | `GET https://<reco-api>/health`                                                             |
+| Check profile API                             | `GET https://<profile-api>/health`                                                          |
+
 
 ---
+
+
 
 ## Changes log (deployment infrastructure implementation)
 
+
+
 ### Configuration and scheduling
-- [`job_ingestion/app/config.py`](job_ingestion/app/config.py) — added `fetch_cadence_minutes`, `pipeline_interval_kwargs()`
-- [`job_ingestion/app/scheduler.py`](job_ingestion/app/scheduler.py) — minute-based pipeline cadence
-- [`recommendation_service/app/config.py`](recommendation_service/app/config.py) — added `notification_cadence_minutes`, `enable_notification_scheduler`, `notification_interval_kwargs()`
-- [`recommendation_service/app/scheduler.py`](recommendation_service/app/scheduler.py) — minute-based notification cadence
-- [`recommendation_service/app/main.py`](recommendation_service/app/main.py) — conditional scheduler startup; gated `/notifications/run`
+
+- `[job_ingestion/app/config.py](job_ingestion/app/config.py)` — added `fetch_cadence_minutes`, `pipeline_interval_kwargs()`
+- `[job_ingestion/app/scheduler.py](job_ingestion/app/scheduler.py)` — minute-based pipeline cadence
+- `[recommendation_service/app/config.py](recommendation_service/app/config.py)` — added `notification_cadence_minutes`, `enable_notification_scheduler`, `notification_interval_kwargs()`
+- `[recommendation_service/app/scheduler.py](recommendation_service/app/scheduler.py)` — minute-based notification cadence
+- `[recommendation_service/app/main.py](recommendation_service/app/main.py)` — conditional scheduler startup; gated `/notifications/run`
+
+
 
 ### Database
-- [`job_ingestion/app/database.py`](job_ingestion/app/database.py) — Supabase pooler detection
-- [`profile_service/app/database.py`](profile_service/app/database.py) — same
-- [`recommendation_service/app/database.py`](recommendation_service/app/database.py) — same
 
-### Resume storage
-- [`profile_service/app/storage/`](profile_service/app/storage/) — local + Supabase backends
-- [`profile_service/app/api/candidates.py`](profile_service/app/api/candidates.py) — upload via storage abstraction
-- [`profile_service/app/pipeline/extractor.py`](profile_service/app/pipeline/extractor.py) — bytes-based PDF extraction
-- [`profile_service/app/pipeline/patch_engine.py`](profile_service/app/pipeline/patch_engine.py) — read resume via storage
+- `[job_ingestion/app/database.py](job_ingestion/app/database.py)` — Supabase pooler detection
+- `[profile_service/app/database.py](profile_service/app/database.py)` — same
+- `[recommendation_service/app/database.py](recommendation_service/app/database.py)` — same
 
-### Deployment artifacts
-- [`Dockerfile`](Dockerfile) — multi-service Cloud Run build
-- [`.dockerignore`](.dockerignore)
-- [`scripts/deploy-cloud-run.sh`](scripts/deploy-cloud-run.sh) — `linux/amd64` builds, dashed Cloud Run names, single `--set-secrets`
-- [`scripts/run-job-ingestion-prod.sh`](scripts/run-job-ingestion-prod.sh)
-- [`scripts/run-notification-worker.sh`](scripts/run-notification-worker.sh)
-- [`deploy/systemd/`](deploy/systemd/) — example systemd units
-
-### Tests
-- [`job_ingestion/tests/test_cadence_config.py`](job_ingestion/tests/test_cadence_config.py)
-- [`recommendation_service/tests/test_cadence_config.py`](recommendation_service/tests/test_cadence_config.py)
-- [`profile_service/tests/test_storage.py`](profile_service/tests/test_storage.py)
-- Updated [`profile_service/tests/test_extractor.py`](profile_service/tests/test_extractor.py)
-
-### Env templates and docs
-- Updated `.env.example` in `job_ingestion/`, `profile_service/`, `recommendation_service/`, `web/`
-- [`DEPLOYMENT.md`](DEPLOYMENT.md) — troubleshooting section from first Cloud Run bring-up
-
----
-
-## Future scope
-
-| Milestone | Trigger | Likely changes |
-|-----------|---------|----------------|
-| **Cold start UX** | 10–50 active users report slow first load | Set `min-instances=1` on recommendation Cloud Run |
-| **Recommendation API auth** | Opening beyond pilot | Session token or API key on `/dashboard/*` |
-| **Email deliverability** | ~100+ users | SendGrid/Resend/Postmark; unsubscribe UX |
-| **Resume storage scale** | Many large PDFs | Review Supabase Storage quotas; lifecycle rules |
-| **Ingestion reliability** | Home downtime hurts freshness | Cloud Scheduler + Cloud Run Job for ingestion only |
-| **DB tier** | Connection limits or size on free tier | Supabase Pro |
-| **CI/CD** | Frequent deploys | GitHub Actions for test + deploy |
-| **Observability** | Production debugging | Cloud Logging, pipeline/enrichment alerts |
-| **Multi-home HA** | Second machine | DB-backed leader lock before dual ingestion |
-| **IaC** | Team grows | Terraform for Supabase + Cloud Run + Vercel |
-
----
-
-## Verification checklist
-
-- [ ] Local dev works with docker-compose Postgres (default env files)
-- [ ] `FETCH_SCHEDULE_JSON` (or defaults) schedules sharded fetch ticks as expected
-- [ ] `ENABLE_NOTIFICATION_SCHEDULER=false` skips scheduler; `/notifications/run` returns 404
-- [ ] `ENABLE_NOTIFICATION_SCHEDULER=true` sends test email via Gmail
-- [ ] Resume upload with `RESUME_STORAGE_BACKEND=local` and `supabase`
-- [ ] Pooler URL connects from Cloud Run
-- [ ] Vercel frontend loads jobs (CORS verified)
-- [ ] All pytest suites pass for touched services

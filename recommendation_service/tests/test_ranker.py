@@ -85,7 +85,7 @@ def test_select_top_jobs_caps_one_job_per_company() -> None:
     assert top[2][0].company_name == "Ramp"
 
 
-def test_select_diversified_jobs_caps_company_share() -> None:
+def test_select_diversified_jobs_caps_per_company() -> None:
     ranked = [
         _job(f"Role {i}", "Amazon", "Remote", 0.9 - i * 0.01)
         for i in range(10)
@@ -96,11 +96,11 @@ def test_select_diversified_jobs_caps_company_share() -> None:
         ranked,
         20,
         applied_count_by_company={},
-        max_share=0.03,
+        max_per_company=5,
         unlock_batch_size=5,
     )
     amazon_count = sum(1 for job, _ in selected if job.company_name == "Amazon")
-    assert amazon_count == 1
+    assert amazon_count == 5
     assert any(job.company_name == "Ramp" for job, _ in selected)
 
 
@@ -115,8 +115,8 @@ def test_select_diversified_jobs_unlocks_after_applies() -> None:
         ranked,
         20,
         applied_count_by_company={"amazon": 5},
-        max_share=0.03,
+        max_per_company=5,
         unlock_batch_size=5,
     )
     amazon_count = sum(1 for job, _ in selected if job.company_name == "Amazon")
-    assert amazon_count == 6
+    assert amazon_count == 10

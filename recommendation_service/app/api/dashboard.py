@@ -249,7 +249,7 @@ async def get_recommended_jobs(
         ranked,
         cap,
         applied_count_by_company=applied_counts,
-        max_share=settings.recommendation_max_company_share,
+        max_per_company=settings.recommendation_max_jobs_per_company,
         unlock_batch_size=settings.recommendation_company_unlock_batch,
     )
     total = len(diversified)

@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     notification_retrieval_limit: int = 500
     recommendation_retrieval_limit: int | None = None
     recommendation_pool_floor_ratio: float = 0.1
-    recommendation_max_company_share: float = 0.03
+    recommendation_max_jobs_per_company: int = 5
     recommendation_company_unlock_batch: int = 5
     notification_jobs_per_email: int = 4
     notification_max_jobs_per_company: int = 1

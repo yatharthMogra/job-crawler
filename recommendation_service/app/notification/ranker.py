@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import math
 import re
 from datetime import timezone
 
@@ -63,16 +62,16 @@ def select_diversified_jobs(
     limit: int,
     *,
     applied_count_by_company: dict[str, int],
-    max_share: float,
+    max_per_company: int,
     unlock_batch_size: int,
 ) -> list[tuple[NormalizedJob, float]]:
-    """Pick top jobs with per-company share cap and apply-based batch unlock."""
+    """Pick top jobs with per-company cap and apply-based batch unlock."""
     if limit <= 0:
         return []
-    if max_share <= 0:
+    if max_per_company <= 0:
         return ranked[:limit]
 
-    base_cap = max(1, math.ceil(limit * max_share))
+    base_cap = max_per_company
     batch = max(1, unlock_batch_size)
     selected: list[tuple[NormalizedJob, float]] = []
     visible_counts: dict[str, int] = {}
