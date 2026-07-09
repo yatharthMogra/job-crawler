@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { getBrandInitial, getBrandLogoSources } from "@/lib/brand-logos"
+import { useEffect, useState } from "react"
+import { getBrandInitial } from "@/lib/brand-logos"
 import { cn } from "@/lib/utils"
 
 interface BrandLogoProps {
@@ -10,9 +10,7 @@ interface BrandLogoProps {
   variant?: "company" | "school"
   shape?: "square" | "circle"
   className?: string
-  /** Prefer this domain when known (e.g. company_info.website host). */
-  domain?: string | null
-  /** Stored logo URL from API — used before CDN fallbacks. */
+  /** Stored logo URL from API (cloud storage). Letter avatar when missing or on error. */
   logoUrl?: string | null
 }
 
@@ -61,36 +59,23 @@ function LetterFallback({
   )
 }
 
-function isLowQualityLogo(img: HTMLImageElement): boolean {
-  return img.naturalWidth <= 16 || img.naturalHeight <= 16
-}
-
 export function BrandLogo({
   name,
   size = 32,
-  variant = "company",
   shape = "square",
   className,
-  domain,
   logoUrl,
 }: BrandLogoProps) {
-  const sources = useMemo(
-    () => (logoUrl?.trim() ? [logoUrl.trim(), ...getBrandLogoSources(name, variant, domain)] : getBrandLogoSources(name, variant, domain)),
-    [name, variant, domain, logoUrl],
-  )
-  const [sourceIndex, setSourceIndex] = useState(0)
+  const storedUrl = logoUrl?.trim() ?? ""
+  const [failed, setFailed] = useState(false)
 
   useEffect(() => {
-    setSourceIndex(0)
-  }, [name, variant, domain, logoUrl])
+    setFailed(false)
+  }, [storedUrl, name])
 
   const roundedClass = shape === "circle" ? "rounded-full" : "rounded-xl"
 
-  function tryNextSource() {
-    setSourceIndex((i) => i + 1)
-  }
-
-  if (!name.trim() || sourceIndex >= sources.length) {
+  if (!name.trim() || !storedUrl || failed) {
     return <LetterFallback name={name || "?"} size={size} shape={shape} className={className} />
   }
 
@@ -106,8 +91,8 @@ export function BrandLogo({
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        key={`${name}-${domain ?? ""}-${sources[sourceIndex]}`}
-        src={sources[sourceIndex]}
+        key={`${name}-${storedUrl}`}
+        src={storedUrl}
         alt=""
         width={size}
         height={size}
@@ -115,10 +100,7 @@ export function BrandLogo({
         decoding="async"
         referrerPolicy="no-referrer"
         className="size-full object-contain p-[12%]"
-        onError={tryNextSource}
-        onLoad={(e) => {
-          if (isLowQualityLogo(e.currentTarget)) tryNextSource()
-        }}
+        onError={() => setFailed(true)}
       />
     </div>
   )

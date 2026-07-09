@@ -1,7 +1,21 @@
 import type { UserApplicationApi } from "@/lib/recommendation/api"
 import { resolveJobDescription } from "@/lib/recommendation/parse-description"
-import type { Effort, EmploymentType, Job, RemoteType } from "@/lib/jobs-data"
+import type { CompanyEnrichmentInfo, Effort, EmploymentType, Job, RemoteType } from "@/lib/jobs-data"
 import { mapApiSeniorityToUi } from "@/lib/profile/seniority"
+
+function companyInfoFromLogoUrl(logoUrl: string | null | undefined): CompanyEnrichmentInfo | null {
+  if (!logoUrl?.trim()) return null
+  return {
+    founded_year: null,
+    headquarters: null,
+    employee_count_range: null,
+    one_line_description: null,
+    website: null,
+    linkedin_url: null,
+    glassdoor_rating: null,
+    logo_url: logoUrl.trim(),
+  }
+}
 
 export function mapApplicationToUi(application: UserApplicationApi): Job & { roleCategory: string } {
   const effort: Effort = "MEDIUM"
@@ -41,7 +55,7 @@ export function mapApplicationToUi(application: UserApplicationApi): Job & { rol
     requires_clearance: false,
     requires_citizenship: false,
     h1b_sponsorship: null,
-    company_info: null,
+    company_info: companyInfoFromLogoUrl(application.logo_url),
     about_summary: description.about,
     description_html: description.fallbackHtml,
     is_saved: false,

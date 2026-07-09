@@ -24,6 +24,7 @@ class UserApplicationOut(BaseModel):
     skills: list[str] = Field(default_factory=list)
     tech_stack: list[str] = Field(default_factory=list)
     description_text: Optional[str] = None
+    logo_url: Optional[str] = None
     applied_at: datetime
     status: str
     notes: Optional[str] = None

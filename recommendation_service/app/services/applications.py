@@ -12,11 +12,22 @@ from app.models.shared import Company, JobArchive, NormalizedJob, UserApplicatio
 from app.schemas.applications import UserApplicationOut, UserApplicationPatchIn
 
 
+async def _load_logo_urls_by_company_id(
+    db: AsyncSession,
+    company_ids: set[uuid.UUID],
+) -> dict[uuid.UUID, str | None]:
+    if not company_ids:
+        return {}
+    companies = await db.scalars(select(Company).where(Company.id.in_(company_ids)))
+    return {company.id: company.logo_url for company in companies.all()}
+
+
 def format_application_row(
     application: UserApplication,
     *,
     archive: Optional[JobArchive],
     normalized_job_id: Optional[uuid.UUID] = None,
+    logo_url: Optional[str] = None,
 ) -> UserApplicationOut:
     skills = list(archive.skills or []) if archive else []
     tech_stack = list(archive.tech_stack or []) if archive else []
@@ -37,6 +48,7 @@ def format_application_row(
         skills=skills,
         tech_stack=tech_stack,
         description_text=archive.description_text if archive else None,
+        logo_url=logo_url,
         applied_at=application.applied_at,
         status=application.status,
         notes=application.notes,
@@ -68,6 +80,9 @@ async def get_user_applications(
             if norm.job_archive_id is not None:
                 normalized_ids[norm.job_archive_id] = norm.id
 
+    company_ids = {archive.company_id for _application, archive in rows if archive is not None}
+    logo_urls = await _load_logo_urls_by_company_id(db, company_ids)
+
     return [
         format_application_row(
             application,
@@ -75,6 +90,7 @@ async def get_user_applications(
             normalized_job_id=normalized_ids.get(application.job_archive_id)
             if application.job_archive_id
             else None,
+            logo_url=logo_urls.get(archive.company_id) if archive else None,
         )
         for application, archive in rows
     ]
@@ -140,7 +156,12 @@ async def apply_to_job(
     archive = await db.scalar(select(JobArchive).where(JobArchive.id == job.job_archive_id))
     await db.commit()
     await db.refresh(application)
-    return format_application_row(application, archive=archive, normalized_job_id=job.id)
+    return format_application_row(
+        application,
+        archive=archive,
+        normalized_job_id=job.id,
+        logo_url=company.logo_url if company else None,
+    )
 
 
 async def patch_application(
@@ -173,10 +194,16 @@ async def patch_application(
             select(NormalizedJob.id).where(NormalizedJob.job_archive_id == application.job_archive_id)
         )
 
+    logo_url = None
+    if archive is not None:
+        company = await db.scalar(select(Company).where(Company.id == archive.company_id))
+        logo_url = company.logo_url if company else None
+
     await db.commit()
     await db.refresh(application)
     return format_application_row(
         application,
         archive=archive,
         normalized_job_id=normalized_job_id,
+        logo_url=logo_url,
     )

@@ -38,11 +38,12 @@ def test_format_application_prefers_archive_data() -> None:
         tech_stack=["postgres"],
         description_text="Job description",
     )
-    out = format_application_row(application, archive=archive, normalized_job_id=uuid4())
+    out = format_application_row(application, archive=archive, normalized_job_id=uuid4(), logo_url="https://cdn.example/logo.png")
     assert out.company_name == "Archive Co"
     assert out.job_title == "Archive Title"
     assert out.description_text == "Job description"
     assert out.skills == ["python"]
+    assert out.logo_url == "https://cdn.example/logo.png"
 
 
 def test_format_application_falls_back_when_archive_missing() -> None:
@@ -63,6 +64,7 @@ def test_format_application_falls_back_when_archive_missing() -> None:
     assert out.company_name == "Denorm Co"
     assert out.job_title == "Denorm Title"
     assert out.description_text is None
+    assert out.logo_url is None
 
 
 @pytest.mark.asyncio

@@ -356,6 +356,7 @@ export interface UserApplicationApi {
   skills: string[]
   tech_stack: string[]
   description_text: string | null
+  logo_url: string | null
   applied_at: string
   status: string
   notes: string | null

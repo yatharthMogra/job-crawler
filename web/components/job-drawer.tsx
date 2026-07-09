@@ -134,7 +134,6 @@ export function JobDetailContent({
             size={64}
             shape="square"
             logoUrl={job.company_info?.logo_url}
-            website={job.company_info?.website}
           />
           <div className="min-w-0 flex-1">
             <h2 className="text-pretty text-2xl font-bold leading-tight tracking-tight text-foreground">
