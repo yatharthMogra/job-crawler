@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 from uuid import UUID
 
+import structlog
 from sqlalchemy import and_, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -42,6 +43,8 @@ from app.models.enrichment_queue import EnrichmentQueue
 from app.models.job_enrichment import JobEnrichment
 from app.models.normalized_job import NormalizedJob
 from app.models.raw_job import RawJob
+
+log = structlog.get_logger(__name__)
 
 
 def _utcnow() -> datetime:
@@ -928,6 +931,12 @@ async def _process_batch(
             was_already_success = row.normalized.processing_state == ProcessingState.SUCCESS
             _apply_enrichment_to_job(row.normalized, enrichment, settings, raw_job=row.raw_job)
             _apply_waas_sponsorship_hint(row.normalized, row.raw_job)
+            try:
+                from app.ingestion.ats_enrichment import apply_job_ats_enrichment
+
+                await apply_job_ats_enrichment(db, row.normalized)
+            except Exception as exc:
+                log.warning("ats_enrichment_failed", job_id=str(row.normalized.id), error=str(exc))
             if row.normalized.job_archive_id is not None:
                 await update_job_archive_after_enrichment(
                     db,

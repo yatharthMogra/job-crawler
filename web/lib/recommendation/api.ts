@@ -140,6 +140,29 @@ export function fetchDashboardJob(candidateId: string, jobId: string) {
   )
 }
 
+export interface AtsFitSignalsApi {
+  bm25?: number | null
+  semantic?: number | null
+  structural?: number | null
+  title?: number | null
+  experience?: number | null
+  education?: number | null
+}
+
+export interface AtsFitApi {
+  ats_fit_score: number | null
+  pool_percentile: number | null
+  pool_percentile_label: string | null
+  signals: AtsFitSignalsApi
+  unavailable_reason: string | null
+}
+
+export function fetchJobAtsFit(candidateId: string, jobId: string) {
+  return request<AtsFitApi>(
+    `/dashboard/jobs/${encodeURIComponent(jobId)}/ats-fit?candidate_id=${encodeURIComponent(candidateId)}`,
+  )
+}
+
 export function fetchSubscriptions(candidateId: string) {
   return request<SubscriptionListResponse>(`/subscriptions/${candidateId}`)
 }

@@ -28,9 +28,11 @@ import {
 import {
   fetchApplications,
   fetchDashboardJobs,
+  fetchJobAtsFit,
   fetchRecommendedJobs,
   applyToJob,
   patchApplication,
+  type AtsFitApi,
 } from "@/lib/recommendation/api"
 import { mapApplicationToUi } from "@/lib/recommendation/map-application"
 import { mapApiJobToUi, mapRecommendedApiJob } from "@/lib/recommendation/map-job"
@@ -68,6 +70,12 @@ const EMPTY_FILTERS: Filters = {
   employmentType: null,
 }
 
+export type AtsFitState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "ready"; data: AtsFitApi }
+  | { status: "error" }
+
 interface JobsContextValue {
   jobs: JobWithRole[]
   recommendedJobs: JobWithRole[]
@@ -96,6 +104,7 @@ interface JobsContextValue {
   clearFilter: (key: keyof Filters) => void
   setEmploymentTypeFilter: (value: EmploymentTypeFilter) => void
   selectJob: (id: string | null) => void
+  atsFitByJobId: Record<string, AtsFitState>
   refreshJobs: () => Promise<void>
   refreshRecommendedJobs: () => Promise<void>
   loadMoreRecommendedJobs: () => Promise<void>
@@ -125,6 +134,33 @@ export function JobsProvider({ children }: { children: ReactNode }) {
   const [recommendedNextCursor, setRecommendedNextCursor] = useState<string | null>(null)
   const [recommendedHasMore, setRecommendedHasMore] = useState(false)
   const [recommendedLoadingMore, setRecommendedLoadingMore] = useState(false)
+  const [atsFitByJobId, setAtsFitByJobId] = useState<Record<string, AtsFitState>>({})
+
+  const loadAtsFit = useCallback(
+    async (jobId: string) => {
+      if (!candidateId || mockMode) return
+      setAtsFitByJobId((prev) => {
+        const existing = prev[jobId]
+        if (existing?.status === "loading" || existing?.status === "ready") return prev
+        return { ...prev, [jobId]: { status: "loading" } }
+      })
+      try {
+        const data = await fetchJobAtsFit(candidateId, jobId)
+        setAtsFitByJobId((prev) => ({ ...prev, [jobId]: { status: "ready", data } }))
+      } catch {
+        setAtsFitByJobId((prev) => ({ ...prev, [jobId]: { status: "error" } }))
+      }
+    },
+    [candidateId, mockMode],
+  )
+
+  const selectJob = useCallback(
+    (id: string | null) => {
+      setSelectedJobId(id)
+      if (id) void loadAtsFit(id)
+    },
+    [loadAtsFit],
+  )
 
   const applyRecommendedResponse = useCallback(
     (recommended: Awaited<ReturnType<typeof fetchRecommendedJobs>>, append: boolean) => {
@@ -565,7 +601,8 @@ export function JobsProvider({ children }: { children: ReactNode }) {
       setFilter,
       clearFilter,
       setEmploymentTypeFilter,
-      selectJob: setSelectedJobId,
+      selectJob,
+      atsFitByJobId,
       refreshJobs,
       refreshRecommendedJobs,
       loadMoreRecommendedJobs,
@@ -599,6 +636,8 @@ export function JobsProvider({ children }: { children: ReactNode }) {
       setFilter,
       clearFilter,
       setEmploymentTypeFilter,
+      selectJob,
+      atsFitByJobId,
       refreshJobs,
       refreshRecommendedJobs,
       loadMoreRecommendedJobs,

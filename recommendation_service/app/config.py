@@ -51,6 +51,11 @@ class Settings(BaseSettings):
     score_skill_weight_with_tier: float = 0.21
     score_location_weight_with_tier: float = 0.17
     score_compensation_weight_with_tier: float = 0.13
+    ats_fit_enabled: bool = False
+    ats_fit_bm25_weight: float = 0.50
+    ats_fit_semantic_weight: float = 0.25
+    ats_fit_structural_weight: float = 0.25
+    pool_percentile_refresh_enabled: bool = True
 
     model_config = SettingsConfigDict(
         env_file=".env",

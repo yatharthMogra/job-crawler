@@ -15,6 +15,7 @@ from app.notification.retrieval import (
     build_constraint_filters,
     query_jobs_in_pools,
 )
+from app.scoring.ats_fit import compute_ats_fit
 from app.scoring.explainability import generate_explanations
 from app.scoring.sponsorship import h1b_info_from_lookup
 from app.schemas.applications import (
@@ -22,6 +23,7 @@ from app.schemas.applications import (
     UserApplicationPatchIn,
     UserApplicationsResponse,
 )
+from app.schemas.ats_fit import AtsFitOut, AtsFitSignalsOut
 from app.schemas.dashboard import (
     CompanyEnrichmentOut,
     DashboardJobOut,
@@ -305,6 +307,26 @@ async def get_dashboard_job(
     candidate_id: uuid.UUID = Query(...),
     db: AsyncSession = Depends(get_db),
 ) -> DashboardJobOut:
+    job, user_profile = await _get_accessible_job(db, job_id=job_id, candidate_id=candidate_id)
+
+    needs_sponsorship = _needs_sponsorship_data(user_profile)
+    h1b_lookup, company_lookup = await _load_job_enrichment_lookups(
+        db, [job], needs_sponsorship=needs_sponsorship
+    )
+    return _enriched_job_out(
+        job,
+        h1b_lookup=h1b_lookup,
+        company_lookup=company_lookup,
+        needs_sponsorship=needs_sponsorship,
+    )
+
+
+async def _get_accessible_job(
+    db: AsyncSession,
+    *,
+    job_id: uuid.UUID,
+    candidate_id: uuid.UUID,
+) -> tuple[NormalizedJob, UserProfile | None]:
     pools = await get_active_pools(db, candidate_id)
     if not pools:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No active subscriptions")
@@ -330,16 +352,34 @@ async def get_dashboard_job(
             settings.experience_tier_visibility_ceiling,
         ):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
+    return job, user_profile
 
-    needs_sponsorship = _needs_sponsorship_data(user_profile)
-    h1b_lookup, company_lookup = await _load_job_enrichment_lookups(
-        db, [job], needs_sponsorship=needs_sponsorship
+
+@router.get("/jobs/{job_id}/ats-fit", response_model=AtsFitOut)
+async def get_job_ats_fit(
+    job_id: uuid.UUID,
+    candidate_id: uuid.UUID = Query(...),
+    db: AsyncSession = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+) -> AtsFitOut:
+    job, user_profile = await _get_accessible_job(db, job_id=job_id, candidate_id=candidate_id)
+    if user_profile is None:
+        return AtsFitOut(unavailable_reason="no_resume")
+
+    pools = await get_active_pools(db, candidate_id)
+    result = await compute_ats_fit(
+        db,
+        job=job,
+        profile=user_profile,
+        user_pools=pools,
+        settings=settings,
     )
-    return _enriched_job_out(
-        job,
-        h1b_lookup=h1b_lookup,
-        company_lookup=company_lookup,
-        needs_sponsorship=needs_sponsorship,
+    return AtsFitOut(
+        ats_fit_score=result.ats_fit_score,
+        pool_percentile=result.pool_percentile,
+        pool_percentile_label=result.pool_percentile_label,
+        signals=AtsFitSignalsOut(**result.signals),
+        unavailable_reason=result.unavailable_reason,
     )
 
 

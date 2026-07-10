@@ -69,6 +69,18 @@ def build_scheduler(settings: Optional[Settings] = None) -> AsyncIOScheduler:
 
         await publish_ops_stats_standalone(settings=settings, trigger="scheduled")
 
+    async def run_idf_corpus_job() -> None:
+        from app.ingestion.idf_corpus import build_idf_corpus
+
+        async with AsyncSessionLocal() as db:
+            await build_idf_corpus(db)
+
+    async def run_pool_percentile_refresh_job() -> None:
+        from app.ingestion.pool_percentile import refresh_cutoffs_for_active_jobs
+
+        async with AsyncSessionLocal() as db:
+            await refresh_cutoffs_for_active_jobs(db)
+
     scheduler.add_job(
         publish_stats_job,
         trigger="interval",
@@ -150,6 +162,24 @@ def build_scheduler(settings: Optional[Settings] = None) -> AsyncIOScheduler:
         hour=5,
         minute=0,
         id="company-enrichment",
+        max_instances=1,
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        run_idf_corpus_job,
+        trigger="cron",
+        hour=3,
+        minute=30,
+        id="idf-corpus-refresh",
+        max_instances=1,
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        run_pool_percentile_refresh_job,
+        trigger="cron",
+        hour=4,
+        minute=30,
+        id="pool-percentile-refresh",
         max_instances=1,
         replace_existing=True,
     )

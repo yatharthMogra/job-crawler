@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from "react"
 import { ExternalLink, Bookmark } from "lucide-react"
 import { useJobs } from "@/components/jobs-provider"
+import { MatchGauge } from "@/components/ui/match-gauge"
 import { CompanyLogo } from "@/components/company-logo"
 import { MatchTag } from "@/components/badges"
 import { CompanyInfoCard } from "@/components/company-info-card"
@@ -85,6 +86,55 @@ function JobDetailActions({ job, feed = "recommended" }: { job: JobWithRole; fee
   )
 }
 
+function AtsFitSection({ jobId }: { jobId: string }) {
+  const { atsFitByJobId } = useJobs()
+  const state = atsFitByJobId[jobId] ?? { status: "idle" as const }
+
+  if (state.status === "idle" || state.status === "loading") {
+    return (
+      <div className="mt-3 animate-pulse space-y-2">
+        <div className="h-3 w-24 rounded bg-muted" />
+        <div className="h-8 w-32 rounded bg-muted" />
+      </div>
+    )
+  }
+
+  if (state.status === "error") {
+    return (
+      <p className="mt-3 text-sm text-muted-foreground">ATS fit score is temporarily unavailable.</p>
+    )
+  }
+
+  const { data } = state
+  if (data.unavailable_reason === "no_resume") {
+    return (
+      <p className="mt-3 text-sm text-muted-foreground">
+        Upload a resume to see your ATS fit score for this role.
+      </p>
+    )
+  }
+  if (data.unavailable_reason === "feature_disabled" || data.ats_fit_score == null) {
+    return null
+  }
+
+  return (
+    <div className="mt-4 rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-4">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">ATS fit score</p>
+      <div className="mt-2 flex items-center gap-4">
+        <MatchGauge score={data.ats_fit_score / 100} variant="ring" compact />
+        <div>
+          <p className="text-2xl font-bold text-foreground">{data.ats_fit_score} / 100</p>
+          {data.pool_percentile_label ? (
+            <p className="mt-1 text-sm text-muted-foreground">
+              Pool percentile: {data.pool_percentile_label}
+            </p>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function JobDetailContent({
   job,
   showMatch = false,
@@ -153,6 +203,7 @@ export function JobDetailContent({
                 <p className="text-xl font-bold text-emerald-600">{matchPct}% match</p>
               </div>
             ) : null}
+            <AtsFitSection jobId={job.id} />
           </div>
         </div>
 

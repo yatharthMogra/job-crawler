@@ -231,6 +231,14 @@ async def process_resume_upload(
     resume.extraction_status = status
     resume.parsed_at = datetime.now(UTC)
 
+    from app.embeddings.service import embed_text, embedding_model_name
+
+    embedding = embed_text(extracted_text)
+    if embedding is not None:
+        resume.content_embedding = embedding
+        resume.content_embedding_model = embedding_model_name()
+        resume.content_embedding_computed_at = datetime.now(UTC)
+
     extracted = await extract_resume_evidence(extracted_text, llm_provider)
     current_profile = await get_current_profile(db, candidate_id)
     current_evidence = await get_active_evidence(db, candidate_id)

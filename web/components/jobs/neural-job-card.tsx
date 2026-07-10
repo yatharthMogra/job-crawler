@@ -79,12 +79,21 @@ export function NeuralJobCard({ job, compact = false, feed = "recommended" }: Ne
     selectJob,
     selectedJobId,
     submitNotInterested,
+    atsFitByJobId,
   } = useJobs()
   const [notInterestedOpen, setNotInterestedOpen] = useState(false)
 
   const isApplied = job.is_applied
   const selected = selectedJobId === job.id
   const tier = matchTier(job.personal_score)
+  const atsFitState = atsFitByJobId[job.id]
+  const poolBadge =
+    atsFitState?.status === "ready" &&
+    atsFitState.data.pool_percentile_label &&
+    (atsFitState.data.pool_percentile_label === "Top 5%" ||
+      atsFitState.data.pool_percentile_label === "Top 10%")
+      ? atsFitState.data.pool_percentile_label
+      : null
   const salary = formatSalaryYr(job.salary_min, job.salary_max)
   const highlights = (
     job.match_reasons.length > 0
@@ -141,6 +150,11 @@ export function NeuralJobCard({ job, compact = false, feed = "recommended" }: Ne
                   {tier ? (
                     <span className="rounded-full bg-violet-500/12 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-violet-800">
                       {tier}
+                    </span>
+                  ) : null}
+                  {poolBadge ? (
+                    <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-amber-900">
+                      {poolBadge}
                     </span>
                   ) : null}
                 </div>
@@ -239,6 +253,11 @@ export function NeuralJobCard({ job, compact = false, feed = "recommended" }: Ne
                 {tier ? (
                   <span className="rounded-full bg-violet-500/12 px-2.5 py-0.5 text-xs font-semibold text-violet-800">
                     {tier}
+                  </span>
+                ) : null}
+                {poolBadge ? (
+                  <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-semibold text-amber-900">
+                    {poolBadge}
                   </span>
                 ) : null}
                 {job.sponsorship_status === "yes" ? (

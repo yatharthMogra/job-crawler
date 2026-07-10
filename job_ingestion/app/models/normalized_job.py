@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, func
-from sqlalchemy.dialects.postgresql import ARRAY, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -86,3 +86,6 @@ class NormalizedJob(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
     )
+    content_embedding: Mapped[Optional[list[float]]] = mapped_column(ARRAY(Float), nullable=True)
+    content_embedding_model: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    pool_percentile_cutoffs: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)

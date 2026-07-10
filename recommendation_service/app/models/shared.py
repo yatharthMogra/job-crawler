@@ -62,7 +62,41 @@ class CandidateEvidence(Base):
     evidence_type: Mapped[str] = mapped_column(String(32), nullable=False)
     is_approved: Mapped[bool] = mapped_column(Boolean, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    raw_source_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     normalized_data: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+
+
+class CandidateResume(Base):
+    __tablename__ = "candidate_resumes"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    candidate_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("candidates.id"), nullable=False)
+    raw_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    extraction_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    content_embedding: Mapped[Optional[list[float]]] = mapped_column(ARRAY(Float), nullable=True)
+    content_embedding_model: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    content_embedding_computed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class JobTermIdf(Base):
+    __tablename__ = "job_term_idf"
+
+    term: Mapped[str] = mapped_column(String(256), primary_key=True)
+    document_frequency: Mapped[int] = mapped_column(Integer, nullable=False)
+    idf: Mapped[float] = mapped_column(Float, nullable=False)
+    corpus_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class EmbeddingCalibration(Base):
+    __tablename__ = "embedding_calibration"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    min_similarity: Mapped[float] = mapped_column(Float, nullable=False)
+    max_similarity: Mapped[float] = mapped_column(Float, nullable=False)
+    model_name: Mapped[str] = mapped_column(String(128), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
 class NormalizedJob(Base):
@@ -109,6 +143,9 @@ class NormalizedJob(Base):
     required_qualifications: Mapped[list[str]] = mapped_column(ARRAY(String(512)), nullable=False)
     preferred_qualifications: Mapped[list[str]] = mapped_column(ARRAY(String(512)), nullable=False)
     benefits: Mapped[list[str]] = mapped_column(ARRAY(String(512)), nullable=False)
+    content_embedding: Mapped[Optional[list[float]]] = mapped_column(ARRAY(Float), nullable=True)
+    content_embedding_model: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    pool_percentile_cutoffs: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
 
 
 class Company(Base):
