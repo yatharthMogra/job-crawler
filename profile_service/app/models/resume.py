@@ -4,8 +4,8 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
-from sqlalchemy.dialects.postgresql import ARRAY, Float, UUID
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, func
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -34,6 +34,7 @@ class CandidateResume(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     parsed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    display_label: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     content_embedding: Mapped[Optional[list[float]]] = mapped_column(ARRAY(Float), nullable=True)
     content_embedding_model: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     content_embedding_computed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
