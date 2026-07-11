@@ -1,12 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { signOut } from "next-auth/react"
+import { PlanPricingCards } from "@/components/billing/plan-pricing-cards"
 import { useSession } from "@/components/session-provider"
 import { SettingRow } from "@/components/settings/setting-controls"
 import { Button } from "@/components/ui/button"
+import { fetchBillingStatus, type BillingStatus } from "@/lib/billing/api"
 import { clearStoredCandidateId } from "@/lib/session"
 import { cn } from "@/lib/utils"
 
@@ -20,14 +22,45 @@ type SectionId = (typeof SECTIONS)[number]["id"]
 
 export function SettingsPage() {
   const router = useRouter()
-  const { candidate } = useSession()
+  const searchParams = useSearchParams()
+  const { candidate, candidateId } = useSession()
   const [section, setSection] = useState<SectionId>("login")
+  const [billing, setBilling] = useState<BillingStatus | null>(null)
+  const [billingBanner, setBillingBanner] = useState<string | null>(null)
+
+  useEffect(() => {
+    const billingParam = searchParams.get("billing")
+    if (billingParam === "success") {
+      setSection("subscriptions")
+      setBillingBanner("Subscription updated. It may take a moment for entitlements to refresh.")
+    } else if (billingParam === "cancel") {
+      setSection("subscriptions")
+      setBillingBanner("Checkout canceled — no changes were made.")
+    }
+  }, [searchParams])
+
+  useEffect(() => {
+    if (!candidateId || section !== "subscriptions") return
+    let cancelled = false
+    void fetchBillingStatus(candidateId)
+      .then((status) => {
+        if (!cancelled) setBilling(status)
+      })
+      .catch(() => {
+        if (!cancelled) setBilling(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [candidateId, section, searchParams])
 
   async function handleLogout() {
     clearStoredCandidateId()
     await signOut({ callbackUrl: "/login" })
     router.replace("/login")
   }
+
+  const planTier = billing?.effective_plan_tier ?? billing?.plan_tier ?? "free"
 
   return (
     <div className="dashboard-page-bg flex min-h-screen flex-col">
@@ -73,21 +106,23 @@ export function SettingsPage() {
           ) : null}
 
           {section === "subscriptions" ? (
-            <div className="mx-auto max-w-2xl rounded-xl card-elevated border-0 p-6">
+            <div className="mx-auto max-w-3xl rounded-xl card-elevated border-0 p-6">
               <h2 className="text-base font-semibold text-foreground">Subscriptions</h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                Job pool subscriptions are synced from your profile filters.
+                Choose Free, Plus, or Pro. Company watch alerts and resume checker are included in paid
+                plans. Manage email preferences on the{" "}
+                <Link href="/emails" className="font-medium text-brand hover:underline">
+                  Emails
+                </Link>{" "}
+                page.
               </p>
-              <div className="mt-6 rounded-lg border border-border/60 bg-surface/50 p-4">
-                <p className="text-sm font-medium text-foreground">Job Scout Plus — coming soon</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  $4.99/month for up to 25 watched companies with higher-frequency batched alerts. Manage email
-                  alerts on the{" "}
-                  <Link href="/emails" className="font-medium text-brand hover:underline">
-                    Emails
-                  </Link>{" "}
-                  page.
+              {billingBanner ? (
+                <p className="mt-4 rounded-lg border border-border/60 bg-surface/50 px-3 py-2 text-sm text-foreground">
+                  {billingBanner}
                 </p>
+              ) : null}
+              <div className="mt-6">
+                <PlanPricingCards planTier={String(planTier)} candidateId={candidateId} />
               </div>
             </div>
           ) : null}

@@ -26,9 +26,10 @@ pnpm install
 
 1. Set `NEXT_PUBLIC_USE_MOCK_DATA=true` in `.env.local`
 2. Restart the dev server
-3. Open `/emails` — uses in-memory mock data with the Free plan (5 companies)
+3. Open `/emails` — uses in-memory mock data with the Free plan (digests only)
 
-In production, `/emails` loads preferences from the recommendation API. Job Scout Plus ($4.99/month, 25 companies) is shown as a waitlist upsell until billing is enabled.
+In production, `/emails` loads preferences from the recommendation API. Upgrade to
+**Job Scout Plus** ($4.99/mo) or **Pro** ($19.99/mo) from Settings / Emails via Stripe Checkout.
 
 ## Navigation
 

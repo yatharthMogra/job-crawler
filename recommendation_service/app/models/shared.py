@@ -21,6 +21,7 @@ class Candidate(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     plan_tier: Mapped[str] = mapped_column(String(16), nullable=False, default="free")
     plan_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    subscription_status: Mapped[str] = mapped_column(String(32), nullable=False, default="none")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 

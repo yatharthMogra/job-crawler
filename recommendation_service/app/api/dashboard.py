@@ -51,6 +51,7 @@ from app.services.profile_loader import UserProfile, load_user_profile
 from app.services.recommended_cursor import decode_recommended_cursor, encode_recommended_cursor
 from app.services.subscriptions import get_active_pools
 from app.services.term_embedding import embed_term
+from app.services.entitlements import get_plan_tier, tier_allows_ats_fit
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -590,6 +591,10 @@ async def get_job_ats_fit(
     db: AsyncSession = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ) -> AtsFitOut:
+    plan_tier = await get_plan_tier(db, candidate_id)
+    if not tier_allows_ats_fit(plan_tier):
+        return AtsFitOut(unavailable_reason="plan_required")
+
     job, user_profile = await _get_accessible_job(db, job_id=job_id, candidate_id=candidate_id)
     if user_profile is None:
         return AtsFitOut(unavailable_reason="no_resume")

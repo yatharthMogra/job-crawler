@@ -2,6 +2,7 @@
 
 import { Check, Lock, Mail, Sparkles } from "lucide-react"
 import type { JobWithRole } from "@/lib/jobs-data"
+import { hiringManagerUnlockState } from "@/lib/plans/company-watch"
 import { cn } from "@/lib/utils"
 
 const RECRUITER_NAMES = [
@@ -82,8 +83,17 @@ export function buildRoleAboutIntro(job: JobWithRole): string {
   return `${job.company} is hiring a ${job.title} to help build and scale products on the ${job.roleCategory} track. This ${remote} role focuses on ${focus || "high-impact delivery"} and works closely with cross-functional partners from design through production.`
 }
 
-export function HiringTeamUpsell({ job, className }: { job: JobWithRole; className?: string }) {
+export function HiringTeamUpsell({
+  job,
+  planTier,
+  className,
+}: {
+  job: JobWithRole
+  planTier?: string | null
+  className?: string
+}) {
   const contact = mockHiringContact(job)
+  const unlock = hiringManagerUnlockState(planTier)
 
   return (
     <div className={cn("relative min-h-[220px] overflow-hidden rounded-xl border border-border/70 bg-card", className)}>
@@ -116,16 +126,27 @@ export function HiringTeamUpsell({ job, className }: { job: JobWithRole; classNa
         <span className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-primary">
           <Lock className="size-4" />
         </span>
-        <p className="text-sm font-bold text-foreground">Unlock with Plus</p>
-        <p className="text-xs leading-relaxed text-muted-foreground">
-          See hiring manager contact and message recruiters directly.
-        </p>
-        <button
-          type="button"
-          className="mt-1 rounded-full bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground"
-        >
-          Upgrade to Plus
-        </button>
+        {unlock === "coming_soon" ? (
+          <>
+            <p className="text-sm font-bold text-foreground">Included in Pro — rolling out</p>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Hiring manager contacts are part of your Pro plan and will unlock when enrichment goes live.
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="text-sm font-bold text-foreground">Unlock with Pro</p>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              See hiring manager contact and message recruiters directly when this feature ships.
+            </p>
+            <a
+              href="/settings"
+              className="mt-1 rounded-full bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground"
+            >
+              View Pro plans
+            </a>
+          </>
+        )}
       </div>
     </div>
   )
@@ -141,17 +162,18 @@ export function JobScoutPlusUpsell({ className }: { className?: string }) {
     >
       <div className="flex items-center gap-2">
         <Sparkles className="size-4 text-violet-300" />
-        <p className="text-sm font-bold">Job Scout Plus</p>
+        <p className="text-sm font-bold">Upgrade your plan</p>
       </div>
       <p className="mt-2 text-xs leading-relaxed text-slate-300">
-        Get recruiter contacts, priority applications, and 3× more visibility on top matches.
+        Plus unlocks resume checker and company-watch alerts. Pro adds elevated limits and upcoming hiring
+        manager + apply agent tools.
       </p>
-      <button
-        type="button"
-        className="mt-3 w-full rounded-lg bg-white/10 py-2 text-xs font-semibold text-white transition-colors hover:bg-white/15"
+      <a
+        href="/settings"
+        className="mt-3 block w-full rounded-lg bg-white/10 py-2 text-center text-xs font-semibold text-white transition-colors hover:bg-white/15"
       >
-        Learn about Plus
-      </button>
+        View plans
+      </a>
     </div>
   )
 }

@@ -28,6 +28,7 @@ class CandidateResponse(BaseModel):
     email_verified: bool = False
     plan_tier: str = "free"
     plan_expires_at: datetime | None = None
+    subscription_status: str = "none"
     created_at: datetime
     updated_at: datetime
 

@@ -95,8 +95,8 @@ export function CompanyWatchPicker({
       )}
       {!disabled && selectedCompanyIds.length >= maxCompanies ? (
         <p className="text-xs text-muted-foreground">
-          You&apos;ve reached your plan limit of {maxCompanies} companies. Job Scout Plus ($4.99/month)
-          supports up to 25.
+                      You&apos;ve reached your plan limit of {maxCompanies} companies. Upgrade to Plus
+                      ($4.99/month, 25 companies) or Pro ($19.99/month, 100 companies) in Settings.
         </p>
       ) : null}
 

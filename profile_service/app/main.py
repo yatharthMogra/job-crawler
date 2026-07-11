@@ -5,6 +5,7 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.auth import router as auth_router
+from app.api.billing import router as billing_router
 from app.api.candidates import router as candidates_router
 from app.api.profiles import router as profiles_router
 from app.auth import require_api_key
@@ -32,6 +33,7 @@ app.add_middleware(
 )
 
 app.include_router(auth_router)
+app.include_router(billing_router)
 app.include_router(candidates_router)
 app.include_router(profiles_router)
 

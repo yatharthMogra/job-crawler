@@ -52,6 +52,9 @@ def _serialize_entitlements(plan_tier: str) -> TierEntitlementsOut:
         delivery=limits.delivery,
         max_emails_per_day_cap=limits.max_emails_per_day_cap,
         default_max_emails_per_day=limits.default_max_emails_per_day,
+        ats_fit=limits.ats_fit,
+        hiring_manager=limits.hiring_manager,
+        apply_agent=limits.apply_agent,
     )
 
 
@@ -100,10 +103,20 @@ async def update_notification_preferences(
 ) -> NotificationPreferencesOut:
     prefs = await get_or_create_preferences(db, candidate_id, settings)
     plan_tier = await get_plan_tier(db, candidate_id)
+    limits = get_tier_limits(plan_tier)
 
     if payload.digest_enabled is not None:
         prefs.digest_enabled = payload.digest_enabled
     if payload.company_watch_enabled is not None:
+        if payload.company_watch_enabled and limits.max_companies <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "message": "Company watch alerts require Plus or Pro.",
+                    "upgrade_required": True,
+                    "plan_tier": plan_tier,
+                },
+            )
         prefs.company_watch_enabled = payload.company_watch_enabled
     if payload.cadence_hours is not None:
         prefs.cadence_hours = clamp_cadence_hours(payload.cadence_hours)
@@ -187,12 +200,28 @@ async def update_company_watch(
     limits = get_tier_limits(plan_tier)
     requested_ids = list(dict.fromkeys(payload.company_ids))
 
-    if len(requested_ids) > limits.max_companies:
+    existing = (
+        await db.scalars(
+            select(CompanyWatchSubscription).where(
+                CompanyWatchSubscription.candidate_id == candidate_id,
+            )
+        )
+    ).all()
+    current_active = {row.company_id for row in existing if row.is_active}
+    requested_set = set(requested_ids)
+    added = requested_set - current_active
+
+    # Grandfather: allow keeping or shrinking an over-limit set; block new adds over cap.
+    if added and len(requested_ids) > limits.max_companies:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={
-                "message": f"Your plan allows up to {limits.max_companies} watched companies.",
-                "upgrade_required": plan_tier != "plus",
+                "message": (
+                    "Company watch alerts require Plus or Pro."
+                    if limits.max_companies == 0
+                    else f"Your plan allows up to {limits.max_companies} watched companies."
+                ),
+                "upgrade_required": plan_tier == "free",
                 "max_companies": limits.max_companies,
                 "plan_tier": plan_tier,
             },
@@ -215,15 +244,7 @@ async def update_company_watch(
                 detail="One or more company IDs are invalid or inactive",
             )
 
-    existing = (
-        await db.scalars(
-            select(CompanyWatchSubscription).where(
-                CompanyWatchSubscription.candidate_id == candidate_id,
-            )
-        )
-    ).all()
     existing_by_company = {row.company_id: row for row in existing}
-    requested_set = set(requested_ids)
 
     for company_id, row in existing_by_company.items():
         row.is_active = company_id in requested_set

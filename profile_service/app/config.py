@@ -26,6 +26,14 @@ class Settings(BaseSettings):
     gcp_project: str = ""
     embedding_requests_topic: str = "embedding-requests"
     embedding_publish_enabled: bool = True
+    # Stripe billing (monthly Plus / Pro subscriptions)
+    stripe_secret_key: str = ""
+    stripe_webhook_secret: str = ""
+    stripe_price_plus: str = ""
+    stripe_price_pro: str = ""
+    billing_success_url: str = "http://localhost:3000/settings?billing=success"
+    billing_cancel_url: str = "http://localhost:3000/settings?billing=cancel"
+    billing_past_due_grace_days: int = 3
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -41,6 +49,14 @@ class Settings(BaseSettings):
     @property
     def should_publish_embedding_requests(self) -> bool:
         return self.embedding_publish_enabled and bool(self.gcp_project.strip())
+
+    @property
+    def stripe_configured(self) -> bool:
+        return bool(
+            self.stripe_secret_key.strip()
+            and self.stripe_price_plus.strip()
+            and self.stripe_price_pro.strip()
+        )
 
     @property
     def allowed_cors_origins(self) -> list[str]:
