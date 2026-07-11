@@ -56,6 +56,13 @@ class Settings(BaseSettings):
     ats_fit_semantic_weight: float = 0.25
     ats_fit_structural_weight: float = 0.25
     pool_percentile_refresh_enabled: bool = True
+    # RRF + cache-backed pagination
+    redis_url: str = ""
+    recommendation_rrf_enabled: bool = True
+    recommendation_rrf_k: int = 60
+    recommendation_page_size: int = 40
+    recommendation_page_size_max: int = 100
+    recommendation_cache_ttl_seconds: int = 1800
 
     model_config = SettingsConfigDict(
         env_file=".env",

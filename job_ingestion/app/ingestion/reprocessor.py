@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 
+import structlog
 from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -30,6 +31,8 @@ from app.models.job_enrichment import JobEnrichment
 from app.models.normalized_job import NormalizedJob
 from app.models.raw_job import RawJob
 from app.schemas.reprocessing import ReprocessingFilters
+
+log = structlog.get_logger(__name__)
 
 
 @dataclass
@@ -283,6 +286,17 @@ async def reprocess_jobs(
             normalized.required_qualifications = list(enrichment.required_qualifications)
             normalized.preferred_qualifications = list(enrichment.preferred_qualifications)
             normalized.benefits = list(enrichment.benefits)
+            try:
+                from app.ingestion.ats_enrichment import apply_job_ats_enrichment
+
+                await apply_job_ats_enrichment(db, normalized)
+            except Exception as exc:  # noqa: BLE001
+                log.warning(
+                    "ats_enrichment_failed",
+                    job_id=str(normalized.id),
+                    error=str(exc),
+                    source="reprocessor",
+                )
             success_count += 1
         else:
             normalized.processing_state = ProcessingState.PARTIAL_SUCCESS

@@ -266,3 +266,75 @@ async def query_jobs_in_pools(
         .limit(limit)
     )
     return list((await db.scalars(stmt)).all())
+
+
+# Columns needed for RRF + constraints + score_job — exclude description_text/preview.
+_RANKING_LOAD_ONLY = (
+    NormalizedJob.id,
+    NormalizedJob.company_id,
+    NormalizedJob.title,
+    NormalizedJob.company_name,
+    NormalizedJob.location,
+    NormalizedJob.job_country,
+    NormalizedJob.posting_url,
+    NormalizedJob.posted_at,
+    NormalizedJob.reference_at,
+    NormalizedJob.created_at,
+    NormalizedJob.remote_type,
+    NormalizedJob.application_effort,
+    NormalizedJob.salary_min,
+    NormalizedJob.salary_max,
+    NormalizedJob.opportunity_score,
+    NormalizedJob.retrieval_pools,
+    NormalizedJob.normalized_roles,
+    NormalizedJob.job_capabilities,
+    NormalizedJob.tech_stack,
+    NormalizedJob.skills,
+    NormalizedJob.seniority,
+    NormalizedJob.experience_tier,
+    NormalizedJob.is_internship,
+    NormalizedJob.is_new_grad,
+    NormalizedJob.sponsorship_status,
+    NormalizedJob.sponsorship_confidence,
+    NormalizedJob.requires_clearance,
+    NormalizedJob.requires_citizenship,
+    NormalizedJob.role_intent,
+    NormalizedJob.job_domain,
+    NormalizedJob.job_secondary_domain,
+    NormalizedJob.content_embedding,
+    NormalizedJob.responsibilities,
+    NormalizedJob.required_qualifications,
+    NormalizedJob.preferred_qualifications,
+    NormalizedJob.benefits,
+    NormalizedJob.is_active,
+    NormalizedJob.processing_state,
+)
+
+
+async def query_jobs_for_ranking(
+    db: AsyncSession,
+    *,
+    pools: list[str],
+    settings: Settings | None = None,
+) -> list[NormalizedJob]:
+    """Pool-matched skinny retrieval for RRF — no hard constraints, no description text.
+
+    Freshness bound uses JOB_MAX_AGE_DAYS (same window as active-job archival).
+    """
+    from sqlalchemy.orm import load_only
+
+    settings = settings or get_settings()
+    conditions = [
+        NormalizedJob.retrieval_pools.overlap(pools),
+        NormalizedJob.is_active.is_(True),
+        NormalizedJob.processing_state == "success",
+        NormalizedJob.opportunity_score.is_not(None),
+        *build_notification_age_filter(settings),
+    ]
+    stmt = (
+        select(NormalizedJob)
+        .options(load_only(*_RANKING_LOAD_ONLY))
+        .where(and_(*conditions))
+        .order_by(NormalizedJob.opportunity_score.desc())
+    )
+    return list((await db.scalars(stmt)).all())

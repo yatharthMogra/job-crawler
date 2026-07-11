@@ -132,6 +132,8 @@ export function JobsProvider({ children }: { children: ReactNode }) {
   const [hasProfile, setHasProfile] = useState(true)
   const [pendingApply, setPendingApplyState] = useState<PendingApply | null>(null)
   const [recommendedNextCursor, setRecommendedNextCursor] = useState<string | null>(null)
+  const [recommendedReferenceToken, setRecommendedReferenceToken] = useState<string | null>(null)
+  const [recommendedOffset, setRecommendedOffset] = useState(0)
   const [recommendedHasMore, setRecommendedHasMore] = useState(false)
   const [recommendedLoadingMore, setRecommendedLoadingMore] = useState(false)
   const [atsFitByJobId, setAtsFitByJobId] = useState<Record<string, AtsFitState>>({})
@@ -170,7 +172,17 @@ export function JobsProvider({ children }: { children: ReactNode }) {
         const ids = new Set(prev.map((j) => j.id))
         return [...prev, ...mapped.filter((j) => !ids.has(j.id))]
       })
-      setRecommendedNextCursor(recommended.next_cursor ?? null)
+      if (recommended.reference_token) {
+        setRecommendedReferenceToken(recommended.reference_token)
+        const nextOffset =
+          (recommended.offset ?? 0) + (recommended.returned ?? recommended.jobs.length)
+        setRecommendedOffset(nextOffset)
+        setRecommendedNextCursor(null)
+      } else {
+        setRecommendedNextCursor(recommended.next_cursor ?? null)
+        setRecommendedReferenceToken(null)
+        setRecommendedOffset(0)
+      }
       setRecommendedHasMore(recommended.has_more ?? false)
     },
     [],
@@ -180,6 +192,8 @@ export function JobsProvider({ children }: { children: ReactNode }) {
     if (!candidateId) {
       setRecommendedJobs([])
       setRecommendedNextCursor(null)
+      setRecommendedReferenceToken(null)
+      setRecommendedOffset(0)
       setRecommendedHasMore(false)
       setRecommendedLoading(false)
       return
@@ -190,6 +204,8 @@ export function JobsProvider({ children }: { children: ReactNode }) {
         [...(ALL_JOBS as JobWithRole[])].sort((a, b) => b.personal_score - a.personal_score),
       )
       setRecommendedNextCursor(null)
+      setRecommendedReferenceToken(null)
+      setRecommendedOffset(0)
       setRecommendedHasMore(false)
       setRecommendedLoading(false)
       setHasProfile(true)
@@ -208,6 +224,8 @@ export function JobsProvider({ children }: { children: ReactNode }) {
       setError(err instanceof Error ? err.message : "Failed to load recommendations")
       setRecommendedJobs([])
       setRecommendedNextCursor(null)
+      setRecommendedReferenceToken(null)
+      setRecommendedOffset(0)
       setRecommendedHasMore(false)
     } finally {
       setRecommendedLoading(false)
@@ -215,13 +233,21 @@ export function JobsProvider({ children }: { children: ReactNode }) {
   }, [candidateId, mockMode, applyRecommendedResponse])
 
   const loadMoreRecommendedJobs = useCallback(async () => {
-    if (!candidateId || !recommendedNextCursor || recommendedLoadingMore || mockMode) return
+    if (!candidateId || recommendedLoadingMore || mockMode) return
+
+    const useToken = Boolean(recommendedReferenceToken)
+    if (!useToken && !recommendedNextCursor) return
 
     setRecommendedLoadingMore(true)
     try {
-      const recommended = await fetchRecommendedJobs(candidateId, {
-        cursor: recommendedNextCursor,
-      })
+      const recommended = useToken
+        ? await fetchRecommendedJobs(candidateId, {
+            referenceToken: recommendedReferenceToken!,
+            offset: recommendedOffset,
+          })
+        : await fetchRecommendedJobs(candidateId, {
+            cursor: recommendedNextCursor!,
+          })
       applyRecommendedResponse(recommended, true)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load more recommendations")
@@ -231,6 +257,8 @@ export function JobsProvider({ children }: { children: ReactNode }) {
   }, [
     candidateId,
     recommendedNextCursor,
+    recommendedReferenceToken,
+    recommendedOffset,
     recommendedLoadingMore,
     mockMode,
     applyRecommendedResponse,
@@ -241,6 +269,8 @@ export function JobsProvider({ children }: { children: ReactNode }) {
       setAllJobs([])
       setRecommendedJobs([])
       setRecommendedNextCursor(null)
+      setRecommendedReferenceToken(null)
+      setRecommendedOffset(0)
       setRecommendedHasMore(false)
       setLoading(false)
       setRecommendedLoading(false)
@@ -260,6 +290,8 @@ export function JobsProvider({ children }: { children: ReactNode }) {
         [...(ALL_JOBS as JobWithRole[])].sort((a, b) => b.personal_score - a.personal_score),
       )
       setRecommendedNextCursor(null)
+      setRecommendedReferenceToken(null)
+      setRecommendedOffset(0)
       setRecommendedHasMore(false)
       setAppliedJobs(
         (ALL_JOBS as JobWithRole[])
@@ -331,6 +363,8 @@ export function JobsProvider({ children }: { children: ReactNode }) {
       setAllJobs([])
       setRecommendedJobs([])
       setRecommendedNextCursor(null)
+      setRecommendedReferenceToken(null)
+      setRecommendedOffset(0)
       setRecommendedHasMore(false)
     } finally {
       setLoading(false)

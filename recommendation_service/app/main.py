@@ -29,6 +29,14 @@ _log = structlog.get_logger(__name__)
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     global _scheduler
     settings = get_settings()
+    if settings.recommendation_rrf_enabled:
+        if not settings.redis_url:
+            raise RuntimeError(
+                "REDIS_URL is required when RECOMMENDATION_RRF_ENABLED=true"
+            )
+        from app.services.redis_client import close_redis, init_redis
+
+        await init_redis(settings.redis_url)
     if settings.enable_notification_scheduler:
         _log.info(
             "notification_worker_started",
@@ -41,6 +49,10 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     if _scheduler is not None:
         _scheduler.shutdown(wait=False)
         _scheduler = None
+    if settings.recommendation_rrf_enabled and settings.redis_url:
+        from app.services.redis_client import close_redis
+
+        await close_redis()
 
 
 settings = get_settings()

@@ -73,10 +73,14 @@ export interface DashboardJobsResponse {
 export interface RecommendedJobsResponse {
   jobs: RecommendedJobApi[]
   total: number
-  next_cursor?: string | null
+  reference_token?: string | null
+  offset?: number
   has_more?: boolean
-  scanned?: number
   returned?: number
+  total_ranked?: number
+  // Deprecated legacy fields
+  next_cursor?: string | null
+  scanned?: number
 }
 
 export interface SubscriptionOut {
@@ -126,9 +130,19 @@ export function fetchDashboardJobs(
 
 export function fetchRecommendedJobs(
   candidateId: string,
-  params: { scanBatch?: number; cursor?: string } = {},
+  params: {
+    referenceToken?: string
+    offset?: number
+    limit?: number
+    /** @deprecated legacy offset cursor */
+    cursor?: string
+    scanBatch?: number
+  } = {},
 ) {
   const query = new URLSearchParams({ candidate_id: candidateId })
+  if (params.referenceToken) query.set("reference_token", params.referenceToken)
+  if (params.offset != null) query.set("offset", String(params.offset))
+  if (params.limit != null) query.set("limit", String(params.limit))
   if (params.scanBatch != null) query.set("scan_batch", String(params.scanBatch))
   if (params.cursor) query.set("cursor", params.cursor)
   return request<RecommendedJobsResponse>(`/dashboard/jobs/recommended?${query}`)

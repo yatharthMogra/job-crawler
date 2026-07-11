@@ -12,6 +12,7 @@ flowchart TB
     RecoAPI["recommendation_service API — Cloud Run"]
     SupabaseDB[("Supabase Postgres")]
     SupabaseStorage["Supabase Storage"]
+    Redis[("Redis — recommendation session cache")]
   end
 
   subgraph home [Home machine - ~22h/day]
@@ -25,6 +26,7 @@ flowchart TB
   ProfileAPI --> SupabaseDB
   ProfileAPI --> SupabaseStorage
   RecoAPI --> SupabaseDB
+  RecoAPI --> Redis
   JobIngestion --> SupabaseDB
   NotifWorker --> SupabaseDB
   AdminDash --> JobIngestion
@@ -540,6 +542,8 @@ cp recommendation_service/.env.example recommendation_service/.env
 ```env
 DATABASE_URL=postgresql+asyncpg://postgres.[ref]:[PASSWORD]@db.[ref].supabase.co:5432/postgres
 ENABLE_NOTIFICATION_SCHEDULER=true
+# Home worker does not serve the recommended feed — disable RRF/Redis here
+RECOMMENDATION_RRF_ENABLED=false
 NOTIFICATION_CADENCE_HOURS=24
 RESEND_API_KEY=re_...
 EMAIL_FROM=Job Scout <notifications@job-scout.dev>
@@ -1082,6 +1086,31 @@ The phases above expand these five areas:
 | `DATABASE_URL`                  | pooler `:6543` | Via Secret Manager              |
 | `ENABLE_NOTIFICATION_SCHEDULER` | `false`        | Critical — disables email batch |
 | `CORS_ORIGINS`                  | Vercel URL     | Required for browser calls      |
+| `REDIS_URL`                     | Upstash / Memorystore URL | Required when `RECOMMENDATION_RRF_ENABLED=true` |
+| `RECOMMENDATION_RRF_ENABLED`    | `true`         | RRF + cache-backed pagination   |
+| `RECOMMENDATION_RRF_K`          | `60`           | RRF constant                    |
+| `RECOMMENDATION_PAGE_SIZE`      | `40`           | Jobs per API page               |
+| `RECOMMENDATION_CACHE_TTL_SECONDS` | `1800`      | Reference-token TTL (30 min)    |
+
+
+#### Redis for recommendation pagination
+
+The recommended feed caches a full ranked job-ID list per session (reference token) in Redis. Provision a Redis instance reachable from Cloud Run (e.g. [Upstash](https://upstash.com) or Memorystore), store the URL as a secret, and set:
+
+```bash
+# Example: add to Secret Manager then wire into Cloud Run
+gcloud secrets create REDIS_URL --data-file=- <<< 'rediss://default:TOKEN@HOST:6379'
+```
+
+Before enabling RRF in production:
+
+1. Run embedding backfills:
+   - `python job_ingestion/scripts/backfill_job_embeddings.py`
+   - `python profile_service/scripts/backfill_resume_embeddings.py`
+2. Deploy with `RECOMMENDATION_RRF_ENABLED=false` if you need a safe rollback path (legacy offset cursor).
+3. Flip `RECOMMENDATION_RRF_ENABLED=true` once Redis is healthy and backfills are done.
+
+If Redis is unreachable at startup with RRF enabled, the service fails fast (no silent in-memory fallback).
 
 
 

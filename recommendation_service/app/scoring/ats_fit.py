@@ -1,6 +1,7 @@
+"""ATS fit score: BM25 + semantic (max-of-5 resumes) + structural blend."""
+
 from __future__ import annotations
 
-import math
 import uuid
 from dataclasses import dataclass
 from typing import Any
@@ -9,12 +10,14 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import Settings
-from app.models.shared import CandidateEvidence, CandidateResume, EmbeddingCalibration, JobTermIdf, NormalizedJob
+from app.models.shared import CandidateEvidence, EmbeddingCalibration, JobTermIdf, NormalizedJob
 from app.scoring.bm25_corpus import normalized_bm25_score
+from app.scoring.embedding_similarity import calibrate_similarity, max_cosine_similarity
 from app.scoring.percentile import resolve_pool_percentile
 from app.scoring.structural import structural_match_score, structural_signal_breakdown
 from app.scoring.text_corpus import build_job_text, collect_protected_phrases
 from app.services.profile_loader import UserProfile
+from app.services.resume_embedding_loader import load_resume_embeddings
 
 
 @dataclass
@@ -41,36 +44,6 @@ async def _load_embedding_calibration(db: AsyncSession) -> tuple[float, float]:
     if row is None:
         return 0.3, 0.85
     return row.min_similarity, row.max_similarity
-
-
-def _cosine_similarity(a: list[float], b: list[float]) -> float | None:
-    if not a or not b or len(a) != len(b):
-        return None
-    dot = sum(x * y for x, y in zip(a, b, strict=True))
-    norm_a = math.sqrt(sum(x * x for x in a))
-    norm_b = math.sqrt(sum(x * x for x in b))
-    if norm_a == 0 or norm_b == 0:
-        return None
-    return dot / (norm_a * norm_b)
-
-
-def _calibrate_similarity(raw: float, min_sim: float, max_sim: float) -> float:
-    if max_sim <= min_sim:
-        return 0.5
-    return max(0.0, min(1.0, (raw - min_sim) / (max_sim - min_sim)))
-
-
-async def _latest_resume(db: AsyncSession, candidate_id: uuid.UUID) -> CandidateResume | None:
-    return await db.scalar(
-        select(CandidateResume)
-        .where(
-            CandidateResume.candidate_id == candidate_id,
-            CandidateResume.extraction_status == "success",
-            CandidateResume.raw_text.is_not(None),
-        )
-        .order_by(CandidateResume.uploaded_at.desc())
-        .limit(1)
-    )
 
 
 def _flatten_profile_skills(skills: dict[str, Any]) -> list[str]:
@@ -133,8 +106,8 @@ async def compute_ats_fit(
             unavailable_reason="feature_disabled",
         )
 
-    resume = await _latest_resume(db, profile.candidate_id)
-    resume_text = resume.raw_text if resume and resume.raw_text else await _resume_text_fallback(db, profile)
+    resume_bundle = await load_resume_embeddings(db, profile.candidate_id)
+    resume_text = resume_bundle.latest_raw_text or await _resume_text_fallback(db, profile)
     if not resume_text.strip():
         return AtsFitResult(
             ats_fit_score=None,
@@ -166,13 +139,12 @@ async def compute_ats_fit(
 
     semantic: float | None = None
     raw_semantic: float | None = None
-    resume_embedding = resume.content_embedding if resume else None
-    if resume_embedding and job.content_embedding:
+    if resume_bundle.embeddings and job.content_embedding:
         min_sim, max_sim = await _load_embedding_calibration(db)
-        raw_similarity = _cosine_similarity(resume_embedding, job.content_embedding)
-        if raw_similarity is not None:
+        raw_similarity = max_cosine_similarity(job.content_embedding, resume_bundle.embeddings)
+        if raw_similarity > 0:
             raw_semantic = raw_similarity
-            semantic = _calibrate_similarity(raw_similarity, min_sim, max_sim)
+            semantic = calibrate_similarity(raw_similarity, min_sim, max_sim)
 
     structural = structural_match_score(profile, job)
     breakdown = structural_signal_breakdown(profile, job)

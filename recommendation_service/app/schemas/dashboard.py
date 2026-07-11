@@ -71,8 +71,12 @@ class DashboardJobsResponse(BaseModel):
 
 class DashboardRecommendedJobsResponse(BaseModel):
     jobs: list[DashboardRecommendedJobOut]
-    total: int
-    next_cursor: str | None = None
+    total: int = 0
+    reference_token: str | None = None
+    offset: int = 0
     has_more: bool = False
-    scanned: int = 0
     returned: int = 0
+    total_ranked: int = 0
+    # Deprecated aliases kept for transitional clients
+    next_cursor: str | None = None
+    scanned: int = 0

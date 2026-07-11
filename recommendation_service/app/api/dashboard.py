@@ -215,10 +215,168 @@ async def get_dashboard_jobs(
 @router.get("/jobs/recommended", response_model=DashboardRecommendedJobsResponse)
 async def get_recommended_jobs(
     candidate_id: uuid.UUID = Query(...),
+    reference_token: Optional[str] = Query(default=None),
+    offset: int = Query(default=0, ge=0),
+    limit: Optional[int] = Query(default=None, ge=1, le=100),
+    # Legacy params — used only when RECOMMENDATION_RRF_ENABLED=false
     scan_batch: int = Query(default=200, ge=1, le=200),
     cursor: Optional[str] = Query(default=None),
     db: AsyncSession = Depends(get_db),
     settings: Settings = Depends(get_settings),
+) -> DashboardRecommendedJobsResponse:
+    if settings.recommendation_rrf_enabled:
+        return await _get_recommended_jobs_rrf(
+            db=db,
+            candidate_id=candidate_id,
+            reference_token=reference_token,
+            offset=offset,
+            limit=limit,
+            settings=settings,
+        )
+    return await _get_recommended_jobs_legacy(
+        db=db,
+        candidate_id=candidate_id,
+        scan_batch=scan_batch,
+        cursor=cursor,
+        settings=settings,
+    )
+
+
+async def _get_recommended_jobs_rrf(
+    *,
+    db: AsyncSession,
+    candidate_id: uuid.UUID,
+    reference_token: str | None,
+    offset: int,
+    limit: int | None,
+    settings: Settings,
+) -> DashboardRecommendedJobsResponse:
+    from app.services.job_fat_fetch import fat_fetch_jobs_by_ids
+    from app.services.recommendation_cache import (
+        delete_recommendation_session,
+        deserialize_profile,
+        load_recommendation_session,
+        session_is_stale,
+        store_recommendation_session,
+    )
+    from app.services.recommendation_pipeline import (
+        PipelineResult,
+        run_recommendation_pipeline,
+    )
+
+    page_size = limit or settings.recommendation_page_size
+    page_size = min(page_size, settings.recommendation_page_size_max)
+
+    session = None
+    if reference_token:
+        try:
+            session = await load_recommendation_session(reference_token)
+        except RuntimeError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Recommendation cache unavailable",
+            ) from exc
+        if session is not None:
+            if session.candidate_id != candidate_id:
+                session = None
+            elif await session_is_stale(db, session):
+                await delete_recommendation_session(reference_token)
+                session = None
+
+    pipeline_result: PipelineResult | None = None
+    token = reference_token
+    if session is None:
+        try:
+            pipeline_result = await run_recommendation_pipeline(db, candidate_id, settings)
+        except RuntimeError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=str(exc),
+            ) from exc
+        if pipeline_result is None:
+            return DashboardRecommendedJobsResponse(
+                jobs=[],
+                total=0,
+                reference_token=None,
+                offset=0,
+                has_more=False,
+                returned=0,
+                total_ranked=0,
+            )
+        try:
+            token = await store_recommendation_session(pipeline_result, settings)
+        except RuntimeError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Recommendation cache unavailable",
+            ) from exc
+        ranked_entries = pipeline_result.ranked_entries
+        user_profile = pipeline_result.profile
+        # Fresh first page always starts at offset 0
+        offset = 0
+    else:
+        ranked_entries = session.ranked_entries
+        user_profile = deserialize_profile(session.profile_snapshot)
+        token = session.reference_token
+
+    total_ranked = len(ranked_entries)
+    page_entries = ranked_entries[offset : offset + page_size]
+    page_ids = [e.job_id for e in page_entries]
+    score_by_id = {e.job_id: e.personal_score for e in page_entries}
+
+    if not page_ids:
+        return DashboardRecommendedJobsResponse(
+            jobs=[],
+            total=0,
+            reference_token=token,
+            offset=offset,
+            has_more=False,
+            returned=0,
+            total_ranked=total_ranked,
+        )
+
+    batch_jobs = await fat_fetch_jobs_by_ids(db, page_ids)
+    needs_sponsorship = _needs_sponsorship_data(user_profile)
+    h1b_lookup, company_lookup = await _load_job_enrichment_lookups(
+        db, batch_jobs, needs_sponsorship=needs_sponsorship
+    )
+
+    jobs_out: list[DashboardRecommendedJobOut] = []
+    for job in batch_jobs:
+        base = _enriched_job_out(
+            job,
+            h1b_lookup=h1b_lookup,
+            company_lookup=company_lookup,
+            needs_sponsorship=needs_sponsorship,
+        )
+        jobs_out.append(
+            DashboardRecommendedJobOut(
+                **base.model_dump(),
+                personal_score=score_by_id.get(job.id, 0.0),
+                match_reasons=generate_explanations(job, user_profile),
+            )
+        )
+
+    returned = len(jobs_out)
+    has_more = offset + returned < total_ranked
+    return DashboardRecommendedJobsResponse(
+        jobs=jobs_out,
+        total=returned,
+        reference_token=token,
+        offset=offset,
+        has_more=has_more,
+        returned=returned,
+        total_ranked=total_ranked,
+    )
+
+
+async def _get_recommended_jobs_legacy(
+    *,
+    db: AsyncSession,
+    candidate_id: uuid.UUID,
+    scan_batch: int,
+    cursor: str | None,
+    settings: Settings,
 ) -> DashboardRecommendedJobsResponse:
     pools = await get_active_pools(db, candidate_id)
     if not pools:

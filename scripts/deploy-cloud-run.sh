@@ -72,8 +72,8 @@ deploy_service profile_service \
   --set-env-vars "RESUME_STORAGE_BACKEND=supabase,SUPABASE_STORAGE_BUCKET=resumes,CORS_ORIGINS=${CORS_ORIGINS},EMAIL_FROM=Job Scout <notifications@job-scout.dev>"
 
 deploy_service recommendation_service \
-  --set-secrets "DATABASE_URL=database-url:latest,GEMINI_API_KEY=gemini-api-key:latest" \
-  --set-env-vars "ENABLE_NOTIFICATION_SCHEDULER=false,CORS_ORIGINS=${CORS_ORIGINS}"
+  --set-secrets "DATABASE_URL=database-url:latest,GEMINI_API_KEY=gemini-api-key:latest,REDIS_URL=redis-url:latest" \
+  --set-env-vars "ENABLE_NOTIFICATION_SCHEDULER=false,CORS_ORIGINS=${CORS_ORIGINS},RECOMMENDATION_RRF_ENABLED=true,RECOMMENDATION_PAGE_SIZE=40,RECOMMENDATION_CACHE_TTL_SECONDS=1800"
 
 echo ""
 echo "Deploy complete. Service URLs:"
