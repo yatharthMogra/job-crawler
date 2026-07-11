@@ -16,23 +16,37 @@ from app.models.normalized_job import NormalizedJob
 log = structlog.get_logger(__name__)
 
 
+async def compute_pool_percentile_cutoffs_for_embedding(
+    db: AsyncSession,
+    embedding: list[float],
+    retrieval_pools: list[str],
+) -> dict[str, dict[str, float | str]]:
+    if not embedding:
+        return {}
+
+    cutoffs: dict[str, dict[str, float | str]] = {}
+    for pool_name in retrieval_pools:
+        _, matrix = await get_pool_embedding_matrix(db, pool_name)
+        if matrix is None or matrix.size == 0:
+            continue
+        scores = cosine_similarity_distribution(embedding, matrix)
+        pool_cutoffs = percentile_values(scores)
+        if pool_cutoffs is not None:
+            cutoffs[pool_name] = pool_cutoffs
+    return cutoffs
+
+
 async def compute_pool_percentile_cutoffs(
     db: AsyncSession,
     job: NormalizedJob,
 ) -> dict[str, dict[str, float | str]]:
     if not job.content_embedding:
         return {}
-
-    cutoffs: dict[str, dict[str, float | str]] = {}
-    for pool_name in job.retrieval_pools or []:
-        _, matrix = await get_pool_embedding_matrix(db, pool_name)
-        if matrix is None or matrix.size == 0:
-            continue
-        scores = cosine_similarity_distribution(job.content_embedding, matrix)
-        pool_cutoffs = percentile_values(scores)
-        if pool_cutoffs is not None:
-            cutoffs[pool_name] = pool_cutoffs
-    return cutoffs
+    return await compute_pool_percentile_cutoffs_for_embedding(
+        db,
+        job.content_embedding,
+        job.retrieval_pools or [],
+    )
 
 
 async def refresh_cutoffs_for_active_jobs(db: AsyncSession, *, batch_size: int = 100) -> dict[str, int]:

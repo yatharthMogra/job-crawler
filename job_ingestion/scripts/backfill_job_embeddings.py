@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Backfill content embeddings for normalized jobs."""
+"""Backfill content embeddings for normalized jobs missing embeddings."""
 
 from __future__ import annotations
 
@@ -14,36 +14,35 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 os.chdir(ROOT)
 
-from sqlalchemy import select
-
 from app.database import AsyncSessionLocal
-from app.ingestion.ats_enrichment import apply_job_ats_enrichment
-from app.models.normalized_job import NormalizedJob
+from app.ingestion.ats_enrichment import DEFAULT_BACKFILL_BATCH_SIZE, backfill_missing_job_embeddings
 
 
-async def main(*, limit: int) -> None:
-    updated = 0
+async def main(*, batch_size: int, max_batches: int | None) -> None:
     async with AsyncSessionLocal() as db:
-        jobs = (
-            await db.scalars(
-                select(NormalizedJob)
-                .where(
-                    NormalizedJob.is_active.is_(True),
-                    NormalizedJob.processing_state == "success",
-                )
-                .order_by(NormalizedJob.updated_at.desc())
-                .limit(limit)
-            )
-        ).all()
-        for job in jobs:
-            await apply_job_ats_enrichment(db, job)
-            updated += 1
-        await db.commit()
-    print(json.dumps({"updated": updated}, ensure_ascii=True))
+        result = await backfill_missing_job_embeddings(
+            db,
+            batch_size=batch_size,
+            max_batches=max_batches,
+        )
+    print(json.dumps(result, ensure_ascii=True))
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Backfill job embeddings and pool percentile cutoffs")
-    parser.add_argument("--limit", type=int, default=500)
+    parser = argparse.ArgumentParser(
+        description="Backfill job embeddings and pool percentile cutoffs for rows with NULL content_embedding",
+    )
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=DEFAULT_BACKFILL_BATCH_SIZE,
+        help=f"Jobs per batch (default: {DEFAULT_BACKFILL_BATCH_SIZE})",
+    )
+    parser.add_argument(
+        "--max-batches",
+        type=int,
+        default=None,
+        help="Stop after N batches (default: run until no NULL embeddings remain)",
+    )
     args = parser.parse_args()
-    asyncio.run(main(limit=args.limit))
+    asyncio.run(main(batch_size=args.batch_size, max_batches=args.max_batches))
