@@ -290,6 +290,8 @@ _RANKING_LOAD_ONLY = (
     NormalizedJob.job_capabilities,
     NormalizedJob.tech_stack,
     NormalizedJob.skills,
+    NormalizedJob.required_skills,
+    NormalizedJob.preferred_skills,
     NormalizedJob.seniority,
     NormalizedJob.experience_tier,
     NormalizedJob.is_internship,

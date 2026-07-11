@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type LucideIcon } from "react"
+import { useState } from "react"
 import {
   Bookmark,
   Calendar,
@@ -13,12 +13,14 @@ import {
   Home,
   MapPin,
   ThumbsDown,
+  type LucideIcon,
 } from "lucide-react"
 import { useJobs } from "@/components/jobs-provider"
 import { CompanyLogo } from "@/components/company-logo"
 import { EligibilityBadges } from "@/components/jobs/eligibility-badges"
 import { MatchGauge } from "@/components/ui/match-gauge"
 import { NotInterestedDialog } from "@/components/jobs/job-feedback-dialogs"
+import { PreferenceIndicatorTags } from "@/components/jobs/preference-indicator-tags"
 import { matchTier } from "@/lib/recommendation/neural-display"
 import { EMP_LABEL, REMOTE_LABEL, SENIORITY_LABEL } from "@/lib/job-meta"
 import { timeAgo, type JobWithRole } from "@/lib/jobs-data"
@@ -85,7 +87,7 @@ export function NeuralJobCard({ job, compact = false, feed = "recommended" }: Ne
 
   const isApplied = job.is_applied
   const selected = selectedJobId === job.id
-  const tier = matchTier(job.personal_score)
+  const tier = matchTier(job.qualification_fit)
   const atsFitState = atsFitByJobId[job.id]
   const poolBadge =
     atsFitState?.status === "ready" &&
@@ -158,6 +160,10 @@ export function NeuralJobCard({ job, compact = false, feed = "recommended" }: Ne
                     </span>
                   ) : null}
                 </div>
+                <PreferenceIndicatorTags
+                  indicators={job.preference_indicators}
+                  className="mt-2"
+                />
                 <p className="mt-0.5 text-sm font-medium text-foreground/80">
                   {job.company}
                   {job.roleCategory ? (
@@ -200,7 +206,7 @@ export function NeuralJobCard({ job, compact = false, feed = "recommended" }: Ne
             ) : null}
           </div>
           <div className="navy-section flex w-[112px] shrink-0 flex-col items-center justify-center border-l border-white/10 px-2 py-4 sm:w-[120px]">
-            <MatchGauge score={job.personal_score} variant="sidebar" />
+            <MatchGauge score={job.qualification_fit} variant="sidebar" />
           </div>
         </article>
         <NotInterestedDialog
@@ -291,6 +297,7 @@ export function NeuralJobCard({ job, compact = false, feed = "recommended" }: Ne
             <MetaRow icon={Crown} label={SENIORITY_LABEL[job.seniority_level]} />
             <MetaRow icon={Calendar} label={experienceLabel(job)} />
           </div>
+          <PreferenceIndicatorTags indicators={job.preference_indicators} className="mt-4" />
 
           {/* Footer: meta left, actions right */}
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border/50 pt-4">
@@ -323,7 +330,7 @@ export function NeuralJobCard({ job, compact = false, feed = "recommended" }: Ne
 
         {/* Dark match rail */}
         <div className="navy-section flex w-[140px] shrink-0 flex-col items-center px-3 py-5 sm:w-[156px]">
-          <MatchGauge score={job.personal_score} variant="sidebar" />
+          <MatchGauge score={job.qualification_fit} variant="sidebar" />
           <div className="my-3 h-px w-full bg-white/15" />
           <ul className="w-full space-y-2">
             {highlights.map((item) => (

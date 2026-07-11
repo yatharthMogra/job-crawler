@@ -60,6 +60,8 @@ def test_job_enrichment_defaults_section_fields_to_empty_lists() -> None:
     assert parsed.required_qualifications == []
     assert parsed.preferred_qualifications == []
     assert parsed.benefits == []
+    assert parsed.required_skills == []
+    assert parsed.preferred_skills == []
 
 
 def test_batch_response_parses_section_fields() -> None:

@@ -10,6 +10,8 @@ flowchart TB
     Vercel["web/ — Vercel"]
     ProfileAPI["profile_service — Cloud Run"]
     RecoAPI["recommendation_service API — Cloud Run"]
+    EmbeddingWorker["embedding-worker — Cloud Run"]
+    PubSub["Pub/Sub embedding-requests"]
     SupabaseDB[("Supabase Postgres")]
     SupabaseStorage["Supabase Storage"]
     Redis[("Redis — recommendation session cache")]
@@ -25,6 +27,9 @@ flowchart TB
   Vercel -->|"direct CORS"| RecoAPI
   ProfileAPI --> SupabaseDB
   ProfileAPI --> SupabaseStorage
+  ProfileAPI --> PubSub
+  PubSub --> EmbeddingWorker
+  EmbeddingWorker --> SupabaseDB
   RecoAPI --> SupabaseDB
   RecoAPI --> Redis
   JobIngestion --> SupabaseDB
@@ -44,6 +49,7 @@ flowchart TB
 | **Supabase Postgres**             | Cloud                            | Shared database for all services                               |
 | **Supabase Storage**              | Cloud                            | Resume PDFs (`profile_service` on Cloud Run)                   |
 | **profile_service**               | Cloud Run                        | OAuth-linked profiles, resume upload, constraints              |
+| **embedding-worker**              | Cloud Run                        | Resume embeddings (Pub/Sub push + nightly backfill job)        |
 | **recommendation_service API**    | Cloud Run                        | Job feed, personal scoring, subscriptions (scheduler **off**)  |
 | **web/**                          | Vercel                           | User-facing Next.js app                                        |
 | **job_ingestion**                 | Home machine                     | Connectors, enrichment, global scoring, H1B, YC crawl, cleanup |
@@ -306,7 +312,7 @@ done
 From repo root (Docker must be running):
 
 ```bash
-GCP_PROJECT=YOUR_PROJECT_ID GCP_REGION=us-central1 ./scripts/deploy-cloud-run.sh
+GCP_PROJECT=YOUR_PROJECT_ID GCP_REGION=us-central1 HF_TOKEN=hf_... ./scripts/deploy-cloud-run.sh
 ```
 
 On **Apple Silicon Macs**, the script builds with `--platform linux/amd64` (required for Cloud Run). If deploy fails, see [Troubleshooting](#troubleshooting--lessons-from-first-deploy).
@@ -314,11 +320,12 @@ On **Apple Silicon Macs**, the script builds with `--platform linux/amd64` (requ
 This script:
 
 1. Creates an Artifact Registry repo (if missing)
-2. Builds and pushes Docker images for `profile_service` and `recommendation_service`
-3. Deploys both to Cloud Run as `profile-service` and `recommendation-service` with:
+2. Builds and pushes Docker images for `profile_service`, `recommendation_service`, and `embedding_worker`
+3. Deploys to Cloud Run as `profile-service`, `recommendation-service`, and `embedding-worker` (plus `embedding-backfill` job) with:
   - `min-instances=0`, `max-instances=3`
-  - `profile_service`: 1Gi memory, Supabase resume storage enabled
+  - `profile_service`: 1Gi memory, Supabase resume storage enabled, Pub/Sub publish enabled
   - `recommendation_service`: 512Mi memory, `ENABLE_NOTIFICATION_SCHEDULER=false`
+  - `embedding_worker`: 1Gi memory, private (no public auth), model baked at build time
 
 First deploy may take several minutes.
 
@@ -356,6 +363,88 @@ curl -X POST https://recommendation-service-xxxxx-uc.a.run.app/notifications/run
 ```
 
 The codebase auto-detects Supabase pooler URLs and disables prepared statement caching.
+
+#### 2.7 Embedding worker (resume embeddings)
+
+Resume content embeddings for ATS fit scoring run in a **separate Cloud Run service** (`embedding-worker`), not in `profile_service`. This keeps the profile API image slim (no PyTorch/sentence-transformers) while using the same `all-MiniLM-L6-v2` model as job embeddings on the home machine.
+
+```mermaid
+flowchart LR
+  upload[Resume upload] --> profileSvc[profile_service]
+  profileSvc --> pubsub[Pub/Sub embedding-requests]
+  pubsub --> worker[embedding-worker]
+  worker --> db[(candidate_resumes.content_embedding)]
+  scheduler[Cloud Scheduler 03:00 UTC] --> backfill[embedding-backfill Job]
+  backfill --> db
+```
+
+**Flow:**
+
+1. User uploads a resume → `profile_service` extracts text and creates a patch (unchanged).
+2. On success, `profile_service` publishes `{entity_type: "resume", entity_id: "<uuid>"}` to Pub/Sub (fire-and-forget).
+3. `embedding-worker` receives the push message, runs `SentenceTransformer.encode(..., normalize_embeddings=True)`, writes `content_embedding` to the DB.
+4. Nightly `embedding-backfill` Cloud Run Job catches any rows where `content_embedding IS NULL`.
+
+Job embeddings are **unchanged** — still computed on the home machine via `job_ingestion`.
+
+**Deploy (included in `deploy-cloud-run.sh`):**
+
+```bash
+# HF_TOKEN needed at Docker build time to download the model into the image
+GCP_PROJECT=YOUR_PROJECT_ID GCP_REGION=us-central1 HF_TOKEN=hf_... ./scripts/deploy-cloud-run.sh
+```
+
+This deploys three Cloud Run targets:
+
+| Resource | Name | Auth | Memory |
+|---|---|---|---|
+| Service | `profile-service` | Public | 1Gi |
+| Service | `recommendation-service` | Public | 512Mi |
+| Service | `embedding-worker` | Private (Pub/Sub only) | 1Gi |
+| Job | `embedding-backfill` | N/A | 1Gi |
+
+`profile-service` receives `GCP_PROJECT`, `EMBEDDING_REQUESTS_TOPIC=embedding-requests`, and `EMBEDDING_PUBLISH_ENABLED=true`.
+
+**One-time infrastructure wiring** (after first worker deploy):
+
+```bash
+GCP_PROJECT=YOUR_PROJECT_ID GCP_REGION=us-central1 ./scripts/provision-embedding-infra.sh
+```
+
+This script creates Pub/Sub topics (`embedding-requests`, `embedding-requests-dlq`), a push subscription to `embedding-worker`, IAM grants, and a Cloud Scheduler job (`embedding-backfill-nightly`, cron `0 3 * * *`).
+
+**One-time catch-up backfill** (resumes uploaded before this pipeline existed):
+
+```bash
+gcloud run jobs execute embedding-backfill \
+  --project YOUR_PROJECT_ID --region us-central1
+```
+
+**Verify:**
+
+```bash
+# Worker health (requires auth token — use from GCP console or gcloud)
+curl -H "Authorization: Bearer $(gcloud auth print-identity-token)" \
+  https://embedding-worker-xxxxx-uc.a.run.app/health
+
+# After uploading a resume, check DB:
+# SELECT id, content_embedding IS NOT NULL, content_embedding_computed_at
+# FROM candidate_resumes ORDER BY uploaded_at DESC LIMIT 5;
+
+# ATS fit should include a non-null semantic signal once embedding is ready:
+# GET /dashboard/jobs/{job_id}/ats-fit?candidate_id=...
+```
+
+**Troubleshooting:**
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| Upload succeeds but no embedding | Pub/Sub not wired or publish disabled | Run `provision-embedding-infra.sh`; check `GCP_PROJECT` on profile-service |
+| Embedding delayed 10–30s | Cold start on scale-from-zero | Normal; or set `min-instances=1` on embedding-worker |
+| Messages in DLQ | Malformed payload or repeated failures | Inspect DLQ in GCP Console; run backfill job |
+| Build fails on model download | Missing `HF_TOKEN` at build | Pass `HF_TOKEN=hf_...` when running deploy script |
+
+See also [`embedding-worker-architecture.md`](embedding-worker-architecture.md).
 
 ---
 

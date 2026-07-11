@@ -12,24 +12,24 @@ interface MatchGaugeProps {
 }
 
 export function matchLabel(score: number): string {
-  if (score >= 0.85) return "STRONG"
-  if (score >= 0.75) return "GOOD"
-  if (score >= 0.65) return "FAIR"
+  if (score >= 0.9) return "STRONG"
+  if (score >= 0.8) return "GOOD"
+  if (score >= 0.7) return "FAIR"
   return "LOW"
 }
 
 /** Human-readable descriptor consistent with the gauge band shown to the user. */
 export function matchDescriptor(score: number): string {
   if (score >= 0.9) return "exceptionally high"
-  if (score >= 0.85) return "strong"
-  if (score >= 0.75) return "solid"
-  if (score >= 0.65) return "moderate"
+  if (score >= 0.8) return "strong"
+  if (score >= 0.7) return "solid"
+  if (score >= 0.6) return "moderate"
   return "still developing"
 }
 
 function ringColor(score: number) {
-  if (score >= 0.85) return "text-add stroke-add"
-  if (score >= 0.75) return "text-primary stroke-primary"
+  if (score >= 0.9) return "text-add stroke-add"
+  if (score >= 0.8) return "text-primary stroke-primary"
   return "text-muted-foreground stroke-muted-foreground"
 }
 
@@ -53,17 +53,17 @@ function MatchRing({
   const label = matchLabel(score)
 
   const ringClass = sidebar
-    ? score >= 0.85
+    ? score >= 0.9
       ? "stroke-teal-300"
-      : score >= 0.75
+      : score >= 0.8
         ? "stroke-teal-400"
         : "stroke-teal-500/55"
     : ringColor(score)
 
   const textClass = sidebar
-    ? score >= 0.85
+    ? score >= 0.9
       ? "text-teal-200"
-      : score >= 0.75
+      : score >= 0.8
         ? "text-teal-300"
         : "text-teal-400/90"
     : ringColor(score).split(" ")[0]

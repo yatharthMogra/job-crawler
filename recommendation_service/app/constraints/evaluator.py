@@ -73,6 +73,8 @@ class RankingJob:
     responsibilities: list[str] = field(default_factory=list)
     required_qualifications: list[str] = field(default_factory=list)
     preferred_qualifications: list[str] = field(default_factory=list)
+    required_skills: list[str] = field(default_factory=list)
+    preferred_skills: list[str] = field(default_factory=list)
     benefits: list[str] = field(default_factory=list)
     description_text: str | None = None
     description_preview: str | None = None

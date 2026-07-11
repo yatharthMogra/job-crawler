@@ -23,7 +23,9 @@ class Settings(BaseSettings):
     cors_origins: str = ""
     resend_api_key: str = ""
     email_from: str = "Job Scout <notifications@job-scout.dev>"
-    hf_token: str = ""
+    gcp_project: str = ""
+    embedding_requests_topic: str = "embedding-requests"
+    embedding_publish_enabled: bool = True
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -35,6 +37,10 @@ class Settings(BaseSettings):
     @property
     def resume_storage_dir(self) -> Path:
         return Path(self.resume_storage_path)
+
+    @property
+    def should_publish_embedding_requests(self) -> bool:
+        return self.embedding_publish_enabled and bool(self.gcp_project.strip())
 
     @property
     def allowed_cors_origins(self) -> list[str]:

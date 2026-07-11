@@ -6,12 +6,9 @@ import structlog
 
 from app.config import Settings
 from app.models.shared import NormalizedJob
-from app.scoring.experience_tier import (
-    experience_tier_distance_score,
-    tiers_above_ceiling,
-)
+from app.scoring.coverage import EmbedFn, capability_coverage, skill_coverage
+from app.scoring.experience_tier import experience_tier_distance_score
 from app.scoring.location import location_alignment_score
-from app.scoring.seniority import seniority_score_multiplier
 from app.scoring.sponsorship import compute_sponsorship_score
 from app.services.h1b_lookup import H1bLookup
 from app.services.h1b_pool_family import pool_family_from_roles
@@ -26,9 +23,15 @@ def score_job(
     settings: Settings,
     *,
     h1b_lookup: H1bLookup | None = None,
+    embed_fn: EmbedFn | None = None,
+    embed_cache: dict[str, list[float] | None] | None = None,
 ) -> float:
-    cap_score = _capability_overlap(job.job_capabilities, user_profile.capabilities)
-    skill_score = _skill_overlap(job.tech_stack + job.skills, user_profile.skills)
+    cap_score = capability_coverage(
+        job, user_profile, settings, embed_fn=embed_fn, embed_cache=embed_cache
+    )
+    skill_score = skill_coverage(
+        job, user_profile, settings, embed_fn=embed_fn, embed_cache=embed_cache
+    )
     loc_score = _location_alignment(
         job.location,
         job.remote_type,
@@ -47,9 +50,6 @@ def score_job(
             job.experience_tier,
             constraints.get("current_experience_tier"),
         )
-    seniority_multiplier = 1.0 if use_tier_scoring else seniority_score_multiplier(
-        job.seniority, constraints
-    )
 
     # Eligibility exclusion is enforced in retrieval filters; do not re-rank via H-1B history.
     use_sponsorship = False
@@ -85,34 +85,7 @@ def score_job(
             + settings.score_location_weight * loc_score
             + settings.score_compensation_weight * comp_score
         )
-    return base_score * seniority_multiplier
-
-
-def _capability_overlap(job_caps: list[str], user_caps: list[Any]) -> float:
-    if not user_caps:
-        return 0.0
-    user_cap_names = {cap.capability_name for cap in user_caps}
-    overlap = len(set(job_caps) & user_cap_names)
-    return overlap / len(user_cap_names)
-
-
-def _flatten_skills(skills: dict[str, Any]) -> list[str]:
-    flattened: list[str] = []
-    for key in ("languages", "frameworks", "tools", "databases", "other"):
-        value = skills.get(key)
-        if isinstance(value, list):
-            flattened.extend(str(item) for item in value)
-    return flattened
-
-
-def _skill_overlap(job_skills: list[str], user_skills: dict[str, Any]) -> float:
-    all_user_skills = _flatten_skills(user_skills)
-    if not all_user_skills:
-        return 0.0
-    job_skills_normalized = {skill.lower() for skill in job_skills}
-    user_skills_normalized = {skill.lower() for skill in all_user_skills}
-    overlap = len(job_skills_normalized & user_skills_normalized)
-    return min(overlap / max(len(user_skills_normalized), 1), 1.0)
+    return base_score
 
 
 def _location_alignment(

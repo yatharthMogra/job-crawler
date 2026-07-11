@@ -36,6 +36,8 @@ class JobEnrichment(Base):
     remote_type: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     tech_stack: Mapped[list[str]] = mapped_column(ARRAY(String(128)), nullable=False, default=list)
     skills: Mapped[list[str]] = mapped_column(ARRAY(String(128)), nullable=False, default=list)
+    required_skills: Mapped[list[str]] = mapped_column(ARRAY(String(128)), nullable=False, default=list)
+    preferred_skills: Mapped[list[str]] = mapped_column(ARRAY(String(128)), nullable=False, default=list)
     normalized_roles: Mapped[list[str]] = mapped_column(ARRAY(String(64)), nullable=False, default=list)
     job_capabilities: Mapped[list[str]] = mapped_column(ARRAY(String(128)), nullable=False, default=list)
     application_effort: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)

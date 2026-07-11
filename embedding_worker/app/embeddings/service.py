@@ -8,6 +8,7 @@ import structlog
 log = structlog.get_logger(__name__)
 
 DEFAULT_MODEL = "all-MiniLM-L6-v2"
+EMBEDDING_DIM = 384
 
 
 def _apply_hf_token() -> None:

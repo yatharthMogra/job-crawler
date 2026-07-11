@@ -53,9 +53,9 @@ def test_score_job_capability_overlap() -> None:
         skills={"languages": ["Python"], "frameworks": [], "tools": [], "databases": [], "other": []},
         capabilities=[SimpleNamespace(capability_name="Backend Engineering")],
     )
-    job = _job()
+    job = _job(required_skills=["Python"], job_capabilities=["Backend Engineering"])
     score = score_job(job, profile, settings)
-    assert score > 0.4
+    assert score > 0.55
 
 
 def test_score_job_respects_minimum_salary() -> None:

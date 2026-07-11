@@ -99,6 +99,16 @@ class EmbeddingCalibration(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
+class QualificationFitCalibration(Base):
+    __tablename__ = "qualification_fit_calibration"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    raw_p5: Mapped[float] = mapped_column(Float, nullable=False)
+    raw_p95: Mapped[float] = mapped_column(Float, nullable=False)
+    sample_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class NormalizedJob(Base):
     __tablename__ = "normalized_jobs"
 
@@ -126,6 +136,8 @@ class NormalizedJob(Base):
     remote_type: Mapped[str] = mapped_column(String(32), nullable=False)
     tech_stack: Mapped[list[str]] = mapped_column(ARRAY(String(128)), nullable=False)
     skills: Mapped[list[str]] = mapped_column(ARRAY(String(128)), nullable=False)
+    required_skills: Mapped[list[str]] = mapped_column(ARRAY(String(128)), nullable=False)
+    preferred_skills: Mapped[list[str]] = mapped_column(ARRAY(String(128)), nullable=False)
     normalized_roles: Mapped[list[str]] = mapped_column(ARRAY(String(64)), nullable=False)
     job_capabilities: Mapped[list[str]] = mapped_column(ARRAY(String(128)), nullable=False)
     application_effort: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)

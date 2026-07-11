@@ -21,7 +21,12 @@ function inferRoleCategory(normalizedRoles: string[]): string {
 
 export function mapApiJobToUi(
   job: DashboardJobApi,
-  extras?: { personal_score?: number; match_reasons?: string[] },
+  extras?: {
+    personal_score?: number
+    qualification_fit?: number | null
+    match_reasons?: string[]
+    preference_indicators?: Job["preference_indicators"]
+  },
 ): Job & { roleCategory: string } {
   const effort = (job.application_effort ?? "MEDIUM") as Effort
   const remote = (job.remote_type ?? "unclear") as RemoteType
@@ -52,7 +57,10 @@ export function mapApiJobToUi(
     posted_at: job.posted_at!,
     opportunity_score: job.opportunity_score ?? 0,
     personal_score: extras?.personal_score ?? job.opportunity_score ?? 0,
+    qualification_fit:
+      extras?.qualification_fit ?? extras?.personal_score ?? job.opportunity_score ?? 0,
     match_reasons: matchReasons,
+    preference_indicators: extras?.preference_indicators ?? [],
     recommendation_reason:
       matchReasons.length > 0
         ? `Strong ${matchReasons[0].toLowerCase()} alignment.`
@@ -79,6 +87,8 @@ export function mapApiJobToUi(
 export function mapRecommendedApiJob(job: RecommendedJobApi) {
   return mapApiJobToUi(job, {
     personal_score: job.personal_score,
+    qualification_fit: job.qualification_fit,
     match_reasons: job.match_reasons,
+    preference_indicators: job.preference_indicators,
   })
 }

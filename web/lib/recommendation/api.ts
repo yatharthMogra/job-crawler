@@ -9,6 +9,11 @@ function useMockNotifications(): boolean {
 
 export type SponsorshipStatus = "yes" | "no" | "unclear"
 
+export interface PreferenceIndicatorApi {
+  label: string
+  kind: "strength" | "gap"
+}
+
 export interface H1BSponsorshipInfo {
   pool_family: string
   total_lca_3yr: number
@@ -62,7 +67,9 @@ export interface DashboardJobApi {
 
 export interface RecommendedJobApi extends DashboardJobApi {
   personal_score: number
+  qualification_fit: number | null
   match_reasons: string[]
+  preference_indicators: PreferenceIndicatorApi[]
 }
 
 export interface DashboardJobsResponse {

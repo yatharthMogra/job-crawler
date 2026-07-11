@@ -16,13 +16,15 @@ DEFAULT_AVG_DOC_LEN = 400.0
 _idf_cache: dict[str, float] = {}
 _corpus_size_cache: int = 0
 _avg_doc_len_cache: float = 400.0
+_idf_cache_loaded: bool = False
 
 
 def set_idf_cache(idf_by_term: dict[str, float], corpus_size: int, avg_doc_len: float) -> None:
-    global _idf_cache, _corpus_size_cache, _avg_doc_len_cache
+    global _idf_cache, _corpus_size_cache, _avg_doc_len_cache, _idf_cache_loaded
     _idf_cache = idf_by_term
     _corpus_size_cache = corpus_size
     _avg_doc_len_cache = avg_doc_len
+    _idf_cache_loaded = True
 
 
 async def load_idf_cache(db: AsyncSession) -> None:
@@ -38,6 +40,11 @@ async def load_idf_cache(db: AsyncSession) -> None:
     idf_by_term = {row.term: row.idf for row in rows}
     avg_doc_len = sum(row.document_frequency for row in rows) / max(len(rows), 1)
     set_idf_cache(idf_by_term, corpus_size, float(avg_doc_len))
+
+
+async def ensure_idf_cache(db: AsyncSession) -> None:
+    if not _idf_cache_loaded:
+        await load_idf_cache(db)
 
 
 def _term_idf(term: str, idf_by_term: dict[str, float], corpus_size: int) -> float:

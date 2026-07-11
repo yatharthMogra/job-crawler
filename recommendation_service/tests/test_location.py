@@ -117,6 +117,8 @@ def test_score_job_location_boost_us_candidate() -> None:
         title="Data Scientist",
         job_capabilities=["Machine Learning"],
         tech_stack=["Python"],
+        required_skills=["Python"],
+        preferred_skills=[],
         skills=[],
         location="New York, NY",
         job_country="US",
@@ -127,7 +129,7 @@ def test_score_job_location_boost_us_candidate() -> None:
     )
     profile = SimpleNamespace(
         capabilities=[SimpleNamespace(capability_name="Machine Learning")],
-        skills={"skills": ["Python"]},
+        skills={"languages": ["Python"], "frameworks": [], "tools": [], "databases": [], "other": []},
         preferences={"preferred_countries": ["US"], "preferred_states": ["NY"]},
         constraints={},
     )

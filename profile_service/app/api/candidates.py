@@ -15,6 +15,7 @@ from app.exceptions import ConflictError, ExtractionError, LLMProviderError, Not
 from app.models.candidate import Candidate
 from app.models.resume import CandidateResume
 from app.pipeline.patch_engine import process_resume_upload
+from app.pubsub.embedding_requests import publish_resume_embedding_request
 from app.services.domain_sync import sync_candidate_domains
 from app.services.auth_crypto import normalize_email
 from app.storage import get_resume_storage
@@ -159,6 +160,13 @@ async def upload_resume(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)) from exc
 
     await db.refresh(resume)
+
+    if resume.extraction_status == "success":
+        try:
+            publish_resume_embedding_request(resume.id)
+        except Exception:
+            log.warning("embedding_publish_failed", resume_id=str(resume.id))
+
     return ResumeUploadResponse(resume=ResumeResponse.model_validate(resume), patch_id=patch.id)
 
 

@@ -55,6 +55,15 @@ class Settings(BaseSettings):
     ats_fit_bm25_weight: float = 0.50
     ats_fit_semantic_weight: float = 0.25
     ats_fit_structural_weight: float = 0.25
+    qualification_fit_enabled: bool = False
+    qualification_fit_shadow_mode: bool = True
+    qualification_fit_required_skill_weight: float = 0.80
+    qualification_fit_preferred_skill_weight: float = 0.20
+    qualification_fit_skill_weight: float = 0.45
+    qualification_fit_capability_weight: float = 0.30
+    qualification_fit_structural_weight: float = 0.25
+    coverage_fuzzy_bm25_weight: float = 0.50
+    coverage_fuzzy_semantic_weight: float = 0.50
     pool_percentile_refresh_enabled: bool = True
     # RRF + cache-backed pagination
     redis_url: str = ""

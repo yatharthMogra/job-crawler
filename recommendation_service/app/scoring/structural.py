@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import math
 import re
+from datetime import UTC, datetime
 from typing import Any
 
 from rapidfuzz import fuzz
@@ -61,6 +61,93 @@ def _degree_text_rank(text: str) -> int | None:
     return None
 
 
+_YEARS_PATTERN = re.compile(r"(\d+)\+?\s*years?", re.I)
+_DATE_VALUE_RE = re.compile(r"^(\d{4})(?:-(\d{1,2}))?(?:-(\d{1,2}))?$")
+
+
+def _parse_evidence_date(value: Any) -> datetime | None:
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value if value.tzinfo else value.replace(tzinfo=UTC)
+    if not isinstance(value, str):
+        return None
+    cleaned = value.strip()
+    if not cleaned or cleaned.lower() in {"present", "current", "now"}:
+        return datetime.now(UTC)
+    match = _DATE_VALUE_RE.match(cleaned)
+    if not match:
+        return None
+    year = int(match.group(1))
+    month = int(match.group(2) or 1)
+    day = int(match.group(3) or 1)
+    try:
+        return datetime(year, month, day, tzinfo=UTC)
+    except ValueError:
+        return None
+
+
+def _months_between(start: datetime, end: datetime) -> int:
+    if end < start:
+        return 0
+    return max(0, (end.year - start.year) * 12 + (end.month - start.month))
+
+
+def infer_required_experience_years(job: NormalizedJob) -> int | None:
+    text = "\n".join(job.required_qualifications or [])
+    matches = [int(match.group(1)) for match in _YEARS_PATTERN.finditer(text)]
+    return max(matches) if matches else None
+
+
+def _infer_experience_months_from_evidence(evidence: list[CandidateEvidence]) -> int:
+    total_months = 0
+    for item in evidence:
+        if item.evidence_type != "experience" or not item.is_active or not item.is_approved:
+            continue
+        data = item.normalized_data or {}
+        start = _parse_evidence_date(data.get("start_date"))
+        end = _parse_evidence_date(data.get("end_date"))
+        if start and end:
+            total_months += _months_between(start, end)
+            continue
+        duration_months = data.get("duration_months")
+        if isinstance(duration_months, (int, float)) and duration_months > 0:
+            total_months += int(duration_months)
+    return total_months
+
+
+def infer_candidate_experience_years(profile: UserProfile) -> float | None:
+    constraints = profile.constraints or {}
+    years = constraints.get("full_time_experience_years")
+    if years is not None:
+        try:
+            return float(years)
+        except (TypeError, ValueError):
+            return None
+    evidence_months = _infer_experience_months_from_evidence(profile.evidence)
+    if evidence_months > 0:
+        return round(evidence_months / 12.0, 1)
+    return None
+
+
+def experience_adequacy_score(profile: UserProfile, job: NormalizedJob) -> float:
+    required_years = infer_required_experience_years(job)
+    if required_years is None:
+        return 1.0
+    candidate_years = infer_candidate_experience_years(profile)
+    if candidate_years is None:
+        return 0.5
+    if candidate_years >= required_years:
+        return 1.0
+    return max(0.0, candidate_years / required_years)
+
+
+def qualification_structural_score(profile: UserProfile, job: NormalizedJob) -> float:
+    experience = experience_adequacy_score(profile, job)
+    education = education_adequacy_score(profile, job)
+    return (experience + education) / 2.0
+
+
 def infer_required_degree_rank(job: NormalizedJob) -> int | None:
     text = "\n".join(job.required_qualifications or [])
     ranks = [rank for pattern, rank in _DEGREE_PATTERNS if pattern.search(text)]
@@ -76,6 +163,18 @@ def education_alignment_score(profile: UserProfile, job: NormalizedJob) -> float
         return 1.0
     gap = required_rank - candidate_rank
     return max(0.0, 1.0 - 0.25 * gap)
+
+
+def education_adequacy_score(profile: UserProfile, job: NormalizedJob) -> float:
+    required_rank = infer_required_degree_rank(job)
+    if required_rank is None:
+        return 1.0
+    candidate_rank = _highest_degree_rank(profile.education or {})
+    if candidate_rank is None:
+        return 0.5
+    if candidate_rank >= required_rank:
+        return 1.0
+    return max(0.0, 1.0 - 0.25 * (required_rank - candidate_rank))
 
 
 def _most_recent_experience_title(evidence: list[CandidateEvidence]) -> str | None:

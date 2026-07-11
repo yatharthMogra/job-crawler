@@ -15,7 +15,7 @@ from app.ingestion.events import write_event
 from app.ingestion.gemini_error_log import record_gemini_error
 from app.ingestion.extractor.deterministic import extract_deterministic_fields
 from app.ingestion.extractor.eligibility import apply_eligibility_signals
-from app.ingestion.extractor.llm import DEFAULT_ENRICHMENT, enrich_job_text
+from app.ingestion.extractor.llm import DEFAULT_ENRICHMENT, enrich_job_text, enrichment_missing_required_skills
 from app.ingestion.extractor.text_cleaner import clean_job_description
 from app.ingestion.job_freshness import FreshnessVerdict, classify_posted_at
 from app.ingestion.job_purge import PurgeTarget, purge_normalized_jobs
@@ -242,6 +242,8 @@ async def reprocess_jobs(
                 remote_type=enrichment.remote_type,
                 tech_stack=enrichment.tech_stack,
                 skills=enrichment.skills,
+                required_skills=enrichment.required_skills,
+                preferred_skills=enrichment.preferred_skills,
                 responsibilities=enrichment.responsibilities,
                 required_qualifications=enrichment.required_qualifications,
                 preferred_qualifications=enrichment.preferred_qualifications,
@@ -269,6 +271,8 @@ async def reprocess_jobs(
             normalized.remote_type = enrichment.remote_type
             normalized.tech_stack = enrichment.tech_stack
             normalized.skills = enrichment.skills
+            normalized.required_skills = list(enrichment.required_skills)
+            normalized.preferred_skills = list(enrichment.preferred_skills)
             normalized.normalized_roles = recommendation_fields.get("normalized_roles", [])
             normalized.job_capabilities = recommendation_fields.get("job_capabilities", [])
             normalized.application_effort = recommendation_fields.get("application_effort")
@@ -286,6 +290,17 @@ async def reprocess_jobs(
             normalized.required_qualifications = list(enrichment.required_qualifications)
             normalized.preferred_qualifications = list(enrichment.preferred_qualifications)
             normalized.benefits = list(enrichment.benefits)
+            if enrichment_missing_required_skills(
+                enrichment.required_skills,
+                enrichment.required_qualifications,
+                normalized_roles=list(enrichment.normalized_roles),
+            ):
+                log.info(
+                    "required_skills_empty_with_qualifications",
+                    job_id=str(normalized.id),
+                    required_qualifications_count=len(enrichment.required_qualifications),
+                    source="reprocessor",
+                )
             try:
                 from app.ingestion.ats_enrichment import apply_job_ats_enrichment
 

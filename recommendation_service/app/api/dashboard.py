@@ -9,14 +9,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import Settings, get_settings
 from app.database import get_db
-from app.models.shared import NormalizedJob
+from app.models.shared import NormalizedJob, QualificationFitCalibration
 from app.notification.ranker import deduplicate_ranked_jobs, rank_jobs, select_diversified_jobs
 from app.notification.retrieval import (
     build_constraint_filters,
     query_jobs_in_pools,
 )
 from app.scoring.ats_fit import compute_ats_fit
+from app.scoring.bm25_corpus import ensure_idf_cache
 from app.scoring.explainability import generate_explanations
+from app.scoring.preference_indicators import preference_indicators
+from app.scoring.qualification_fit import (
+    calibrate_qualification_fit_display,
+    compute_qualification_fit,
+)
 from app.scoring.sponsorship import h1b_info_from_lookup
 from app.schemas.applications import (
     UserApplicationOut,
@@ -44,8 +50,41 @@ from app.services.h1b_pool_family import pool_family_from_roles
 from app.services.profile_loader import UserProfile, load_user_profile
 from app.services.recommended_cursor import decode_recommended_cursor, encode_recommended_cursor
 from app.services.subscriptions import get_active_pools
+from app.services.term_embedding import embed_term
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
+
+
+async def _qualification_calibration(db: AsyncSession) -> tuple[float, float]:
+    calibration = await db.get(QualificationFitCalibration, 1)
+    if calibration is None or calibration.sample_size <= 0:
+        return 0.0, 1.0
+    return calibration.raw_p5, calibration.raw_p95
+
+
+def _qualification_fit_for_response(
+    job: NormalizedJob,
+    profile: UserProfile,
+    settings: Settings,
+    calibration: tuple[float, float],
+    embed_cache: dict[str, list[float] | None],
+) -> float | None:
+    if not (settings.qualification_fit_enabled or settings.qualification_fit_shadow_mode):
+        return None
+    breakdown = compute_qualification_fit(
+        job,
+        profile,
+        settings,
+        embed_fn=embed_term,
+        embed_cache=embed_cache,
+    )
+    if not settings.qualification_fit_enabled or settings.qualification_fit_shadow_mode:
+        return None
+    return calibrate_qualification_fit_display(
+        breakdown.raw,
+        raw_p5=calibration[0],
+        raw_p95=calibration[1],
+    )
 
 
 def _h1b_sponsorship_for_job(
@@ -107,8 +146,8 @@ def _job_to_out(
         benefits=list(job.benefits or []),
         sponsorship_status=job.sponsorship_status,
         sponsorship_confidence=job.sponsorship_confidence,
-        requires_clearance=job.requires_clearance,
-        requires_citizenship=job.requires_citizenship,
+        requires_clearance=bool(job.requires_clearance),
+        requires_citizenship=bool(job.requires_citizenship),
         h1b_sponsorship=h1b_sponsorship,
         company_info=company_info,
     )
@@ -340,6 +379,12 @@ async def _get_recommended_jobs_rrf(
     h1b_lookup, company_lookup = await _load_job_enrichment_lookups(
         db, batch_jobs, needs_sponsorship=needs_sponsorship
     )
+    calibration = (
+        await _qualification_calibration(db)
+        if settings.qualification_fit_enabled and not settings.qualification_fit_shadow_mode
+        else (0.0, 1.0)
+    )
+    qualification_embed_cache: dict[str, list[float] | None] = {}
 
     jobs_out: list[DashboardRecommendedJobOut] = []
     for job in batch_jobs:
@@ -353,7 +398,13 @@ async def _get_recommended_jobs_rrf(
             DashboardRecommendedJobOut(
                 **base.model_dump(),
                 personal_score=score_by_id.get(job.id, 0.0),
+                qualification_fit=_qualification_fit_for_response(
+                    job, user_profile, settings, calibration, qualification_embed_cache
+                ),
                 match_reasons=generate_explanations(job, user_profile),
+                preference_indicators=[
+                    indicator.__dict__ for indicator in preference_indicators(job, user_profile)
+                ],
             )
         )
 
@@ -419,8 +470,15 @@ async def _get_recommended_jobs_legacy(
         db, batch_jobs, needs_sponsorship=needs_sponsorship
     )
     scoring_lookup = h1b_lookup if settings.sponsorship_score_enabled and needs_sponsorship else None
+    await ensure_idf_cache(db)
     ranked = deduplicate_ranked_jobs(
-        rank_jobs(batch_jobs, user_profile, settings, h1b_lookup=scoring_lookup)
+        rank_jobs(
+            batch_jobs,
+            user_profile,
+            settings,
+            h1b_lookup=scoring_lookup,
+            embed_fn=embed_term,
+        )
     )
     applied_counts = await applied_count_by_company(db, candidate_id)
     diversified = select_diversified_jobs(
@@ -430,6 +488,12 @@ async def _get_recommended_jobs_legacy(
         max_per_company=settings.recommendation_max_jobs_per_company,
         unlock_batch_size=settings.recommendation_company_unlock_batch,
     )
+    calibration = (
+        await _qualification_calibration(db)
+        if settings.qualification_fit_enabled and not settings.qualification_fit_shadow_mode
+        else (0.0, 1.0)
+    )
+    qualification_embed_cache: dict[str, list[float] | None] = {}
 
     jobs_out: list[DashboardRecommendedJobOut] = []
     for job, score in diversified:
@@ -443,7 +507,13 @@ async def _get_recommended_jobs_legacy(
             DashboardRecommendedJobOut(
                 **base.model_dump(),
                 personal_score=score,
+                qualification_fit=_qualification_fit_for_response(
+                    job, user_profile, settings, calibration, qualification_embed_cache
+                ),
                 match_reasons=generate_explanations(job, user_profile),
+                preference_indicators=[
+                    indicator.__dict__ for indicator in preference_indicators(job, user_profile)
+                ],
             )
         )
 

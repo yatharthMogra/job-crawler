@@ -16,6 +16,10 @@ export type SeniorityLevel =
   | "senior"
   | "staff"
 export type Effort = "LOW" | "MEDIUM" | "HIGH"
+export interface PreferenceIndicator {
+  label: string
+  kind: "strength" | "gap"
+}
 
 export interface Job {
   id: string
@@ -32,7 +36,9 @@ export interface Job {
   posted_at: string
   opportunity_score: number
   personal_score: number
+  qualification_fit: number
   match_reasons: string[]
+  preference_indicators: PreferenceIndicator[]
   recommendation_reason: string
   skills: string[]
   responsibilities: string[]
@@ -215,7 +221,9 @@ export const ALL_JOBS: Job[] = Array.from({ length: TOTAL }).map((_, i) => {
     posted_at: postedAt,
     opportunity_score: Math.round((0.4 + rand() * 0.55) * 1000) / 1000,
     personal_score: Math.round((0.4 + rand() * 0.55) * 1000) / 1000,
+    qualification_fit: Math.round((0.4 + rand() * 0.55) * 1000) / 1000,
     match_reasons: role.reasons,
+    preference_indicators: [],
     recommendation_reason: REC_REASONS[Math.floor(rand() * REC_REASONS.length)],
     skills: role.skills,
     responsibilities: [
@@ -228,6 +236,7 @@ export const ALL_JOBS: Job[] = Array.from({ length: TOTAL }).map((_, i) => {
     ],
     preferred_qualifications: [`Familiarity with ${role.skills.slice(2).join(", ") || "modern tooling"}.`],
     benefits: ["Competitive compensation", "Equity", "Flexible work environment"],
+    roleCategory: role.title,
     sponsorship_status: "unclear",
     sponsorship_confidence: "low",
     requires_clearance: false,

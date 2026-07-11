@@ -226,6 +226,8 @@ async def _get_job_enrichments(row: NormalizedJob, db: AsyncSession) -> list[Job
             remote_type=e.remote_type,
             tech_stack=e.tech_stack,
             skills=e.skills,
+            required_skills=e.required_skills,
+            preferred_skills=e.preferred_skills,
             responsibilities=e.responsibilities,
             required_qualifications=e.required_qualifications,
             preferred_qualifications=e.preferred_qualifications,

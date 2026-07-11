@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import Settings
 from app.models.shared import NormalizedJob
+from app.scoring.coverage import EmbedFn
 from app.scoring.recommendation import score_job
 from app.services.h1b_lookup import H1bLookup
 from app.services.profile_loader import UserProfile
@@ -109,8 +110,23 @@ def rank_jobs(
     settings: Settings,
     *,
     h1b_lookup: H1bLookup | None = None,
+    embed_fn: EmbedFn | None = None,
 ) -> list[tuple[NormalizedJob, float]]:
-    scored = [(job, score_job(job, user_profile, settings, h1b_lookup=h1b_lookup)) for job in jobs]
+    embed_cache: dict[str, list[float] | None] = {}
+    scored = [
+        (
+            job,
+            score_job(
+                job,
+                user_profile,
+                settings,
+                h1b_lookup=h1b_lookup,
+                embed_fn=embed_fn,
+                embed_cache=embed_cache,
+            ),
+        )
+        for job in jobs
+    ]
     scored.sort(key=_rank_sort_key, reverse=True)
     return scored
 

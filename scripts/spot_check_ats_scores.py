@@ -12,12 +12,13 @@ ROOT = Path(__file__).resolve().parents[1] / "recommendation_service"
 sys.path.insert(0, str(ROOT))
 os.chdir(ROOT)
 
-from app.config import Settings
-from app.models.shared import CandidateEvidence, NormalizedJob
-from app.scoring.ats_fit import compute_ats_fit
-from app.scoring.bm25_corpus import normalized_bm25_score
-from app.scoring.structural import structural_match_score
-from app.services.profile_loader import UserProfile
+from app.config import Settings  # noqa: E402
+from app.models.shared import CandidateEvidence, NormalizedJob  # noqa: E402
+from app.scoring.ats_fit import compute_ats_fit  # noqa: E402
+from app.scoring.bm25_corpus import normalized_bm25_score  # noqa: E402
+from app.scoring.qualification_fit import compute_qualification_fit  # noqa: E402
+from app.scoring.structural import structural_match_score  # noqa: E402
+from app.services.profile_loader import UserProfile  # noqa: E402
 
 
 class _FakeDb:
@@ -59,6 +60,8 @@ def _job(title: str, *, skills: list[str], quals: list[str]) -> NormalizedJob:
         remote_type="remote",
         tech_stack=skills,
         skills=skills,
+        required_skills=skills,
+        preferred_skills=[],
         normalized_roles=["DATA_ENGINEER"],
         job_capabilities=[],
         application_effort="MEDIUM",
@@ -82,7 +85,13 @@ def _job(title: str, *, skills: list[str], quals: list[str]) -> NormalizedJob:
     )
 
 
-def _profile(*, title: str, resume_text: str, tier: str = "SENIOR") -> UserProfile:
+def _profile(
+    *,
+    title: str,
+    resume_text: str,
+    tier: str = "SENIOR",
+    skills: list[str] | None = None,
+) -> UserProfile:
     evidence = CandidateEvidence(
         id=uuid.uuid4(),
         candidate_id=uuid.uuid4(),
@@ -98,7 +107,7 @@ def _profile(*, title: str, resume_text: str, tier: str = "SENIOR") -> UserProfi
         name="Test User",
         constraints={"current_experience_tier": tier},
         preferences={},
-        skills={"languages": ["Python", "SQL"]},
+        skills={"languages": skills or ["Python", "SQL"]},
         education={"entries": [{"degree": "BS Computer Science", "university": "State U"}]},
         evidence=[evidence],
     )
@@ -118,8 +127,17 @@ def main() -> None:
     Marketing Manager with campaign analytics, brand strategy, and social media management.
     """
 
-    strong_profile = _profile(title="Data Engineer", resume_text=strong_resume)
-    weak_profile = _profile(title="Marketing Manager", resume_text=weak_resume, tier="MID")
+    strong_profile = _profile(
+        title="Data Engineer",
+        resume_text=strong_resume,
+        skills=["Python", "SQL", "Spark", "Airflow", "dbt"],
+    )
+    weak_profile = _profile(
+        title="Marketing Manager",
+        resume_text=weak_resume,
+        tier="MID",
+        skills=["Campaign Analytics", "Brand Strategy"],
+    )
 
     strong_bm25 = normalized_bm25_score(strong_resume, job.description_text or "", protected_phrases=job.skills)
     weak_bm25 = normalized_bm25_score(weak_resume, job.description_text or "", protected_phrases=job.skills)
@@ -132,6 +150,12 @@ def main() -> None:
     )
 
     settings = Settings(ats_fit_enabled=True)
+    strong_qualification = compute_qualification_fit(job, strong_profile, settings)
+    weak_qualification = compute_qualification_fit(job, weak_profile, settings)
+    assert strong_qualification.raw > weak_qualification.raw, (
+        "expected strong qualification fit > weak qualification fit "
+        f"({strong_qualification.raw} vs {weak_qualification.raw})"
+    )
     db = _FakeDb()
 
     async def _run() -> None:
@@ -147,6 +171,8 @@ def main() -> None:
                 "weak": weak.ats_fit_score,
                 "strong_bm25": round(strong_bm25, 3),
                 "weak_bm25": round(weak_bm25, 3),
+                "strong_qualification_fit": round(strong_qualification.raw, 3),
+                "weak_qualification_fit": round(weak_qualification.raw, 3),
             }
         )
 

@@ -41,7 +41,7 @@ def _job(**kwargs) -> NormalizedJob:
     return NormalizedJob(**defaults)
 
 
-def test_score_job_senior_penalty() -> None:
+def test_score_job_ignores_seniority_label_in_default_mode() -> None:
     settings = Settings()
     profile = UserProfile(
         candidate_id=uuid.uuid4(),
@@ -54,5 +54,5 @@ def test_score_job_senior_penalty() -> None:
     )
     senior_score = score_job(_job(seniority="SENIOR", title="Senior Backend Engineer"), profile, settings)
     mid_score = score_job(_job(seniority="MID"), profile, settings)
-    assert senior_score < mid_score
+    assert senior_score == mid_score
 

@@ -20,6 +20,7 @@ from app.ingestion.extractor.llm import (
     BatchJobEnrichment,
     DEFAULT_ENRICHMENT,
     enrich_job_batch_text,
+    enrichment_missing_required_skills,
     enrichment_missing_skill_fields,
 )
 from app.ingestion.extractor.seniority import build_batch_job_payload
@@ -590,6 +591,13 @@ def _jd_section_fields(enrichment: BatchJobEnrichment) -> dict[str, list[str]]:
     }
 
 
+def _skill_split_fields(enrichment: BatchJobEnrichment) -> dict[str, list[str]]:
+    return {
+        "required_skills": list(enrichment.required_skills),
+        "preferred_skills": list(enrichment.preferred_skills),
+    }
+
+
 def _apply_enrichment_to_job(
     normalized: NormalizedJob,
     enrichment: BatchJobEnrichment,
@@ -609,6 +617,8 @@ def _apply_enrichment_to_job(
     normalized.remote_type = enrichment.remote_type
     normalized.tech_stack = enrichment.tech_stack
     normalized.skills = enrichment.skills
+    normalized.required_skills = enrichment.required_skills
+    normalized.preferred_skills = enrichment.preferred_skills
     normalized.normalized_roles = list(enrichment.normalized_roles)
     normalized.job_capabilities = list(enrichment.job_capabilities)
     normalized.application_effort = enrichment.application_effort
@@ -866,6 +876,8 @@ async def _process_batch(
                         remote_type=DEFAULT_ENRICHMENT.remote_type,
                         tech_stack=DEFAULT_ENRICHMENT.tech_stack,
                         skills=DEFAULT_ENRICHMENT.skills,
+                        required_skills=DEFAULT_ENRICHMENT.required_skills,
+                        preferred_skills=DEFAULT_ENRICHMENT.preferred_skills,
                         responsibilities=DEFAULT_ENRICHMENT.responsibilities,
                         required_qualifications=DEFAULT_ENRICHMENT.required_qualifications,
                         preferred_qualifications=DEFAULT_ENRICHMENT.preferred_qualifications,
@@ -918,6 +930,7 @@ async def _process_batch(
                         remote_type=enrichment.remote_type,
                         tech_stack=enrichment.tech_stack,
                         skills=enrichment.skills,
+                        **_skill_split_fields(enrichment),
                         **_jd_section_fields(enrichment),
                         input_tokens=input_tokens,
                         output_tokens=output_tokens,
@@ -931,6 +944,16 @@ async def _process_batch(
             was_already_success = row.normalized.processing_state == ProcessingState.SUCCESS
             _apply_enrichment_to_job(row.normalized, enrichment, settings, raw_job=row.raw_job)
             _apply_waas_sponsorship_hint(row.normalized, row.raw_job)
+            if enrichment_missing_required_skills(
+                enrichment.required_skills,
+                enrichment.required_qualifications,
+                normalized_roles=list(enrichment.normalized_roles),
+            ):
+                log.info(
+                    "required_skills_empty_with_qualifications",
+                    job_id=str(row.normalized.id),
+                    required_qualifications_count=len(enrichment.required_qualifications),
+                )
             try:
                 from app.ingestion.ats_enrichment import apply_job_ats_enrichment
 
@@ -976,6 +999,7 @@ async def _process_batch(
                     remote_type=enrichment.remote_type,
                     tech_stack=enrichment.tech_stack,
                     skills=enrichment.skills,
+                    **_skill_split_fields(enrichment),
                     **_jd_section_fields(enrichment),
                     **fields_for_job_enrichment_record(recommendation_fields),
                     input_tokens=input_tokens,
@@ -1107,6 +1131,8 @@ async def _process_batch(
                     remote_type=DEFAULT_ENRICHMENT.remote_type,
                     tech_stack=DEFAULT_ENRICHMENT.tech_stack,
                     skills=DEFAULT_ENRICHMENT.skills,
+                    required_skills=DEFAULT_ENRICHMENT.required_skills,
+                    preferred_skills=DEFAULT_ENRICHMENT.preferred_skills,
                     responsibilities=DEFAULT_ENRICHMENT.responsibilities,
                     required_qualifications=DEFAULT_ENRICHMENT.required_qualifications,
                     preferred_qualifications=DEFAULT_ENRICHMENT.preferred_qualifications,

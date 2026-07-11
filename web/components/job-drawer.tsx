@@ -9,6 +9,7 @@ import { MatchTag } from "@/components/badges"
 import { CompanyInfoCard } from "@/components/company-info-card"
 import { H1bSponsorshipSection, SponsorshipStatusPill } from "@/components/h1b-sponsorship-section"
 import { EligibilityBadges } from "@/components/jobs/eligibility-badges"
+import { PreferenceIndicatorTags } from "@/components/jobs/preference-indicator-tags"
 import {
   JobDescriptionSectionsView,
   buildMatchedLabels,
@@ -172,7 +173,7 @@ export function JobDetailContent({
     descriptionSections.benefits.length > 0
   const showFullDescription =
     job.responsibilities.length === 0 && !hasQualsOrBenefits && Boolean(job.description_html)
-  const matchPct = Math.round(Math.min(1, Math.max(0, job.personal_score)) * 100)
+  const matchPct = Math.round(Math.min(1, Math.max(0, job.qualification_fit)) * 100)
   const salaryLabel = formatSalary(job.salary_min, job.salary_max)
 
   return (
@@ -198,9 +199,13 @@ export function JobDetailContent({
             {showMatch && matchPct > 0 ? (
               <div className="mt-3">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  Match quality
+                  Qualification fit
                 </p>
-                <p className="text-xl font-bold text-emerald-600">{matchPct}% match</p>
+                <p className="text-xl font-bold text-emerald-600">{matchPct}% fit</p>
+                <PreferenceIndicatorTags
+                  indicators={job.preference_indicators}
+                  className="mt-2"
+                />
               </div>
             ) : null}
             <AtsFitSection jobId={job.id} />

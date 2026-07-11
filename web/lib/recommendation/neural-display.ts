@@ -40,15 +40,15 @@ export function applicationWindowLabel(postedAt: string): string {
 }
 
 export function matchTier(score: number): "TOP MATCH" | "STRONG MATCH" | "GOOD MATCH" | null {
-  if (score >= 0.88) return "TOP MATCH"
+  if (score >= 0.9) return "TOP MATCH"
   if (score >= 0.8) return "STRONG MATCH"
-  if (score >= 0.72) return "GOOD MATCH"
+  if (score >= 0.7) return "GOOD MATCH"
   return null
 }
 
 export function isPremiumRole(job: JobWithRole): boolean {
   return (
-    job.personal_score >= 0.86 &&
+    job.qualification_fit >= 0.86 &&
     (job.seniority_level === "staff" ||
       job.seniority_level === "senior" ||
       job.title.toLowerCase().includes("staff") ||
@@ -68,7 +68,7 @@ export function neuralRationale(job: JobWithRole): string {
 }
 
 export function coreSkillsMatchPercent(job: JobWithRole): number {
-  return Math.min(99, Math.round(job.personal_score * 100 + 3))
+  return Math.round(Math.min(1, Math.max(0, job.qualification_fit)) * 100)
 }
 
 export function salaryDisplay(job: JobWithRole): string {
@@ -95,6 +95,6 @@ export function outreachLabel(job: JobWithRole): string {
 
 export function marketAlignmentPercent(jobs: JobWithRole[]): number {
   if (jobs.length === 0) return 0
-  const avg = jobs.reduce((sum, j) => sum + j.personal_score, 0) / jobs.length
+  const avg = jobs.reduce((sum, j) => sum + j.qualification_fit, 0) / jobs.length
   return Math.round(avg * 100)
 }

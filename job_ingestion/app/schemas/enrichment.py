@@ -22,6 +22,8 @@ class JobEnrichmentOut(BaseModel):
     remote_type: Optional[str]
     tech_stack: list[str]
     skills: list[str]
+    required_skills: list[str] = []
+    preferred_skills: list[str] = []
     normalized_roles: list[str] = []
     job_capabilities: list[str] = []
     application_effort: Optional[str] = None

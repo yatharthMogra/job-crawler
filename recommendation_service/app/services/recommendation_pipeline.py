@@ -19,12 +19,14 @@ from app.notification.ranker import (
     select_diversified_jobs,
 )
 from app.notification.retrieval import query_jobs_for_ranking
+from app.scoring.bm25_corpus import ensure_idf_cache
 from app.scoring.embedding_similarity import max_cosine_similarity
 from app.scoring.rrf import reciprocal_rank_fusion
 from app.services.applications import applied_count_by_company
 from app.services.profile_loader import UserProfile, load_user_profile
 from app.services.resume_embedding_loader import load_resume_embeddings
 from app.services.subscriptions import get_active_pools
+from app.services.term_embedding import embed_term
 
 log = structlog.get_logger(__name__)
 
@@ -98,6 +100,8 @@ def _to_ranking_job(job: NormalizedJob) -> RankingJob:
         responsibilities=list(job.responsibilities or []),
         required_qualifications=list(job.required_qualifications or []),
         preferred_qualifications=list(job.preferred_qualifications or []),
+        required_skills=list(job.required_skills or []),
+        preferred_skills=list(job.preferred_skills or []),
         benefits=list(job.benefits or []),
         is_active=job.is_active,
         processing_state=job.processing_state,
@@ -193,7 +197,10 @@ async def run_recommendation_pipeline(
 
     # score_job / personal_score on full surviving set
     t_score = time.perf_counter()
-    ranked = deduplicate_ranked_jobs(rank_jobs(eligible, user_profile, settings))
+    await ensure_idf_cache(db)
+    ranked = deduplicate_ranked_jobs(
+        rank_jobs(eligible, user_profile, settings, embed_fn=embed_term)
+    )
     diversified = select_diversified_jobs(
         ranked,
         len(ranked),

@@ -98,7 +98,7 @@ export function JobCard({
   const salary = formatSalary(job.salary_min, job.salary_max)
   const selected = selectedJobId === job.id
   const isApplied = cardMode === "applied" || job.is_applied
-  const isStrongMatch = job.personal_score >= 0.85
+  const isStrongMatch = job.qualification_fit >= 0.85
   const whyFitItems =
     job.match_reasons.length > 0
       ? job.match_reasons.slice(0, 3)
@@ -261,7 +261,7 @@ export function JobCard({
 
           {showMatch ? (
             <div className="navy-section flex w-[108px] shrink-0 flex-col items-center justify-center border-l border-border/40 px-2 py-4 sm:w-[120px]">
-              <MatchGauge score={job.personal_score} variant="sidebar" />
+              <MatchGauge score={job.qualification_fit} variant="sidebar" />
             </div>
           ) : null}
         </div>

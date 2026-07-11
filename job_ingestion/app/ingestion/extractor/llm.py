@@ -88,6 +88,23 @@ def _coerce_job_capabilities(value: object) -> list[str]:
     return capabilities
 
 
+def _coerce_skill_terms(value: object) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    terms: list[str] = []
+    seen: set[str] = set()
+    for item in value:
+        term = str(item).strip()
+        if not term:
+            continue
+        key = term.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        terms.append(term)
+    return terms
+
+
 def _strip_json_fences(text: str) -> str:
     value = text.strip()
     if not value:
@@ -183,6 +200,17 @@ ENRICHMENT_SYSTEM_PROMPT = (
     "- Examples: distributed systems, NLP, computer vision, CI/CD, data pipelines\n"
     "- Do not duplicate job_capabilities taxonomy labels here\n"
     "- Leave empty only when no technical themes are present\n\n"
+    "required_skills rules:\n"
+    "- Extract atomic canonical tool/tech names from the must-have / required section only\n"
+    "- Use the same canonical naming as tech_stack (Python, Go, Kubernetes, AWS, PostgreSQL, etc.)\n"
+    "- One skill per list item; do not include prose, years-of-experience, or education requirements\n"
+    "- May overlap tech_stack but should reflect only explicitly required tools/tech\n"
+    "- Return [] when no required section or no concrete tools/tech are stated; do not guess\n\n"
+    "preferred_skills rules:\n"
+    "- Extract atomic canonical tool/tech names from nice-to-have / preferred / bonus sections only\n"
+    "- Use the same canonical naming as tech_stack\n"
+    "- One skill per list item; exclude soft skills and vague traits unless they name a concrete tool\n"
+    "- Return [] when no preferred section or no concrete tools/tech are stated; do not guess\n\n"
     "description section rules:\n"
     "- Extract the job description into structured sections as lists of short bullet strings\n"
     "- Rewrite into bullets even when the source is prose; do not copy long paragraphs verbatim\n"
@@ -241,6 +269,22 @@ class _DomainFieldsMixin(_ClearanceRoleIntentMixin):
         return self
 
 
+def enrichment_missing_required_skills(
+    required_skills: list[str],
+    required_qualifications: list[str],
+    *,
+    normalized_roles: list[str] | None = None,
+) -> bool:
+    """Soft QA: engineering job with qualification bullets but no extracted required skills."""
+    if required_skills:
+        return False
+    if not required_qualifications:
+        return False
+    if normalized_roles and not (set(normalized_roles) & ENGINEERING_ROLES):
+        return False
+    return True
+
+
 def enrichment_missing_skill_fields(
     tech_stack: list[str],
     skills: list[str],
@@ -269,6 +313,8 @@ class JobEnrichment(_DomainFieldsMixin):
     remote_type: Literal["remote", "hybrid", "onsite", "unclear"]
     tech_stack: list[str] = Field(default_factory=list)
     skills: list[str] = Field(default_factory=list)
+    required_skills: list[str] = Field(default_factory=list)
+    preferred_skills: list[str] = Field(default_factory=list)
     normalized_roles: list[str] = Field(default_factory=lambda: ["OTHER"])
     job_capabilities: list[CapabilityName] = Field(default_factory=list)
     application_effort: ApplicationEffort = "MEDIUM"
@@ -309,6 +355,11 @@ class JobEnrichment(_DomainFieldsMixin):
     def _coerce_capabilities(cls, value: object) -> list[str]:
         return _coerce_job_capabilities(value)
 
+    @field_validator("required_skills", "preferred_skills", mode="before")
+    @classmethod
+    def _coerce_skill_fields(cls, value: object) -> list[str]:
+        return _coerce_skill_terms(value)
+
 
 class BatchJobEnrichment(_DomainFieldsMixin):
     job_id: str
@@ -321,6 +372,8 @@ class BatchJobEnrichment(_DomainFieldsMixin):
     remote_type: Literal["remote", "hybrid", "onsite", "unclear"] = "unclear"
     tech_stack: list[str] = Field(default_factory=list)
     skills: list[str] = Field(default_factory=list)
+    required_skills: list[str] = Field(default_factory=list)
+    preferred_skills: list[str] = Field(default_factory=list)
     normalized_roles: list[str] = Field(default_factory=lambda: ["OTHER"])
     job_capabilities: list[CapabilityName] = Field(default_factory=list)
     application_effort: ApplicationEffort = "MEDIUM"
@@ -360,6 +413,11 @@ class BatchJobEnrichment(_DomainFieldsMixin):
     @classmethod
     def _coerce_capabilities(cls, value: object) -> list[str]:
         return _coerce_job_capabilities(value)
+
+    @field_validator("required_skills", "preferred_skills", mode="before")
+    @classmethod
+    def _coerce_skill_fields(cls, value: object) -> list[str]:
+        return _coerce_skill_terms(value)
 
 
 class BatchJobEnrichmentResponse(BaseModel):
@@ -414,6 +472,8 @@ DEFAULT_ENRICHMENT = JobEnrichment(
     remote_type="unclear",
     tech_stack=[],
     skills=[],
+    required_skills=[],
+    preferred_skills=[],
     normalized_roles=["OTHER"],
     job_capabilities=[],
     application_effort="MEDIUM",

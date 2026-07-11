@@ -21,7 +21,7 @@ export function ProfileInsightsPanel({
     const top = recommendedJobs
       .filter((j) => !j.is_applied)
       .sort((a, b) => b.personal_score - a.personal_score)[0]
-    return top?.personal_score ?? 0.94
+    return top?.qualification_fit ?? 0.94
   }, [recommendedJobs])
 
   const primaryRole = data.primaryRoles[0] ?? "your target roles"

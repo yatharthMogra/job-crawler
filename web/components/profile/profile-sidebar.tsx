@@ -30,7 +30,7 @@ export function ProfileSidebar({ data, className }: ProfileSidebarProps) {
     const top = recommendedJobs
       .filter((j) => !j.is_applied)
       .sort((a, b) => b.personal_score - a.personal_score)[0]
-    return top?.personal_score ?? 0.85
+    return top?.qualification_fit ?? 0.85
   }, [recommendedJobs])
 
   const initials = (candidate?.name ?? data.candidateName).charAt(0).toUpperCase()

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -59,9 +59,16 @@ class DashboardJobOut(BaseModel):
     company_info: CompanyEnrichmentOut | None = None
 
 
+class PreferenceIndicatorOut(BaseModel):
+    label: str
+    kind: Literal["strength", "gap"]
+
+
 class DashboardRecommendedJobOut(DashboardJobOut):
     personal_score: float
+    qualification_fit: float | None = None
     match_reasons: list[str] = Field(default_factory=list)
+    preference_indicators: list[PreferenceIndicatorOut] = Field(default_factory=list)
 
 
 class DashboardJobsResponse(BaseModel):

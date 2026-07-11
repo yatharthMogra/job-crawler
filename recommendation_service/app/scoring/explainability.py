@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from app.models.shared import NormalizedJob
-from app.scoring.recommendation import _flatten_skills
+from app.scoring.coverage import flatten_skills
 from app.services.profile_loader import UserProfile
 
 
@@ -15,7 +15,7 @@ def generate_explanations(job: NormalizedJob, user_profile: UserProfile) -> list
         if cap in user_cap_names:
             reasons.append(cap)
 
-    all_user_skills = _flatten_skills(user_profile.skills)
+    all_user_skills = flatten_skills(user_profile.skills)
     user_skills_lower = {skill.lower(): skill for skill in all_user_skills}
     for skill in job.tech_stack:
         if skill.lower() in user_skills_lower:
