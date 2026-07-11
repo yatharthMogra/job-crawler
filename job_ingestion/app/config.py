@@ -93,6 +93,7 @@ class Settings(BaseSettings):
     yc_crawler_password: str = ""
     yc_directory_probe_concurrency: int = 5
     yc_waas_roles: str = "eng,ds"
+    hf_token: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",

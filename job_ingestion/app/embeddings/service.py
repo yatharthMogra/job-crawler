@@ -1,17 +1,24 @@
 from __future__ import annotations
 
+import os
 from functools import lru_cache
-from typing import TYPE_CHECKING
 
 import structlog
-
-if TYPE_CHECKING:
-    pass
 
 log = structlog.get_logger(__name__)
 
 DEFAULT_MODEL = "all-MiniLM-L6-v2"
 EMBEDDING_DIM = 384
+
+
+def _apply_hf_token() -> None:
+    from app.config import get_settings
+
+    token = get_settings().hf_token.strip()
+    if not token:
+        return
+    os.environ.setdefault("HF_TOKEN", token)
+    os.environ.setdefault("HUGGING_FACE_HUB_TOKEN", token)
 
 
 @lru_cache(maxsize=1)
@@ -20,6 +27,7 @@ def _load_model():
         from sentence_transformers import SentenceTransformer
     except ImportError as exc:
         raise RuntimeError("sentence-transformers is required for embedding computation") from exc
+    _apply_hf_token()
     return SentenceTransformer(DEFAULT_MODEL)
 
 

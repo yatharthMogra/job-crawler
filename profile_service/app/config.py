@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     cors_origins: str = ""
     resend_api_key: str = ""
     email_from: str = "Job Scout <notifications@job-scout.dev>"
+    hf_token: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",
