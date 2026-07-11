@@ -70,10 +70,31 @@ def build_scheduler(settings: Optional[Settings] = None) -> AsyncIOScheduler:
         await publish_ops_stats_standalone(settings=settings, trigger="scheduled")
 
     async def run_idf_corpus_job() -> None:
+        from app.ingestion.constants import EventCategory, EventSeverity, EventType
+        from app.ingestion.events import write_event
         from app.ingestion.idf_corpus import build_idf_corpus
 
         async with AsyncSessionLocal() as db:
-            await build_idf_corpus(db)
+            try:
+                result = await build_idf_corpus(db)
+                await write_event(
+                    db,
+                    event_type=EventType.IDF_CORPUS_BUILT,
+                    category=EventCategory.SYSTEM,
+                    severity=EventSeverity.INFO,
+                    metadata=result,
+                )
+                await db.commit()
+            except Exception as exc:
+                await write_event(
+                    db,
+                    event_type=EventType.IDF_CORPUS_FAILED,
+                    category=EventCategory.SYSTEM,
+                    severity=EventSeverity.ERROR,
+                    metadata={"error": str(exc)},
+                )
+                await db.commit()
+                raise
 
     async def run_pool_percentile_refresh_job() -> None:
         from app.ingestion.pool_percentile import refresh_cutoffs_for_active_jobs

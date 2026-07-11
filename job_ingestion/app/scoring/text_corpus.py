@@ -1,9 +1,28 @@
 from __future__ import annotations
 
 import re
-from typing import Iterable
+from dataclasses import dataclass
+from typing import Iterable, Protocol
 
-from app.models.normalized_job import NormalizedJob
+class _JobTextFields(Protocol):
+    description_text: str | None
+    description_preview: str | None
+    responsibilities: list[str]
+    required_qualifications: list[str]
+    preferred_qualifications: list[str]
+    tech_stack: list[str]
+    skills: list[str]
+
+
+@dataclass(frozen=True)
+class IdfJobText:
+    description_text: str | None
+    description_preview: str | None
+    responsibilities: list[str]
+    required_qualifications: list[str]
+    preferred_qualifications: list[str]
+    tech_stack: list[str]
+    skills: list[str]
 
 _TOKEN_RE = re.compile(r"[a-z0-9]+(?:'[a-z]+)?", re.IGNORECASE)
 _PHRASE_SEP_RE = re.compile(r"[\s_/\-]+")
@@ -56,19 +75,19 @@ def tokenize_text(text: str, *, protected_phrases: Iterable[str] = ()) -> list[s
     return tokens
 
 
-def job_content_text(job: NormalizedJob) -> str:
+def job_content_text(job: _JobTextFields) -> str:
     parts = [
         job.description_text or "",
         job.description_preview or "",
-        * (job.responsibilities or []),
-        * (job.required_qualifications or []),
-        * (job.preferred_qualifications or []),
-        * (job.tech_stack or []),
-        * (job.skills or []),
+        *(job.responsibilities or []),
+        *(job.required_qualifications or []),
+        *(job.preferred_qualifications or []),
+        *(job.tech_stack or []),
+        *(job.skills or []),
     ]
     return "\n".join(part.strip() for part in parts if part and part.strip())
 
 
-def job_tokens(job: NormalizedJob) -> list[str]:
+def job_tokens(job: _JobTextFields) -> list[str]:
     phrases = collect_protected_phrases(job.tech_stack or [], job.skills or [])
     return tokenize_text(job_content_text(job), protected_phrases=phrases)

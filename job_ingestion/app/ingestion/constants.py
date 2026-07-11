@@ -45,6 +45,8 @@ class EventType:
     SCHEDULER_STARTED = "scheduler_started"
     SCHEDULER_STOPPED = "scheduler_stopped"
     JOB_REJECTED_STALE = "job_rejected_stale"
+    IDF_CORPUS_BUILT = "idf_corpus_built"
+    IDF_CORPUS_FAILED = "idf_corpus_failed"
 
 
 class EventCategory:
