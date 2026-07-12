@@ -6,13 +6,17 @@ export type PaidPlan = "plus" | "pro"
 export const FEATURE_HIRING_MANAGER_LIVE = false
 export const FEATURE_APPLY_AGENT_LIVE = false
 
+export const PRODUCT_NAME = "Job Scout AI"
+
 export interface PlanDefinition {
   tier: PlanTier
   name: string
   priceLabel: string | null
+  priceMonthlyLabel: string | null
   priceCents: number | null
   maxCompanies: number
   deliveryLabel: string
+  shortFeatures: string[]
   features: string[]
   atsFit: boolean
   hiringManager: boolean
@@ -24,11 +28,14 @@ export const PLANS: Record<PlanTier, PlanDefinition> = {
     tier: "free",
     name: "Free",
     priceLabel: null,
+    priceMonthlyLabel: null,
     priceCents: null,
-    maxCompanies: 0,
-    deliveryLabel: "Personalized digest emails",
+    maxCompanies: 5,
+    deliveryLabel: "Batched alerts every 6–12 hours",
+    shortFeatures: ["Watch up to 5 companies", "Batched alerts every 6–12 hours"],
     features: [
       "Personalized job recommendations",
+      "Watch up to 5 companies",
       "Digest emails on your cadence",
       "Application tracking",
     ],
@@ -38,11 +45,18 @@ export const PLANS: Record<PlanTier, PlanDefinition> = {
   },
   plus: {
     tier: "plus",
-    name: "Job Scout Plus",
+    name: "Job Scout AI Plus",
     priceLabel: "$4.99/month",
+    priceMonthlyLabel: "$4.99/mo",
     priceCents: 499,
     maxCompanies: 25,
-    deliveryLabel: "Company watch alerts every 30 min–3 hours",
+    deliveryLabel: "Alerts every 30 min–3 hours",
+    shortFeatures: [
+      "Watch up to 25 companies",
+      "Alerts every 30 min–3h",
+      "Higher daily email limit",
+      "Resume checker (ATS fit)",
+    ],
     features: [
       "Everything in Free",
       "Resume checker (ATS fit + semantic signals)",
@@ -55,11 +69,18 @@ export const PLANS: Record<PlanTier, PlanDefinition> = {
   },
   pro: {
     tier: "pro",
-    name: "Job Scout Pro",
+    name: "Pro",
     priceLabel: "$19.99/month",
+    priceMonthlyLabel: "$19.99/mo",
     priceCents: 1999,
     maxCompanies: 100,
-    deliveryLabel: "Company watch alerts every 15–60 minutes",
+    deliveryLabel: "Faster alerts every 15–60 minutes",
+    shortFeatures: [
+      "Watch up to 100 companies",
+      "Faster alerts (15–60 min)",
+      "Hiring manager contacts (rolling out)",
+      "Apply agent (rolling out)",
+    ],
     features: [
       "Everything in Plus",
       "Watch up to 100 companies",

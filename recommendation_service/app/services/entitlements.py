@@ -31,7 +31,7 @@ class TierLimits:
 
 TIER_LIMITS: dict[PlanTier, TierLimits] = {
     "free": TierLimits(
-        max_companies=0,
+        max_companies=5,
         cadence_min_minutes=360,
         cadence_max_minutes=720,
         delivery="batched",

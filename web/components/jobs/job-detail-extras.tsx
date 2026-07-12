@@ -162,7 +162,7 @@ export function JobScoutPlusUpsell({ className }: { className?: string }) {
     >
       <div className="flex items-center gap-2">
         <Sparkles className="size-4 text-violet-300" />
-        <p className="text-sm font-bold">Upgrade your plan</p>
+        <p className="text-sm font-bold">Job Scout AI plans</p>
       </div>
       <p className="mt-2 text-xs leading-relaxed text-slate-300">
         Plus unlocks resume checker and company-watch alerts. Pro adds elevated limits and upcoming hiring
@@ -172,7 +172,7 @@ export function JobScoutPlusUpsell({ className }: { className?: string }) {
         href="/settings"
         className="mt-3 block w-full rounded-lg bg-white/10 py-2 text-center text-xs font-semibold text-white transition-colors hover:bg-white/15"
       >
-        View plans
+        View Job Scout AI plans
       </a>
     </div>
   )

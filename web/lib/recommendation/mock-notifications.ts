@@ -7,7 +7,7 @@ import type {
 import { MOCK_CANDIDATE_ID } from "@/lib/profile/session"
 
 const FREE_ENTITLEMENTS: TierEntitlementsApi = {
-  max_companies: 0,
+  max_companies: 5,
   cadence_min_minutes: 360,
   cadence_max_minutes: 720,
   delivery: "batched",
@@ -43,14 +43,62 @@ const PRO_ENTITLEMENTS: TierEntitlementsApi = {
 }
 
 export const MOCK_COMPANY_CATALOG: CompanySearchResult[] = [
-  { id: "a1000000-0000-4000-8000-000000000001", name: "Stripe", platform: "greenhouse", is_active: true },
-  { id: "a1000000-0000-4000-8000-000000000002", name: "Notion", platform: "ashby", is_active: true },
-  { id: "a1000000-0000-4000-8000-000000000003", name: "Anthropic", platform: "greenhouse", is_active: true },
-  { id: "a1000000-0000-4000-8000-000000000004", name: "Figma", platform: "greenhouse", is_active: true },
-  { id: "a1000000-0000-4000-8000-000000000005", name: "Databricks", platform: "greenhouse", is_active: true },
-  { id: "a1000000-0000-4000-8000-000000000006", name: "Airbnb", platform: "greenhouse", is_active: true },
-  { id: "a1000000-0000-4000-8000-000000000007", name: "Coinbase", platform: "greenhouse", is_active: true },
-  { id: "a1000000-0000-4000-8000-000000000008", name: "Scale AI", platform: "greenhouse", is_active: true },
+  {
+    id: "a1000000-0000-4000-8000-000000000001",
+    name: "Stripe",
+    platform: "greenhouse",
+    is_active: true,
+    logo_url: null,
+  },
+  {
+    id: "a1000000-0000-4000-8000-000000000002",
+    name: "Notion",
+    platform: "ashby",
+    is_active: true,
+    logo_url: null,
+  },
+  {
+    id: "a1000000-0000-4000-8000-000000000003",
+    name: "Anthropic",
+    platform: "greenhouse",
+    is_active: true,
+    logo_url: null,
+  },
+  {
+    id: "a1000000-0000-4000-8000-000000000004",
+    name: "Figma",
+    platform: "greenhouse",
+    is_active: true,
+    logo_url: null,
+  },
+  {
+    id: "a1000000-0000-4000-8000-000000000005",
+    name: "Databricks",
+    platform: "greenhouse",
+    is_active: true,
+    logo_url: null,
+  },
+  {
+    id: "a1000000-0000-4000-8000-000000000006",
+    name: "Airbnb",
+    platform: "greenhouse",
+    is_active: true,
+    logo_url: null,
+  },
+  {
+    id: "a1000000-0000-4000-8000-000000000007",
+    name: "Coinbase",
+    platform: "greenhouse",
+    is_active: true,
+    logo_url: null,
+  },
+  {
+    id: "a1000000-0000-4000-8000-000000000008",
+    name: "Scale AI",
+    platform: "greenhouse",
+    is_active: true,
+    logo_url: null,
+  },
 ]
 
 const DEFAULT_WATCHED_IDS = [
@@ -92,7 +140,7 @@ function createDefaultState(candidateId: string): MockNotificationState {
     prefs: {
       candidate_id: candidateId,
       digest_enabled: true,
-      company_watch_enabled: false,
+      company_watch_enabled: true,
       cadence_hours: 24,
       top_k: 4,
       digest_filters: null,
@@ -145,6 +193,7 @@ export async function mockFetchCompanyWatch(candidateId: string): Promise<Compan
       company_name: c.name,
       platform: c.platform,
       is_active: true,
+      logo_url: c.logo_url ?? null,
     }),
   )
   return {

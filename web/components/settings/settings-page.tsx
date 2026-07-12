@@ -109,8 +109,8 @@ export function SettingsPage() {
             <div className="mx-auto max-w-3xl rounded-xl card-elevated border-0 p-6">
               <h2 className="text-base font-semibold text-foreground">Subscriptions</h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                Choose Free, Plus, or Pro. Company watch alerts and resume checker are included in paid
-                plans. Manage email preferences on the{" "}
+                Choose Free, Plus, or Pro for Job Scout AI. Company watch alerts and resume checker are
+                included in paid plans. Manage email preferences on the{" "}
                 <Link href="/emails" className="font-medium text-brand hover:underline">
                   Emails
                 </Link>{" "}
