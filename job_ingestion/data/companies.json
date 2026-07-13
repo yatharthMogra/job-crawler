@@ -180,7 +180,7 @@
     "platform": "lever",
     "board_token": "palantir",
     "is_active": true,
-    "fetch_tier": 2
+    "fetch_tier": 1
   },
   {
     "company": "Slate",
@@ -488,7 +488,7 @@
     "platform": "lever",
     "board_token": "MBRDNA",
     "is_active": true,
-    "fetch_tier": 2
+    "fetch_tier": 1
   },
   {
     "company": "Per Scholas",
@@ -714,7 +714,7 @@
       "public_path_prefix": "en-US/external"
     },
     "is_active": true,
-    "fetch_tier": 3
+    "fetch_tier": 2
   },
   {
     "company": "Valeo",
@@ -1972,7 +1972,7 @@
     "company": "Netflix",
     "platform": "eightfold",
     "board_token": "netflix",
-    "fetch_tier": 2,
+    "fetch_tier": 1,
     "is_active": true,
     "platform_config": {
       "api_host": "explore.jobs.netflix.net",
@@ -26792,7 +26792,7 @@
     "company": "103644278",
     "platform": "greenhouse",
     "board_token": "103644278",
-    "is_active": true,
+    "is_active": false,
     "fetch_tier": 2
   },
   {
@@ -37087,7 +37087,7 @@
     "platform": "rippling",
     "board_token": "blackrockneurotech",
     "is_active": true,
-    "fetch_tier": 2
+    "fetch_tier": 1
   },
   {
     "company": "Blattner Blattnercompany",
@@ -46926,7 +46926,7 @@
     "platform": "workday",
     "board_token": "nike-nke",
     "is_active": true,
-    "fetch_tier": 3,
+    "fetch_tier": 2,
     "platform_config": {
       "tenant": "nike",
       "instance": "wd1",
@@ -57692,7 +57692,7 @@
       "company_id": "45831"
     },
     "is_active": true,
-    "fetch_tier": 2
+    "fetch_tier": 1
   },
   {
     "company": "Goldman Sachs",
@@ -57720,7 +57720,7 @@
       ]
     },
     "is_active": true,
-    "fetch_tier": 2
+    "fetch_tier": 1
   },
   {
     "company": "Millennium Management",
@@ -57731,7 +57731,7 @@
       "domain": "mlp.com"
     },
     "is_active": true,
-    "fetch_tier": 2
+    "fetch_tier": 1
   },
   {
     "company": "Millennium Management (Campus)",
@@ -57745,6 +57745,6 @@
       }
     },
     "is_active": true,
-    "fetch_tier": 2
+    "fetch_tier": 1
   }
 ]

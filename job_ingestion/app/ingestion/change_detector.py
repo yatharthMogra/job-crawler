@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Any
 
-from app.utils.hashing import compute_content_hash
+from app.ingestion.job_content_hash import compute_job_content_hash
 
 
 @dataclass
@@ -17,6 +17,8 @@ def classify_jobs(
     fetched_jobs: list[dict[str, Any]],
     previous_hashes: dict[str, str],
     previously_active_job_ids: set[str],
+    *,
+    platform: str,
 ) -> ClassifiedJobs:
     result = ClassifiedJobs()
     seen_ids: set[str] = set()
@@ -27,7 +29,7 @@ def classify_jobs(
             continue
 
         seen_ids.add(external_job_id)
-        content_hash = compute_content_hash(job)
+        content_hash = compute_job_content_hash(job, platform)
         result.hashes[external_job_id] = content_hash
         old_hash = previous_hashes.get(external_job_id)
 

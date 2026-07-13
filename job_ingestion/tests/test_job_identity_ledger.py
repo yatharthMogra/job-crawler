@@ -10,19 +10,21 @@ import pytest
 from app.config import Settings
 from app.ingestion import pipeline
 from app.ingestion.change_detector import ClassifiedJobs, classify_jobs
+from app.ingestion.job_content_hash import compute_job_content_hash
 from app.ingestion.job_identity_ledger import load_ledger_hashes, touch_ledger_seen, upsert_ledger_entry
 from app.models.company import Company
-from app.utils.hashing import compute_content_hash
 
 
 def test_classify_uses_ledger_hashes_after_purge() -> None:
-    job = {"id": "42", "title": "Software Engineer"}
-    ledger_hashes = {"42": compute_content_hash(job)}
+    job = {"id": "42", "title": "Software Engineer", "content": "<p>Build things</p>"}
+    platform = "greenhouse"
+    ledger_hashes = {"42": compute_job_content_hash(job, platform)}
 
     result = classify_jobs(
         fetched_jobs=[job],
         previous_hashes=ledger_hashes,
         previously_active_job_ids=set(),
+        platform=platform,
     )
 
     assert len(result.new) == 0
@@ -92,24 +94,13 @@ def _company(**overrides) -> Company:
 async def test_process_company_raw_jobs_unchanged_when_ledger_hash_matches(monkeypatch) -> None:
     company = _company()
     job = {"id": "job-1", "title": "Engineer", "content": "<p>Build things</p>"}
-    content_hash = compute_content_hash(job)
+    content_hash = compute_job_content_hash(job, company.platform)
 
     monkeypatch.setattr(pipeline, "load_ledger_hashes", AsyncMock(return_value={"job-1": content_hash}))
+    monkeypatch.setattr(pipeline, "load_ledger_first_seen_map", AsyncMock(return_value={}))
     monkeypatch.setattr(pipeline, "_latest_hashes_for_company", AsyncMock(return_value={}))
     monkeypatch.setattr(pipeline, "_normalized_map_for_company", AsyncMock(return_value={}))
     monkeypatch.setattr(pipeline, "fingerprint_exists", AsyncMock(return_value=False))
-    monkeypatch.setattr(
-        pipeline,
-        "upsert_job_archive_from_deterministic",
-        AsyncMock(return_value=uuid4()),
-    )
-    normalized = SimpleNamespace(id=uuid4(), job_archive_id=uuid4(), is_active=True)
-    monkeypatch.setattr(
-        pipeline,
-        "_upsert_normalized_core",
-        AsyncMock(return_value=normalized),
-    )
-    monkeypatch.setattr(pipeline, "queue_job_for_enrichment", AsyncMock())
     upsert_mock = AsyncMock()
     monkeypatch.setattr(pipeline, "upsert_ledger_entry", upsert_mock)
 
@@ -126,19 +117,47 @@ async def test_process_company_raw_jobs_unchanged_when_ledger_hash_matches(monke
     assert outcome.jobs_new == 0
     assert outcome.jobs_unchanged == 1
     assert outcome.jobs_ledger_skipped == 0
-    db.add.assert_called_once()
-    assert upsert_mock.await_count >= 2
+    db.add.assert_not_called()
+    upsert_mock.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_process_company_raw_jobs_unchanged_ledger_only_does_not_promote(monkeypatch) -> None:
+    company = _company()
+    job = {"id": "job-1", "title": "Engineer", "content": "<p>Build things</p>"}
+    content_hash = compute_job_content_hash(job, company.platform)
+
+    monkeypatch.setattr(pipeline, "load_ledger_hashes", AsyncMock(return_value={"job-1": content_hash}))
+    monkeypatch.setattr(pipeline, "load_ledger_first_seen_map", AsyncMock(return_value={"job-1": datetime.now(timezone.utc)}))
+    monkeypatch.setattr(pipeline, "_latest_hashes_for_company", AsyncMock(return_value={}))
+    monkeypatch.setattr(pipeline, "_normalized_map_for_company", AsyncMock(return_value={}))
+    upsert_mock = AsyncMock()
+    monkeypatch.setattr(pipeline, "upsert_ledger_entry", upsert_mock)
+
+    db = MagicMock()
+    outcome = await pipeline.process_company_raw_jobs(
+        db,
+        company,
+        [job],
+        pipeline_run_id=uuid4(),
+        settings=Settings(),
+    )
+
+    assert outcome.jobs_unchanged == 1
+    db.add.assert_not_called()
+    upsert_mock.assert_awaited_once()
 
 
 @pytest.mark.asyncio
 async def test_process_company_raw_jobs_guard_skips_changed_job(monkeypatch) -> None:
     company = _company()
     job = {"id": "job-1", "title": "Engineer", "content": "<p>Build things</p>"}
-    content_hash = compute_content_hash(job)
+    content_hash = compute_job_content_hash(job, company.platform)
     classified = ClassifiedJobs()
     classified.new = [job]
 
     monkeypatch.setattr(pipeline, "load_ledger_hashes", AsyncMock(return_value={"job-1": content_hash}))
+    monkeypatch.setattr(pipeline, "load_ledger_first_seen_map", AsyncMock(return_value={}))
     monkeypatch.setattr(pipeline, "_latest_hashes_for_company", AsyncMock(return_value={"job-1": "stale-hash"}))
     monkeypatch.setattr(
         pipeline,
@@ -178,8 +197,9 @@ async def test_process_company_raw_jobs_reingests_on_hash_mismatch(monkeypatch) 
     monkeypatch.setattr(
         pipeline,
         "load_ledger_hashes",
-        AsyncMock(return_value={"job-1": compute_content_hash(old_job)}),
+        AsyncMock(return_value={"job-1": compute_job_content_hash(old_job, company.platform)}),
     )
+    monkeypatch.setattr(pipeline, "load_ledger_first_seen_map", AsyncMock(return_value={}))
     monkeypatch.setattr(pipeline, "_latest_hashes_for_company", AsyncMock(return_value={}))
     monkeypatch.setattr(pipeline, "_normalized_map_for_company", AsyncMock(return_value={}))
     monkeypatch.setattr(pipeline, "fingerprint_exists", AsyncMock(return_value=False))
@@ -220,6 +240,7 @@ async def test_process_company_raw_jobs_baseline_ledgers_unknown_posted_at(monke
     job = {"id": "job-new", "title": "Engineer", "content": "<p>New role</p>"}
 
     monkeypatch.setattr(pipeline, "load_ledger_hashes", AsyncMock(return_value={}))
+    monkeypatch.setattr(pipeline, "load_ledger_first_seen_map", AsyncMock(return_value={}))
     monkeypatch.setattr(pipeline, "_latest_hashes_for_company", AsyncMock(return_value={}))
     monkeypatch.setattr(pipeline, "_normalized_map_for_company", AsyncMock(return_value={}))
     monkeypatch.setattr(pipeline, "fingerprint_exists", AsyncMock(return_value=False))
@@ -267,6 +288,7 @@ async def test_process_company_raw_jobs_baseline_ingests_fresh_jobs(monkeypatch)
     }
 
     monkeypatch.setattr(pipeline, "load_ledger_hashes", AsyncMock(return_value={}))
+    monkeypatch.setattr(pipeline, "load_ledger_first_seen_map", AsyncMock(return_value={}))
     monkeypatch.setattr(pipeline, "_latest_hashes_for_company", AsyncMock(return_value={}))
     monkeypatch.setattr(pipeline, "_normalized_map_for_company", AsyncMock(return_value={}))
     monkeypatch.setattr(pipeline, "fingerprint_exists", AsyncMock(return_value=False))
@@ -313,6 +335,7 @@ async def test_process_company_raw_jobs_baseline_ledgers_stale_jobs(monkeypatch)
     }
 
     monkeypatch.setattr(pipeline, "load_ledger_hashes", AsyncMock(return_value={}))
+    monkeypatch.setattr(pipeline, "load_ledger_first_seen_map", AsyncMock(return_value={}))
     monkeypatch.setattr(pipeline, "_latest_hashes_for_company", AsyncMock(return_value={}))
     monkeypatch.setattr(pipeline, "_normalized_map_for_company", AsyncMock(return_value={}))
     monkeypatch.setattr(pipeline, "fingerprint_exists", AsyncMock(return_value=False))
@@ -342,6 +365,7 @@ async def test_process_company_raw_jobs_second_run_ingests_new_jobs(monkeypatch)
     job = {"id": "job-new", "title": "Engineer", "content": "<p>New role</p>"}
 
     monkeypatch.setattr(pipeline, "load_ledger_hashes", AsyncMock(return_value={"job-old": "existing-hash"}))
+    monkeypatch.setattr(pipeline, "load_ledger_first_seen_map", AsyncMock(return_value={}))
     monkeypatch.setattr(pipeline, "_latest_hashes_for_company", AsyncMock(return_value={}))
     monkeypatch.setattr(pipeline, "_normalized_map_for_company", AsyncMock(return_value={}))
     monkeypatch.setattr(pipeline, "fingerprint_exists", AsyncMock(return_value=False))

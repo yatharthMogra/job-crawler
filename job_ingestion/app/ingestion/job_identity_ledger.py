@@ -25,6 +25,17 @@ async def load_ledger_hashes(db: AsyncSession, company_id: UUID) -> dict[str, st
     return {external_job_id: content_hash for external_job_id, content_hash in rows}
 
 
+async def load_ledger_first_seen_map(db: AsyncSession, company_id: UUID) -> dict[str, datetime]:
+    rows = (
+        await db.execute(
+            select(JobIdentityLedger.external_job_id, JobIdentityLedger.first_seen_at).where(
+                JobIdentityLedger.company_id == company_id
+            )
+        )
+    ).all()
+    return {external_job_id: first_seen_at for external_job_id, first_seen_at in rows}
+
+
 async def upsert_ledger_entry(
     db: AsyncSession,
     company_id: UUID,

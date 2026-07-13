@@ -44,7 +44,9 @@ from app.ingestion.job_archive_sync import (
     upsert_job_archive_from_deterministic,
     upsert_job_archive_from_normalized,
 )
+from app.ingestion.job_content_hash import compute_job_content_hash
 from app.ingestion.job_identity_ledger import (
+    load_ledger_first_seen_map,
     load_ledger_hashes,
     upsert_ledger_entry,
 )
@@ -52,7 +54,6 @@ from app.models.company import Company
 from app.models.normalized_job import NormalizedJob
 from app.models.pipeline_run import CompanyRunResult, PipelineRun
 from app.models.raw_job import RawJob
-from app.utils.hashing import compute_content_hash
 
 logger = structlog.get_logger(__name__) if structlog else logging.getLogger(__name__)
 TerminalRunStatus = Literal["completed", "partial_success", "failed"]
@@ -196,9 +197,24 @@ async def _upsert_normalized_job(
     settings: Settings,
     existing_row: Optional[NormalizedJob],
     job_archive_id: Optional[UUID] = None,
+    *,
+    ledger_first_seen_at: Optional[datetime] = None,
 ) -> None:
     now = _utcnow()
     company_name = deterministic_fields.get("company_name") or company.name
+    posted_at = deterministic_fields.get("posted_at")
+    if existing_row is None:
+        if posted_at is not None:
+            reference_at = resolve_reference_at(posted_at, raw_row.fetch_timestamp)
+        elif ledger_first_seen_at is not None:
+            reference_at = ledger_first_seen_at
+        else:
+            reference_at = resolve_reference_at(None, raw_row.fetch_timestamp)
+    elif posted_at is not None:
+        reference_at = resolve_reference_at(posted_at, raw_row.fetch_timestamp)
+    else:
+        reference_at = existing_row.reference_at
+
     payload = dict(
         raw_job_id=raw_row.id,
         company_id=company.id,
@@ -213,11 +229,8 @@ async def _upsert_normalized_job(
         posting_url=deterministic_fields["posting_url"],
         description_text=deterministic_fields.get("description_text"),
         description_preview=deterministic_fields.get("description_preview"),
-        posted_at=deterministic_fields["posted_at"],
-        reference_at=resolve_reference_at(
-            deterministic_fields.get("posted_at"),
-            raw_row.fetch_timestamp,
-        ),
+        posted_at=posted_at,
+        reference_at=reference_at,
         is_active=True,
         consecutive_misses=0,
         last_seen_at=now,
@@ -267,6 +280,8 @@ async def _upsert_normalized_core(
     settings: Settings,
     existing_row: Optional[NormalizedJob],
     job_archive_id: UUID,
+    *,
+    ledger_first_seen_at: Optional[datetime] = None,
 ) -> NormalizedJob:
     await _upsert_normalized_job(
         db=db,
@@ -277,6 +292,7 @@ async def _upsert_normalized_core(
         settings=settings,
         existing_row=existing_row,
         job_archive_id=job_archive_id,
+        ledger_first_seen_at=ledger_first_seen_at,
     )
     normalized = existing_row
     if normalized is None:
@@ -306,26 +322,28 @@ async def process_company_raw_jobs(
     outcome = CompanyRunOutcome(company_id=company.id, status="success")
     outcome.jobs_fetched = len(raw_jobs)
     ledger_hashes = await load_ledger_hashes(db, company.id)
+    ledger_first_seen = await load_ledger_first_seen_map(db, company.id)
     raw_hashes = await _latest_hashes_for_company(db, company.id)
     previous_hashes = {**raw_hashes, **ledger_hashes}
     normalized_by_external_id = await _normalized_map_for_company(db, company.id)
     is_baseline = _is_baseline_run(ledger_hashes, raw_hashes, normalized_by_external_id)
     active_ids = {job_id for job_id, row in normalized_by_external_id.items() if row.is_active}
-    classified = classify_jobs(raw_jobs, previous_hashes, active_ids)
+    classified = classify_jobs(
+        raw_jobs,
+        previous_hashes,
+        active_ids,
+        platform=company.platform,
+    )
     outcome.jobs_new = len(classified.new)
     outcome.jobs_updated = len(classified.updated)
     outcome.jobs_unchanged = len(classified.unchanged)
 
     new_external_ids = {str(job.get("id")) for job in classified.new}
-    ledger_only_unchanged = [
-        job
-        for job in classified.unchanged
-        if str(job.get("id")) not in normalized_by_external_id
-    ]
-    changed_jobs = classified.new + classified.updated + ledger_only_unchanged
+    updated_external_ids = {str(job.get("id")) for job in classified.updated}
+    changed_jobs = classified.new + classified.updated
     now = _utcnow()
     for job in changed_jobs:
-        content_hash = compute_content_hash(job)
+        content_hash = compute_job_content_hash(job, company.platform)
         deterministic_fields = extract_deterministic_fields(job, platform=company.platform)
         external_id = deterministic_fields["external_job_id"]
         freshness = classify_posted_at(deterministic_fields.get("posted_at"), settings=settings)
@@ -369,9 +387,9 @@ async def process_company_raw_jobs(
             external_job_id=external_id,
         ):
             outcome.jobs_deduped += 1
-            if external_id not in normalized_by_external_id:
+            if external_id in new_external_ids:
                 outcome.jobs_new -= 1
-            else:
+            elif external_id in updated_external_ids:
                 outcome.jobs_updated -= 1
             if structlog:
                 logger.info(
@@ -439,6 +457,7 @@ async def process_company_raw_jobs(
             settings=settings,
             existing_row=normalized_by_external_id.get(external_id),
             job_archive_id=job_archive_id,
+            ledger_first_seen_at=ledger_first_seen.get(external_id),
         )
         normalized_by_external_id[external_id] = normalized
 
@@ -464,7 +483,7 @@ async def process_company_raw_jobs(
             db,
             company.id,
             external_id,
-            compute_content_hash(unchanged),
+            compute_job_content_hash(unchanged, company.platform),
             seen_at=now,
         )
         existing = normalized_by_external_id.get(external_id)
