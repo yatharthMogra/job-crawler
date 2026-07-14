@@ -5,7 +5,7 @@
 #   - gcloud CLI authenticated, billing enabled, APIs enabled
 #   - Docker running (Apple Silicon: builds linux/amd64 for Cloud Run)
 #   - Secrets in Secret Manager: database-url, gemini-api-key, profile-api-key,
-#     supabase-url, supabase-service-role-key, resend-api-key
+#     azure-storage-connection-string, resend-api-key
 #   - HF_TOKEN env var set when building embedding_worker (model download at build time)
 #   - Run scripts/provision-embedding-infra.sh once to create Pub/Sub + scheduler
 #
@@ -130,8 +130,8 @@ gcloud artifacts repositories describe "${REPO}" \
 gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
 
 deploy_service profile_service \
-  --set-secrets "DATABASE_URL=database-url:latest,GEMINI_API_KEY=gemini-api-key:latest,API_KEY=profile-api-key:latest,SUPABASE_URL=supabase-url:latest,SUPABASE_SERVICE_ROLE_KEY=supabase-service-role-key:latest,RESEND_API_KEY=resend-api-key:latest" \
-  --set-env-vars "RESUME_STORAGE_BACKEND=supabase,SUPABASE_STORAGE_BUCKET=resumes,CORS_ORIGINS=${CORS_ORIGINS},EMAIL_FROM=Job Scout <notifications@job-scout.dev>,GCP_PROJECT=${PROJECT},EMBEDDING_REQUESTS_TOPIC=embedding-requests,EMBEDDING_PUBLISH_ENABLED=true"
+  --set-secrets "DATABASE_URL=database-url:latest,GEMINI_API_KEY=gemini-api-key:latest,API_KEY=profile-api-key:latest,AZURE_STORAGE_CONNECTION_STRING=azure-storage-connection-string:latest,RESEND_API_KEY=resend-api-key:latest" \
+  --set-env-vars "RESUME_STORAGE_BACKEND=azure,AZURE_STORAGE_CONTAINER=resumes,CORS_ORIGINS=${CORS_ORIGINS},EMAIL_FROM=Job Scout <notifications@job-scout.dev>,GCP_PROJECT=${PROJECT},EMBEDDING_REQUESTS_TOPIC=embedding-requests,EMBEDDING_PUBLISH_ENABLED=true"
 
 deploy_service recommendation_service \
   --set-secrets "DATABASE_URL=database-url:latest,GEMINI_API_KEY=gemini-api-key:latest,REDIS_URL=redis-url:latest" \

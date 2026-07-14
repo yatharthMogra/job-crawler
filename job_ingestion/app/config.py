@@ -81,12 +81,14 @@ class Settings(BaseSettings):
     archive_dir: str = "data/archives"
     tesla_ingest_token: str = ""
     company_watch_events_enabled: bool = True
-    company_logo_storage_backend: Literal["local", "supabase"] = "local"
+    company_logo_storage_backend: Literal["local", "supabase", "azure"] = "local"
     company_logo_local_dir: str = "../web/public/logos/companies"
     company_logo_public_base_url: str = "/logos/companies"
     supabase_url: str = ""
     supabase_service_role_key: str = ""
     supabase_storage_bucket: str = "company-logos"
+    azure_storage_connection_string: str = ""
+    azure_storage_container: str = "company-icons"
     company_logo_fetch_rate_per_second: float = 5.0
 
     yc_crawler_email: str = ""
