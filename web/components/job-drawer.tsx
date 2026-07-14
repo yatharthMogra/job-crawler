@@ -21,6 +21,7 @@ import {
   buildRoleAboutIntro,
 } from "@/components/jobs/job-detail-extras"
 import { useProfileFlow } from "@/components/profile/profile-flow-provider"
+import { useSession } from "@/components/session-provider"
 import { timeAgo, formatSalary, type JobWithRole } from "@/lib/jobs-data"
 import type { JobFeedKind } from "@/lib/job-feed"
 import { EMP_LABEL, REMOTE_LABEL } from "@/lib/job-meta"
@@ -107,6 +108,25 @@ function AtsFitSection({ jobId }: { jobId: string }) {
   }
 
   const { data } = state
+  if (data.unavailable_reason === "plan_required") {
+    return (
+      <div className="mt-4 rounded-xl border border-border/70 bg-muted/30 p-4">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+          Resume checker
+        </p>
+        <p className="mt-2 text-sm font-semibold text-foreground">Unlock with Plus</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          ATS fit and semantic resume matching are included with Job Scout Plus and Pro.
+        </p>
+        <a
+          href="/settings"
+          className="mt-3 inline-flex rounded-full bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground"
+        >
+          View plans
+        </a>
+      </div>
+    )
+  }
   if (data.unavailable_reason === "no_resume") {
     return (
       <p className="mt-3 text-sm text-muted-foreground">
@@ -146,6 +166,7 @@ export function JobDetailContent({
   feed?: JobFeedKind
 }) {
   const { profileHome } = useProfileFlow()
+  const { candidate } = useSession()
 
   const profileSkillNames = useMemo(
     () => profileHome?.profile.skills?.flatMap((group) => group.names) ?? [],
@@ -325,7 +346,7 @@ export function JobDetailContent({
           </div>
 
           <aside className="space-y-4 xl:sticky xl:top-0 xl:self-start">
-            <HiringTeamUpsell job={job} />
+            <HiringTeamUpsell job={job} planTier={candidate?.plan_tier} />
             <JobScoutPlusUpsell />
           </aside>
         </div>

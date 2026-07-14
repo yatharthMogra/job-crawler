@@ -1163,9 +1163,27 @@ The phases above expand these five areas:
 | `RESEND_API_KEY`            |                                           | Via Secret Manager — OTP emails |
 | `EMAIL_FROM`                | `Job Scout <notifications@job-scout.dev>` | Verified sender in Resend       |
 | `CORS_ORIGINS`              | Vercel URL                                |                                 |
+| `STRIPE_SECRET_KEY`         | `sk_live_…` / `sk_test_…`                 | Via Secret Manager              |
+| `STRIPE_WEBHOOK_SECRET`     | `whsec_…`                                 | Via Secret Manager              |
+| `STRIPE_PRICE_PLUS`         | `price_…`                                 | $4.99/mo Plus price id          |
+| `STRIPE_PRICE_PRO`          | `price_…`                                 | $19.99/mo Pro price id          |
+| `BILLING_SUCCESS_URL`       | `https://job-scout.dev/settings?billing=success` | Checkout return URL      |
+| `BILLING_CANCEL_URL`        | `https://job-scout.dev/settings?billing=cancel`  | Checkout cancel URL      |
 
 
 
+### Stripe billing setup
+
+1. In Stripe (test mode first), create products **Job Scout Plus** ($4.99/month) and **Job Scout Pro** ($19.99/month).
+2. Set price metadata `plan_tier=plus` / `plan_tier=pro`.
+3. Enable Customer Portal: cancel, switch plans, update payment method.
+4. Add webhook endpoint `https://<profile-api>/billing/webhook` for:
+   `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`.
+5. Store secrets in GCP Secret Manager and wire into the profile Cloud Run service.
+6. Run Alembic migration `20260711_0007` (billing columns + `billing_events`).
+7. Local: `stripe listen --forward-to localhost:8001/billing/webhook` and put the printed `whsec_…` in `STRIPE_WEBHOOK_SECRET`.
+
+Checkout and portal sessions are created by profile_service; the Next.js app proxies `/api/profile/billing/*` with `PROFILE_API_KEY`.
 
 ### Cloud Run — recommendation_service API
 

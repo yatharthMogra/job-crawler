@@ -2,6 +2,9 @@ export interface CandidateResponse {
   id: string
   email: string
   name: string
+  plan_tier?: string
+  plan_expires_at?: string | null
+  subscription_status?: string
   created_at: string
   updated_at: string
 }

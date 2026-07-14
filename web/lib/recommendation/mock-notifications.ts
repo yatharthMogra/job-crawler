@@ -7,12 +7,15 @@ import type {
 import { MOCK_CANDIDATE_ID } from "@/lib/profile/session"
 
 const FREE_ENTITLEMENTS: TierEntitlementsApi = {
-  max_companies: 5,
+  max_companies: 0,
   cadence_min_minutes: 360,
   cadence_max_minutes: 720,
   delivery: "batched",
   max_emails_per_day_cap: 10,
   default_max_emails_per_day: 3,
+  ats_fit: false,
+  hiring_manager: false,
+  apply_agent: false,
 }
 
 const PLUS_ENTITLEMENTS: TierEntitlementsApi = {
@@ -22,6 +25,21 @@ const PLUS_ENTITLEMENTS: TierEntitlementsApi = {
   delivery: "batched",
   max_emails_per_day_cap: 20,
   default_max_emails_per_day: 10,
+  ats_fit: true,
+  hiring_manager: false,
+  apply_agent: false,
+}
+
+const PRO_ENTITLEMENTS: TierEntitlementsApi = {
+  max_companies: 100,
+  cadence_min_minutes: 15,
+  cadence_max_minutes: 60,
+  delivery: "batched",
+  max_emails_per_day_cap: 50,
+  default_max_emails_per_day: 20,
+  ats_fit: true,
+  hiring_manager: true,
+  apply_agent: true,
 }
 
 export const MOCK_COMPANY_CATALOG: CompanySearchResult[] = [
@@ -48,27 +66,33 @@ interface MockNotificationState {
 
 const stateByCandidate = new Map<string, MockNotificationState>()
 
-function entitlementsFor(planTier: "free" | "plus"): TierEntitlementsApi {
-  return planTier === "plus" ? PLUS_ENTITLEMENTS : FREE_ENTITLEMENTS
+function entitlementsFor(planTier: "free" | "plus" | "pro"): TierEntitlementsApi {
+  if (planTier === "pro") return PRO_ENTITLEMENTS
+  if (planTier === "plus") return PLUS_ENTITLEMENTS
+  return FREE_ENTITLEMENTS
 }
 
-function defaultCadenceMinutes(planTier: "free" | "plus"): number {
-  return planTier === "plus" ? 30 : 360
+function defaultCadenceMinutes(planTier: "free" | "plus" | "pro"): number {
+  if (planTier === "pro") return 15
+  if (planTier === "plus") return 30
+  return 360
 }
 
-function defaultMaxEmails(planTier: "free" | "plus"): number {
-  return planTier === "plus" ? 10 : 3
+function defaultMaxEmails(planTier: "free" | "plus" | "pro"): number {
+  if (planTier === "pro") return 20
+  if (planTier === "plus") return 10
+  return 3
 }
 
 function createDefaultState(candidateId: string): MockNotificationState {
-  const planTier: "free" | "plus" = "free"
+  const planTier: "free" | "plus" | "pro" = "free"
   const entitlements = entitlementsFor(planTier)
   return {
     watchedCompanyIds: [...DEFAULT_WATCHED_IDS],
     prefs: {
       candidate_id: candidateId,
       digest_enabled: true,
-      company_watch_enabled: true,
+      company_watch_enabled: false,
       cadence_hours: 24,
       top_k: 4,
       digest_filters: null,
@@ -86,95 +110,68 @@ function createDefaultState(candidateId: string): MockNotificationState {
 }
 
 function getState(candidateId: string): MockNotificationState {
-  let state = stateByCandidate.get(candidateId)
+  const key = candidateId || MOCK_CANDIDATE_ID
+  let state = stateByCandidate.get(key)
   if (!state) {
-    state = createDefaultState(candidateId)
-    stateByCandidate.set(candidateId, state)
+    state = createDefaultState(key)
+    stateByCandidate.set(key, state)
   }
   return state
 }
 
-function buildWatchList(candidateId: string, state: MockNotificationState): CompanyWatchListApi {
-  const catalog = new Map(MOCK_COMPANY_CATALOG.map((c) => [c.id, c]))
-  return {
-    candidate_id: candidateId,
-    plan_tier: state.prefs.plan_tier,
-    max_companies: state.prefs.entitlements.max_companies,
-    companies: state.watchedCompanyIds
-      .map((id) => catalog.get(id))
-      .filter((c): c is CompanySearchResult => Boolean(c))
-      .map((c) => ({
-        company_id: c.id,
-        company_name: c.name,
-        platform: c.platform,
-        is_active: c.is_active,
-      })),
-  }
+export async function mockFetchNotificationPreferences(candidateId: string) {
+  return structuredClone(getState(candidateId).prefs)
 }
 
-function delay<T>(value: T): Promise<T> {
-  return new Promise((resolve) => window.setTimeout(() => resolve(value), 120))
-}
-
-export function mockFetchNotificationPreferences(candidateId: string) {
-  return delay({ ...getState(candidateId).prefs })
-}
-
-export function mockUpdateNotificationPreferences(
+export async function mockUpdateNotificationPreferences(
   candidateId: string,
-  payload: Partial<{
-    digest_enabled: boolean
-    company_watch_enabled: boolean
-    cadence_hours: number
-    top_k: number
-    company_watch_cadence_minutes: number
-    max_emails_per_day: number
-  }>,
+  payload: Partial<NotificationPreferencesApi>,
 ) {
   const state = getState(candidateId)
-  const next = { ...state.prefs, ...payload }
-
-  if (payload.max_emails_per_day != null) {
-    next.max_emails_per_day = Math.min(
-      Math.max(1, payload.max_emails_per_day),
-      next.entitlements.max_emails_per_day_cap,
-    )
+  state.prefs = {
+    ...state.prefs,
+    ...payload,
+    entitlements: state.prefs.entitlements,
+    plan_tier: state.prefs.plan_tier,
   }
-
-  state.prefs = next
-  return delay({ ...next })
+  return structuredClone(state.prefs)
 }
 
-export function mockFetchCompanyWatch(candidateId: string) {
+export async function mockFetchCompanyWatch(candidateId: string): Promise<CompanyWatchListApi> {
   const state = getState(candidateId)
-  return delay(buildWatchList(candidateId, state))
+  const companies = MOCK_COMPANY_CATALOG.filter((c) => state.watchedCompanyIds.includes(c.id)).map(
+    (c) => ({
+      company_id: c.id,
+      company_name: c.name,
+      platform: c.platform,
+      is_active: true,
+    }),
+  )
+  return {
+    candidate_id: candidateId,
+    companies,
+    plan_tier: state.prefs.plan_tier,
+    max_companies: state.prefs.entitlements.max_companies,
+  }
 }
 
-export function mockUpdateCompanyWatch(candidateId: string, companyIds: string[]) {
+export async function mockUpdateCompanyWatch(candidateId: string, companyIds: string[]) {
   const state = getState(candidateId)
   const max = state.prefs.entitlements.max_companies
-  if (companyIds.length > max) {
-    return Promise.reject(new Error(`Your plan allows up to ${max} watched companies.`))
+  const current = new Set(state.watchedCompanyIds)
+  const next = [...new Set(companyIds)]
+  const added = next.filter((id) => !current.has(id))
+  if (added.length > 0 && next.length > max) {
+    throw new Error(`Plan allows up to ${max} watched companies`)
   }
-  const validIds = new Set(MOCK_COMPANY_CATALOG.map((c) => c.id))
-  state.watchedCompanyIds = companyIds.filter((id) => validIds.has(id))
-  return delay(buildWatchList(candidateId, state))
+  state.watchedCompanyIds = next
+  return mockFetchCompanyWatch(candidateId)
 }
 
-export function mockSearchCompanies(q = "", limit = 20) {
-  const pattern = q.trim().toLowerCase()
-  const results = MOCK_COMPANY_CATALOG.filter(
-    (c) =>
-      !pattern ||
-      c.name.toLowerCase().includes(pattern) ||
-      c.platform.toLowerCase().includes(pattern),
-  ).slice(0, limit)
-  return delay(results)
-}
-
-export function ensureMockCandidateSession() {
-  if (typeof window === "undefined") return
-  if (!localStorage.getItem("profile_candidate_id")) {
-    localStorage.setItem("profile_candidate_id", MOCK_CANDIDATE_ID)
-  }
+export async function mockSearchCompanies(q: string, limit = 20): Promise<CompanySearchResult[]> {
+  const query = q.trim().toLowerCase()
+  return MOCK_COMPANY_CATALOG.filter((c) => !query || c.name.toLowerCase().includes(query)).slice(
+    0,
+    limit,
+  )
 }

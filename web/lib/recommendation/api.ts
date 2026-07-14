@@ -213,6 +213,9 @@ export interface TierEntitlementsApi {
   delivery: "batched" | "instant"
   max_emails_per_day_cap: number
   default_max_emails_per_day: number
+  ats_fit?: boolean
+  hiring_manager?: boolean
+  apply_agent?: boolean
 }
 
 export interface NotificationPreferencesApi {
@@ -228,7 +231,7 @@ export interface NotificationPreferencesApi {
   max_emails_per_day: number
   last_company_watch_batch_at: string | null
   next_company_watch_due_at: string | null
-  plan_tier: "free" | "plus"
+  plan_tier: "free" | "plus" | "pro"
   entitlements: TierEntitlementsApi
   emails_sent_today: number
 }
@@ -243,7 +246,7 @@ export interface CompanyWatchItemApi {
 export interface CompanyWatchListApi {
   candidate_id: string
   companies: CompanyWatchItemApi[]
-  plan_tier: "free" | "plus"
+  plan_tier: "free" | "plus" | "pro"
   max_companies: number
 }
 
@@ -279,26 +282,52 @@ export const PLUS_COMPANY_WATCH_CADENCE_OPTIONS = [
   { label: "Every 3 hours", minutes: 180 },
 ] as const
 
-export function companyWatchCadenceOptions(planTier: "free" | "plus") {
-  return planTier === "plus" ? PLUS_COMPANY_WATCH_CADENCE_OPTIONS : FREE_COMPANY_WATCH_CADENCE_OPTIONS
+export const PRO_COMPANY_WATCH_CADENCE_OPTIONS = [
+  { label: "Every 15 minutes", minutes: 15 },
+  { label: "Every 30 minutes", minutes: 30 },
+  { label: "Every 45 minutes", minutes: 45 },
+  { label: "Every 1 hour", minutes: 60 },
+] as const
+
+export function companyWatchCadenceOptions(planTier: "free" | "plus" | "pro") {
+  if (planTier === "pro") return PRO_COMPANY_WATCH_CADENCE_OPTIONS
+  if (planTier === "plus") return PLUS_COMPANY_WATCH_CADENCE_OPTIONS
+  return FREE_COMPANY_WATCH_CADENCE_OPTIONS
 }
 
-const FALLBACK_ENTITLEMENTS: Record<"free" | "plus", TierEntitlementsApi> = {
+const FALLBACK_ENTITLEMENTS: Record<"free" | "plus" | "pro", TierEntitlementsApi> = {
   free: {
-    max_companies: 5,
+    max_companies: 0,
     cadence_min_minutes: 360,
     cadence_max_minutes: 720,
     delivery: "batched",
     max_emails_per_day_cap: 10,
     default_max_emails_per_day: 3,
+    ats_fit: false,
+    hiring_manager: false,
+    apply_agent: false,
   },
   plus: {
     max_companies: 25,
     cadence_min_minutes: 30,
     cadence_max_minutes: 180,
-    delivery: "instant",
+    delivery: "batched",
     max_emails_per_day_cap: 20,
     default_max_emails_per_day: 10,
+    ats_fit: true,
+    hiring_manager: false,
+    apply_agent: false,
+  },
+  pro: {
+    max_companies: 100,
+    cadence_min_minutes: 15,
+    cadence_max_minutes: 60,
+    delivery: "batched",
+    max_emails_per_day_cap: 50,
+    default_max_emails_per_day: 20,
+    ats_fit: true,
+    hiring_manager: true,
+    apply_agent: true,
   },
 }
 
@@ -309,12 +338,16 @@ const FALLBACK_ENTITLEMENTS: Record<"free" | "plus", TierEntitlementsApi> = {
 function normalizeNotificationPreferences(
   prefs: NotificationPreferencesApi,
 ): NotificationPreferencesApi {
-  const planTier: "free" | "plus" = prefs.plan_tier === "plus" ? "plus" : "free"
+  const planTier: "free" | "plus" | "pro" =
+    prefs.plan_tier === "pro" ? "pro" : prefs.plan_tier === "plus" ? "plus" : "free"
   const entitlements = prefs.entitlements ?? FALLBACK_ENTITLEMENTS[planTier]
   return {
     ...prefs,
     plan_tier: planTier,
-    entitlements,
+    entitlements: {
+      ...FALLBACK_ENTITLEMENTS[planTier],
+      ...entitlements,
+    },
     max_emails_per_day: prefs.max_emails_per_day ?? entitlements.default_max_emails_per_day,
     company_watch_cadence_minutes:
       prefs.company_watch_cadence_minutes ?? entitlements.cadence_min_minutes,

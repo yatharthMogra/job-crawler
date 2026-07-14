@@ -1,1 +1,10 @@
-from app.models import auth_challenge, candidate, capability, evidence, patch, profile, resume  # noqa: F401
+from app.models import (  # noqa: F401
+    auth_challenge,
+    billing_event,
+    candidate,
+    capability,
+    evidence,
+    patch,
+    profile,
+    resume,
+)

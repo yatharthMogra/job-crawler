@@ -19,7 +19,7 @@ import {
   updateNotificationPreferences,
   type NotificationPreferencesApi,
 } from "@/lib/recommendation/api"
-import { isPlusTier } from "@/lib/plans/company-watch"
+import { isPlusTier, PLANS } from "@/lib/plans/company-watch"
 import { cn } from "@/lib/utils"
 
 function EmailsPageSkeleton() {
@@ -40,7 +40,7 @@ export function EmailsPage() {
   const { profileHome, loadProfileHome } = useProfileFlow()
   const [prefs, setPrefs] = useState<NotificationPreferencesApi | null>(null)
   const [watchedCompanyIds, setWatchedCompanyIds] = useState<string[]>([])
-  const [maxCompanies, setMaxCompanies] = useState(5)
+  const [maxCompanies, setMaxCompanies] = useState(0)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -141,6 +141,8 @@ export function EmailsPage() {
   if (!prefs) return null
 
   const onPlus = isPlusTier(prefs.plan_tier)
+  const planLabel = PLANS[prefs.plan_tier === "pro" ? "pro" : prefs.plan_tier === "plus" ? "plus" : "free"].name
+  const companyWatchAllowed = prefs.entitlements.max_companies > 0
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-6">
@@ -193,17 +195,25 @@ export function EmailsPage() {
                 : "border-border bg-surface text-foreground",
             )}
           >
-            {onPlus ? "Job Scout Plus" : "Free"} · {watchedCompanyIds.length}/{maxCompanies}{" "}
-            companies
+            {planLabel} · {watchedCompanyIds.length}/{Math.max(maxCompanies, 0)} companies
           </span>
         </div>
+        {!companyWatchAllowed ? (
+          <p className="border-b border-border/60 py-4 text-sm text-muted-foreground">
+            Company watch alerts are included with Plus and Pro. Free plans still receive personalized
+            digests below.{" "}
+            <Link href="/settings" className="font-medium text-brand hover:underline">
+              Upgrade
+            </Link>
+          </p>
+        ) : null}
         <SettingRow
           title="Enable Company Watch"
           description="Get batched emails at your chosen frequency when watched companies post new matching roles."
         >
           <Toggle
-            checked={prefs.company_watch_enabled}
-            disabled={saving}
+            checked={prefs.company_watch_enabled && companyWatchAllowed}
+            disabled={saving || !companyWatchAllowed}
             onChange={(v) => void savePrefs({ company_watch_enabled: v })}
           />
         </SettingRow>
@@ -212,7 +222,7 @@ export function EmailsPage() {
           <CompanyWatchPicker
             selectedCompanyIds={watchedCompanyIds}
             maxCompanies={maxCompanies}
-            disabled={!prefs.company_watch_enabled || saving}
+            disabled={!prefs.company_watch_enabled || saving || !companyWatchAllowed}
             onChange={(ids) => void saveWatchList(ids)}
           />
         </div>
@@ -220,7 +230,7 @@ export function EmailsPage() {
           <select
             className="rounded-lg card-elevated border-0 px-3 py-2 text-sm text-foreground disabled:opacity-50"
             value={prefs.company_watch_cadence_minutes}
-            disabled={!prefs.company_watch_enabled || saving}
+            disabled={!prefs.company_watch_enabled || saving || !companyWatchAllowed}
             onChange={(e) =>
               void savePrefs({ company_watch_cadence_minutes: Number(e.target.value) })
             }
@@ -239,16 +249,17 @@ export function EmailsPage() {
           <select
             className="rounded-lg card-elevated border-0 px-3 py-2 text-sm text-foreground disabled:opacity-50"
             value={prefs.max_emails_per_day}
-            disabled={saving}
+            disabled={saving || !companyWatchAllowed}
             onChange={(e) => void savePrefs({ max_emails_per_day: Number(e.target.value) })}
           >
-            {Array.from({ length: prefs.entitlements.max_emails_per_day_cap }, (_, i) => i + 1).map(
-              (n) => (
-                <option key={n} value={n}>
-                  {n} email{n !== 1 ? "s" : ""} / day
-                </option>
-              ),
-            )}
+            {Array.from(
+              { length: Math.max(1, prefs.entitlements.max_emails_per_day_cap) },
+              (_, i) => i + 1,
+            ).map((n) => (
+              <option key={n} value={n}>
+                {n} email{n !== 1 ? "s" : ""} / day
+              </option>
+            ))}
           </select>
         </SettingRow>
       </div>

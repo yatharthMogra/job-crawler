@@ -21,6 +21,9 @@ class TierEntitlementsOut(BaseModel):
     delivery: Literal["batched", "instant"]
     max_emails_per_day_cap: int
     default_max_emails_per_day: int
+    ats_fit: bool = False
+    hiring_manager: bool = False
+    apply_agent: bool = False
 
 
 class NotificationPreferencesOut(BaseModel):

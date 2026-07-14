@@ -23,6 +23,11 @@ class Candidate(Base):
     password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
     plan_tier: Mapped[str] = mapped_column(String(16), nullable=False, default="free", server_default="free")
     plan_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    stripe_customer_id: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True, index=True)
+    stripe_subscription_id: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    subscription_status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="none", server_default="none"
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
