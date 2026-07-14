@@ -59,6 +59,7 @@ class CompanyWatchItemOut(BaseModel):
     company_name: str
     platform: str
     is_active: bool
+    logo_url: Optional[str] = None
 
 
 class CompanyWatchListOut(BaseModel):
@@ -77,3 +78,4 @@ class CompanySearchOut(BaseModel):
     name: str
     platform: str
     is_active: bool
+    logo_url: Optional[str] = None

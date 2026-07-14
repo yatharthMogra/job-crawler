@@ -116,7 +116,7 @@ function AtsFitSection({ jobId }: { jobId: string }) {
         </p>
         <p className="mt-2 text-sm font-semibold text-foreground">Unlock with Plus</p>
         <p className="mt-1 text-sm text-muted-foreground">
-          ATS fit and semantic resume matching are included with Job Scout Plus and Pro.
+          ATS fit and semantic resume matching are included with Job Scout AI Plus and Pro.
         </p>
         <a
           href="/settings"

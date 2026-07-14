@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { getBrandInitial } from "@/lib/brand-logos"
+import { useEffect, useMemo, useState } from "react"
+import { getBrandInitial, getBrandLogoSources } from "@/lib/brand-logos"
 import { cn } from "@/lib/utils"
 
 interface BrandLogoProps {
@@ -10,7 +10,7 @@ interface BrandLogoProps {
   variant?: "company" | "school"
   shape?: "square" | "circle"
   className?: string
-  /** Stored logo URL from API (cloud storage). Letter avatar when missing or on error. */
+  /** Stored logo URL from API (cloud storage). Falls back through brand CDN chain. */
   logoUrl?: string | null
 }
 
@@ -65,17 +65,26 @@ export function BrandLogo({
   shape = "square",
   className,
   logoUrl,
+  variant = "company",
 }: BrandLogoProps) {
-  const storedUrl = logoUrl?.trim() ?? ""
-  const [failed, setFailed] = useState(false)
+  const sources = useMemo(() => {
+    const list: string[] = []
+    const stored = logoUrl?.trim()
+    if (stored) list.push(stored)
+    if (name.trim()) list.push(...getBrandLogoSources(name, variant))
+    return list
+  }, [logoUrl, name, variant])
+
+  const [index, setIndex] = useState(0)
 
   useEffect(() => {
-    setFailed(false)
-  }, [storedUrl, name])
+    setIndex(0)
+  }, [sources.join("|")])
 
   const roundedClass = shape === "circle" ? "rounded-full" : "rounded-xl"
+  const src = sources[index]
 
-  if (!name.trim() || !storedUrl || failed) {
+  if (!name.trim() || !src || index >= sources.length) {
     return <LetterFallback name={name || "?"} size={size} shape={shape} className={className} />
   }
 
@@ -91,8 +100,8 @@ export function BrandLogo({
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        key={`${name}-${storedUrl}`}
-        src={storedUrl}
+        key={`${name}-${src}`}
+        src={src}
         alt=""
         width={size}
         height={size}
@@ -100,7 +109,7 @@ export function BrandLogo({
         decoding="async"
         referrerPolicy="no-referrer"
         className="size-full object-contain p-[12%]"
-        onError={() => setFailed(true)}
+        onError={() => setIndex((current) => current + 1)}
       />
     </div>
   )

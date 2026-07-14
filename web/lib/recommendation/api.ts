@@ -241,6 +241,7 @@ export interface CompanyWatchItemApi {
   company_name: string
   platform: string
   is_active: boolean
+  logo_url?: string | null
 }
 
 export interface CompanyWatchListApi {
@@ -255,6 +256,7 @@ export interface CompanySearchResult {
   name: string
   platform: string
   is_active: boolean
+  logo_url?: string | null
 }
 
 export type DigestCadenceHours = 3 | 6 | 12 | 24 | 72 | 168
@@ -297,7 +299,7 @@ export function companyWatchCadenceOptions(planTier: "free" | "plus" | "pro") {
 
 const FALLBACK_ENTITLEMENTS: Record<"free" | "plus" | "pro", TierEntitlementsApi> = {
   free: {
-    max_companies: 0,
+    max_companies: 5,
     cadence_min_minutes: 360,
     cadence_max_minutes: 720,
     delivery: "batched",

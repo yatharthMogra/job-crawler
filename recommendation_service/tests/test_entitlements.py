@@ -23,7 +23,7 @@ def test_normalize_plan_tier() -> None:
 
 def test_free_tier_limits() -> None:
     limits = get_tier_limits("free")
-    assert limits.max_companies == 0
+    assert limits.max_companies == 5
     assert limits.ats_fit is False
     assert limits.hiring_manager is False
     assert limits.apply_agent is False

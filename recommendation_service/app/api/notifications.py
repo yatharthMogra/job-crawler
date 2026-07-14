@@ -179,6 +179,7 @@ async def get_company_watch(
             company_name=company.name,
             platform=company.platform,
             is_active=company.is_active,
+            logo_url=company.logo_url,
         )
         for _sub, company in rows
     ]
@@ -281,6 +282,7 @@ async def search_companies(
             name=row.name,
             platform=row.platform,
             is_active=row.is_active,
+            logo_url=row.logo_url,
         )
         for row in rows
     ]
