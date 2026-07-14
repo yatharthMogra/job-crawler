@@ -5,7 +5,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
@@ -30,9 +29,31 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { Coins, ArrowUpRight, ArrowDownRight, AlertTriangle } from 'lucide-react'
 import { MetricCard, SummaryStrip } from './metric-card'
 import { PlatformBadge } from './status-badges'
+import { SortableTableHead } from './sortable-table-head'
+import { useTableSort } from '@/hooks/use-table-sort'
 import { type PipelineRun, type TrendDataPoint, type UsageByCompany, type UsageByPlatform } from '@/lib/mock-data'
 import { formatNumber, formatCost, calculateEstimatedCost } from '@/lib/dashboard-utils'
 import { getCostTrend, getCostUsage, getPipelineRuns, type UsagePeriod, type UsageSplitBy } from '@/lib/api'
+
+const platformUsageGetters = {
+  platform: (r: UsageByPlatform) => r.platform,
+  inputTokens: (r: UsageByPlatform) => r.inputTokens,
+  outputTokens: (r: UsageByPlatform) => r.outputTokens,
+  cost: (r: UsageByPlatform) => calculateEstimatedCost(r.inputTokens, r.outputTokens),
+  enrichmentCount: (r: UsageByPlatform) => r.enrichmentCount,
+  failureCount: (r: UsageByPlatform) => r.failureCount,
+  avgLatency: (r: UsageByPlatform) => r.avgLatency,
+}
+
+const companyUsageGetters = {
+  company: (r: UsageByCompany) => r.company,
+  inputTokens: (r: UsageByCompany) => r.inputTokens,
+  outputTokens: (r: UsageByCompany) => r.outputTokens,
+  cost: (r: UsageByCompany) => calculateEstimatedCost(r.inputTokens, r.outputTokens),
+  enrichmentCount: (r: UsageByCompany) => r.enrichmentCount,
+  failureCount: (r: UsageByCompany) => r.failureCount,
+  avgLatency: (r: UsageByCompany) => r.avgLatency,
+}
 
 export function CostTab() {
   const [timePeriod, setTimePeriod] = useState<UsagePeriod>('day')
@@ -86,6 +107,17 @@ export function CostTab() {
       void loadUsage()
     }
   }, [timePeriod, splitBy, selectedRun])
+
+  const {
+    sortedRows: sortedPlatformUsage,
+    sort: platformSort,
+    toggleSort: togglePlatformSort,
+  } = useTableSort(usageByPlatform, platformUsageGetters)
+  const {
+    sortedRows: sortedCompanyUsage,
+    sort: companySort,
+    toggleSort: toggleCompanySort,
+  } = useTableSort(usageByCompany, companyUsageGetters)
 
   const chartConfig = {
     inputTokens: {
@@ -211,17 +243,17 @@ export function CostTab() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Platform</TableHead>
-                    <TableHead className="text-right">Input Tokens</TableHead>
-                    <TableHead className="text-right">Output Tokens</TableHead>
-                    <TableHead className="text-right">Estimated Cost</TableHead>
-                    <TableHead className="text-right">Enrichments</TableHead>
-                    <TableHead className="text-right">Failures</TableHead>
-                    <TableHead className="text-right">Avg Latency</TableHead>
+                    <SortableTableHead label="Platform" columnKey="platform" sort={platformSort} onToggle={togglePlatformSort} />
+                    <SortableTableHead label="Input Tokens" columnKey="inputTokens" sort={platformSort} onToggle={togglePlatformSort} align="right" />
+                    <SortableTableHead label="Output Tokens" columnKey="outputTokens" sort={platformSort} onToggle={togglePlatformSort} align="right" />
+                    <SortableTableHead label="Estimated Cost" columnKey="cost" sort={platformSort} onToggle={togglePlatformSort} align="right" />
+                    <SortableTableHead label="Enrichments" columnKey="enrichmentCount" sort={platformSort} onToggle={togglePlatformSort} align="right" />
+                    <SortableTableHead label="Failures" columnKey="failureCount" sort={platformSort} onToggle={togglePlatformSort} align="right" />
+                    <SortableTableHead label="Avg Latency" columnKey="avgLatency" sort={platformSort} onToggle={togglePlatformSort} align="right" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {usageByPlatform.map((data) => (
+                  {sortedPlatformUsage.map((data) => (
                     <TableRow key={data.platform}>
                       <TableCell><PlatformBadge platform={data.platform} /></TableCell>
                       <TableCell className="text-right font-mono">{formatNumber(data.inputTokens)}</TableCell>
@@ -244,17 +276,17 @@ export function CostTab() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Company</TableHead>
-                  <TableHead className="text-right">Input Tokens</TableHead>
-                  <TableHead className="text-right">Output Tokens</TableHead>
-                  <TableHead className="text-right">Estimated Cost</TableHead>
-                  <TableHead className="text-right">Enrichments</TableHead>
-                  <TableHead className="text-right">Failures</TableHead>
-                  <TableHead className="text-right">Avg Latency</TableHead>
+                  <SortableTableHead label="Company" columnKey="company" sort={companySort} onToggle={toggleCompanySort} />
+                  <SortableTableHead label="Input Tokens" columnKey="inputTokens" sort={companySort} onToggle={toggleCompanySort} align="right" />
+                  <SortableTableHead label="Output Tokens" columnKey="outputTokens" sort={companySort} onToggle={toggleCompanySort} align="right" />
+                  <SortableTableHead label="Estimated Cost" columnKey="cost" sort={companySort} onToggle={toggleCompanySort} align="right" />
+                  <SortableTableHead label="Enrichments" columnKey="enrichmentCount" sort={companySort} onToggle={toggleCompanySort} align="right" />
+                  <SortableTableHead label="Failures" columnKey="failureCount" sort={companySort} onToggle={toggleCompanySort} align="right" />
+                  <SortableTableHead label="Avg Latency" columnKey="avgLatency" sort={companySort} onToggle={toggleCompanySort} align="right" />
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {usageByCompany.map((data) => (
+                {sortedCompanyUsage.map((data) => (
                   <TableRow key={data.company}>
                     <TableCell className="font-medium">{data.company}</TableCell>
                     <TableCell className="text-right font-mono">{formatNumber(data.inputTokens)}</TableCell>

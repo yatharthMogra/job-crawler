@@ -22,9 +22,24 @@ import { ChevronDown, ChevronRight, Activity, Clock, Briefcase, AlertTriangle, I
 import { MetricCard, SummaryStrip } from './metric-card'
 import { StatusBadge, PlatformBadge, SeverityBadge } from './status-badges'
 import { RelativeTime } from './relative-time'
+import { SortableTableHead } from './sortable-table-head'
+import { useTableSort } from '@/hooks/use-table-sort'
 import { type CompanyRunDetail, type Event, type PipelineRun, type Severity } from '@/lib/mock-data'
 import { formatNumber } from '@/lib/dashboard-utils'
 import { getCompanyRunDetails, getEvents, getPipelineRuns } from '@/lib/api'
+
+const runGetters = {
+  timestamp: (r: PipelineRun) => r.timestamp,
+  status: (r: PipelineRun) => r.status,
+  totalCompanies: (r: PipelineRun) => r.totalCompanies,
+  successfulCompanies: (r: PipelineRun) => r.successfulCompanies,
+  failedCompanies: (r: PipelineRun) => r.failedCompanies,
+  jobsFetched: (r: PipelineRun) => r.jobsFetched,
+  jobsNew: (r: PipelineRun) => r.jobsNew,
+  jobsUpdated: (r: PipelineRun) => r.jobsUpdated,
+  jobsUnchanged: (r: PipelineRun) => r.jobsUnchanged,
+  duration: (r: PipelineRun) => r.duration,
+}
 
 export function PipelineTab() {
   const [expandedRun, setExpandedRun] = useState<string | null>(null)
@@ -73,6 +88,8 @@ export function PipelineTab() {
     [events, severityFilter, platformFilter, categoryFilter]
   )
 
+  const { sortedRows: sortedRuns, sort, toggleSort } = useTableSort(runs, runGetters)
+
   const latestRun = runs[0]
   const stats = {
     lastRunStatus: latestRun?.status ?? 'failed',
@@ -118,20 +135,20 @@ export function PipelineTab() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-8"></TableHead>
-                <TableHead>Timestamp</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Total Companies</TableHead>
-                <TableHead className="text-right">Successful</TableHead>
-                <TableHead className="text-right">Failed</TableHead>
-                <TableHead className="text-right">Jobs Fetched</TableHead>
-                <TableHead className="text-right">New</TableHead>
-                <TableHead className="text-right">Updated</TableHead>
-                <TableHead className="text-right">Unchanged</TableHead>
-                <TableHead className="text-right">Duration</TableHead>
+                <SortableTableHead label="Timestamp" columnKey="timestamp" sort={sort} onToggle={toggleSort} />
+                <SortableTableHead label="Status" columnKey="status" sort={sort} onToggle={toggleSort} />
+                <SortableTableHead label="Total Companies" columnKey="totalCompanies" sort={sort} onToggle={toggleSort} align="right" />
+                <SortableTableHead label="Successful" columnKey="successfulCompanies" sort={sort} onToggle={toggleSort} align="right" />
+                <SortableTableHead label="Failed" columnKey="failedCompanies" sort={sort} onToggle={toggleSort} align="right" />
+                <SortableTableHead label="Jobs Fetched" columnKey="jobsFetched" sort={sort} onToggle={toggleSort} align="right" />
+                <SortableTableHead label="New" columnKey="jobsNew" sort={sort} onToggle={toggleSort} align="right" />
+                <SortableTableHead label="Updated" columnKey="jobsUpdated" sort={sort} onToggle={toggleSort} align="right" />
+                <SortableTableHead label="Unchanged" columnKey="jobsUnchanged" sort={sort} onToggle={toggleSort} align="right" />
+                <SortableTableHead label="Duration" columnKey="duration" sort={sort} onToggle={toggleSort} align="right" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {runs.map((run) => (
+              {sortedRuns.map((run) => (
                 <RunRow 
                   key={run.id} 
                   run={run} 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Table,
   TableBody,
@@ -15,9 +15,22 @@ import { ChevronDown, ChevronRight, Database, AlertTriangle, Pause, Flag, Play }
 import { MetricCard, SummaryStrip } from './metric-card'
 import { StatusBadge, PlatformBadge } from './status-badges'
 import { RelativeTime } from './relative-time'
+import { SortableTableHead } from './sortable-table-head'
+import { useTableSort } from '@/hooks/use-table-sort'
 import { type Event, type Source } from '@/lib/mock-data'
 import { cn } from '@/lib/utils'
 import { flagCompany, getCompanies, getEvents, patchCompany } from '@/lib/api'
+
+const sourceGetters = {
+  company: (s: Source) => s.companyName,
+  platform: (s: Source) => s.platform,
+  health: (s: Source) => s.health,
+  activeJobs: (s: Source) => s.activeJobs,
+  lastSuccessfulFetch: (s: Source) => s.lastSuccessfulFetch,
+  lastFailure: (s: Source) => s.lastFailure,
+  consecutiveFailures: (s: Source) => s.consecutiveFailures,
+  status: (s: Source) => (s.isActive ? (s.requiresReview ? 1 : 0) : 2),
+}
 
 export function SourcesTab() {
   const [expandedSource, setExpandedSource] = useState<string | null>(null)
@@ -50,26 +63,34 @@ export function SourcesTab() {
     void load()
   }, [expandedSource, eventsBySource])
 
+  const { sortedRows, sort, toggleSort } = useTableSort(sources, sourceGetters)
+
   const handleTogglePause = async (sourceId: string, nextIsActive: boolean) => {
     await patchCompany(sourceId, { isActive: nextIsActive })
-    setSources((prev) => prev.map((source) => (source.id === sourceId ? { ...source, isActive: nextIsActive } : source)))
+    setSources((prev) =>
+      prev.map((source) => (source.id === sourceId ? { ...source, isActive: nextIsActive } : source)),
+    )
   }
 
   const handleFlagForReview = async (sourceId: string) => {
     await flagCompany(sourceId)
-    setSources((prev) => prev.map((source) => (source.id === sourceId ? { ...source, requiresReview: true } : source)))
+    setSources((prev) =>
+      prev.map((source) => (source.id === sourceId ? { ...source, requiresReview: true } : source)),
+    )
   }
 
-  const stats = {
-    totalActive: sources.filter((source) => source.isActive).length,
-    withFailures: sources.filter((source) => source.consecutiveFailures > 0).length,
-    paused: sources.filter((source) => !source.isActive).length,
-    flaggedForReview: sources.filter((source) => source.requiresReview).length,
-  }
+  const stats = useMemo(
+    () => ({
+      totalActive: sources.filter((source) => source.isActive).length,
+      withFailures: sources.filter((source) => source.consecutiveFailures > 0).length,
+      paused: sources.filter((source) => !source.isActive).length,
+      flaggedForReview: sources.filter((source) => source.requiresReview).length,
+    }),
+    [sources],
+  )
 
   return (
     <div className="space-y-6">
-      {/* Summary Strip */}
       <SummaryStrip>
         <MetricCard
           title="Total Active Sources"
@@ -95,7 +116,6 @@ export function SourcesTab() {
         />
       </SummaryStrip>
 
-      {/* Sources Table */}
       <Card>
         <CardHeader>
           <CardTitle>Company Sources</CardTitle>
@@ -105,21 +125,38 @@ export function SourcesTab() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-8"></TableHead>
-                <TableHead>Company</TableHead>
-                <TableHead>Platform</TableHead>
-                <TableHead>Health</TableHead>
-                <TableHead className="text-right">Active Jobs</TableHead>
-                <TableHead>Last Successful Fetch</TableHead>
-                <TableHead>Last Failure</TableHead>
-                <TableHead className="text-right">Consecutive Failures</TableHead>
-                <TableHead>Status</TableHead>
+                <SortableTableHead label="Company" columnKey="company" sort={sort} onToggle={toggleSort} />
+                <SortableTableHead label="Platform" columnKey="platform" sort={sort} onToggle={toggleSort} />
+                <SortableTableHead label="Health" columnKey="health" sort={sort} onToggle={toggleSort} />
+                <SortableTableHead
+                  label="Active Jobs"
+                  columnKey="activeJobs"
+                  sort={sort}
+                  onToggle={toggleSort}
+                  align="right"
+                />
+                <SortableTableHead
+                  label="Last Successful Fetch"
+                  columnKey="lastSuccessfulFetch"
+                  sort={sort}
+                  onToggle={toggleSort}
+                />
+                <SortableTableHead label="Last Failure" columnKey="lastFailure" sort={sort} onToggle={toggleSort} />
+                <SortableTableHead
+                  label="Consecutive Failures"
+                  columnKey="consecutiveFailures"
+                  sort={sort}
+                  onToggle={toggleSort}
+                  align="right"
+                />
+                <SortableTableHead label="Status" columnKey="status" sort={sort} onToggle={toggleSort} />
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sources.map((source) => (
-                <SourceRow 
-                  key={source.id} 
+              {sortedRows.map((source) => (
+                <SourceRow
+                  key={source.id}
                   source={source}
                   sourceEvents={eventsBySource[source.id] || []}
                   isExpanded={expandedSource === source.id}
@@ -128,7 +165,7 @@ export function SourcesTab() {
                   onFlagForReview={() => handleFlagForReview(source.id)}
                 />
               ))}
-              {sources.length === 0 && (
+              {sortedRows.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                     {error || 'No sources found'}
@@ -152,7 +189,14 @@ interface SourceRowProps {
   onFlagForReview: () => void
 }
 
-function SourceRow({ source, sourceEvents, isExpanded, onToggle, onTogglePause, onFlagForReview }: SourceRowProps) {
+function SourceRow({
+  source,
+  sourceEvents,
+  isExpanded,
+  onToggle,
+  onTogglePause,
+  onFlagForReview,
+}: SourceRowProps) {
   return (
     <>
       <TableRow className="cursor-pointer hover:bg-muted/50">
@@ -163,22 +207,36 @@ function SourceRow({ source, sourceEvents, isExpanded, onToggle, onTogglePause, 
             <ChevronRight className="size-4 text-muted-foreground" />
           )}
         </TableCell>
-        <TableCell onClick={onToggle} className="font-medium">{source.companyName}</TableCell>
-        <TableCell onClick={onToggle}><PlatformBadge platform={source.platform} /></TableCell>
-        <TableCell onClick={onToggle}><StatusBadge status={source.health} /></TableCell>
-        <TableCell onClick={onToggle} className="text-right">{source.activeJobs}</TableCell>
-        <TableCell onClick={onToggle}><RelativeTime date={source.lastSuccessfulFetch} /></TableCell>
+        <TableCell onClick={onToggle} className="font-medium">
+          {source.companyName}
+        </TableCell>
+        <TableCell onClick={onToggle}>
+          <PlatformBadge platform={source.platform} />
+        </TableCell>
+        <TableCell onClick={onToggle}>
+          <StatusBadge status={source.health} />
+        </TableCell>
+        <TableCell onClick={onToggle} className="text-right">
+          {source.activeJobs}
+        </TableCell>
+        <TableCell onClick={onToggle}>
+          <RelativeTime date={source.lastSuccessfulFetch} />
+        </TableCell>
         <TableCell onClick={onToggle}>
           {source.lastFailure ? (
-            <span className="text-warning"><RelativeTime date={source.lastFailure} /></span>
+            <span className="text-warning">
+              <RelativeTime date={source.lastFailure} />
+            </span>
           ) : (
             <span className="text-muted-foreground">-</span>
           )}
         </TableCell>
         <TableCell onClick={onToggle} className="text-right">
-          <span className={cn(
-            source.consecutiveFailures > 0 ? 'text-warning font-medium' : 'text-muted-foreground'
-          )}>
+          <span
+            className={cn(
+              source.consecutiveFailures > 0 ? 'text-warning font-medium' : 'text-muted-foreground',
+            )}
+          >
             {source.consecutiveFailures}
           </span>
         </TableCell>
@@ -193,8 +251,8 @@ function SourceRow({ source, sourceEvents, isExpanded, onToggle, onTogglePause, 
         </TableCell>
         <TableCell>
           <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               onClick={(e) => {
                 e.stopPropagation()
@@ -213,8 +271,8 @@ function SourceRow({ source, sourceEvents, isExpanded, onToggle, onTogglePause, 
                 </>
               )}
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               disabled={source.requiresReview}
               onClick={(e) => {
@@ -236,8 +294,14 @@ function SourceRow({ source, sourceEvents, isExpanded, onToggle, onTogglePause, 
               {sourceEvents.length > 0 ? (
                 <div className="space-y-2">
                   {sourceEvents.map((event) => (
-                    <div key={event.id} className="flex items-center gap-4 py-2 px-3 rounded bg-card border border-border text-sm">
-                      <RelativeTime date={event.timestamp} className="text-muted-foreground w-24 flex-shrink-0" />
+                    <div
+                      key={event.id}
+                      className="flex items-center gap-4 py-2 px-3 rounded bg-card border border-border text-sm"
+                    >
+                      <RelativeTime
+                        date={event.timestamp}
+                        className="text-muted-foreground w-24 flex-shrink-0"
+                      />
                       <StatusBadge status={event.severity} />
                       <span className="text-foreground">{event.message}</span>
                     </div>

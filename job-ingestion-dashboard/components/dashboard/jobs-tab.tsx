@@ -5,7 +5,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
@@ -64,6 +63,8 @@ import {
 import { MetricCard, SummaryStrip } from './metric-card'
 import { StatusBadge, PlatformBadge } from './status-badges'
 import { RelativeTime } from './relative-time'
+import { SortableTableHead } from './sortable-table-head'
+import { useTableSort } from '@/hooks/use-table-sort'
 import { 
   type Job,
   type ProcessingState,
@@ -141,6 +142,22 @@ export function JobsTab() {
       return true
     })
   }, [jobs, processingStateFilter, platformFilter, companyFilter, titleSearch, showDefaultFilters])
+
+  const jobGetters = useMemo(
+    () => ({
+      title: (j: Job) => j.title,
+      company: (j: Job) => j.company,
+      platform: (j: Job) => j.platform,
+      location: (j: Job) => j.location,
+      processingState: (j: Job) => j.processingState,
+      failureReason: (j: Job) => j.failureReason ?? '',
+      lastSeen: (j: Job) => j.lastSeen,
+      lastEnrichmentAttempt: (j: Job) => j.lastEnrichmentAttempt,
+      lastManualReview: (j: Job) => j.lastManualReview,
+    }),
+    [],
+  )
+  const { sortedRows: sortedJobs, sort, toggleSort } = useTableSort(filteredJobs, jobGetters)
 
   const stats = useMemo(() => {
     const jobsRequiringReview = jobs.filter((job) => job.processingState === 'requires_review').length
@@ -350,25 +367,25 @@ export function JobsTab() {
       {/* Jobs Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Jobs ({filteredJobs.length})</CardTitle>
+          <CardTitle>Jobs ({sortedJobs.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Job Title</TableHead>
-                <TableHead>Company</TableHead>
-                <TableHead>Platform</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Processing State</TableHead>
-                <TableHead>Failure Reason</TableHead>
-                <TableHead>Last Seen</TableHead>
-                <TableHead>Last Enrichment</TableHead>
-                <TableHead>Last Review</TableHead>
+                <SortableTableHead label="Job Title" columnKey="title" sort={sort} onToggle={toggleSort} />
+                <SortableTableHead label="Company" columnKey="company" sort={sort} onToggle={toggleSort} />
+                <SortableTableHead label="Platform" columnKey="platform" sort={sort} onToggle={toggleSort} />
+                <SortableTableHead label="Location" columnKey="location" sort={sort} onToggle={toggleSort} />
+                <SortableTableHead label="Processing State" columnKey="processingState" sort={sort} onToggle={toggleSort} />
+                <SortableTableHead label="Failure Reason" columnKey="failureReason" sort={sort} onToggle={toggleSort} />
+                <SortableTableHead label="Last Seen" columnKey="lastSeen" sort={sort} onToggle={toggleSort} />
+                <SortableTableHead label="Last Enrichment" columnKey="lastEnrichmentAttempt" sort={sort} onToggle={toggleSort} />
+                <SortableTableHead label="Last Review" columnKey="lastManualReview" sort={sort} onToggle={toggleSort} />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredJobs.map((job) => (
+              {sortedJobs.map((job) => (
                 <TableRow 
                   key={job.id}
                   className="cursor-pointer hover:bg-muted/50"
@@ -407,7 +424,7 @@ export function JobsTab() {
                   <TableCell><RelativeTime date={job.lastManualReview} /></TableCell>
                 </TableRow>
               ))}
-              {filteredJobs.length === 0 && (
+              {sortedJobs.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                     {error || 'No jobs match the selected filters'}

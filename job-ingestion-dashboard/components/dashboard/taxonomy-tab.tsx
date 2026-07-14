@@ -11,17 +11,29 @@ import {
 } from '@/components/ui/table'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { ChevronDown, Layers, RefreshCw, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { MetricCard, SummaryStrip } from './metric-card'
+import { SortableTableHead } from './sortable-table-head'
+import { useTableSort } from '@/hooks/use-table-sort'
 import {
   getTaxonomyHealth,
   setTaxonomyDomainAcknowledged,
+  type TaxonomyGroupBy,
   type TaxonomyHealthResponse,
 } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { formatNumber } from '@/lib/dashboard-utils'
 
 const THRESHOLD_PCT = 10
+
+type TaxonomyRow = TaxonomyHealthResponse['domains'][number]
 
 function pctColor(pct: number, flagged: boolean): string {
   if (!flagged) return 'text-green-600'
@@ -37,28 +49,46 @@ function PctBadge({ pct, flagged }: { pct: number; flagged: boolean }) {
   )
 }
 
+const taxonomyGetters = {
+  key: (row: TaxonomyRow) => row.domain,
+  total: (row: TaxonomyRow) => row.total,
+  no_pool: (row: TaxonomyRow) => row.no_pool,
+  no_pool_pct: (row: TaxonomyRow) => row.no_pool_pct,
+  status: (row: TaxonomyRow) =>
+    row.needs_review ? 2 : row.acknowledged && row.flagged ? 1 : 0,
+}
+
 export function TaxonomyTab() {
+  const [groupBy, setGroupBy] = useState<TaxonomyGroupBy>('domain')
   const [data, setData] = useState<TaxonomyHealthResponse | null>(null)
   const [expanded, setExpanded] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (nextGroupBy: TaxonomyGroupBy = groupBy) => {
     setLoading(true)
     setError(null)
     try {
-      const response = await getTaxonomyHealth()
+      const response = await getTaxonomyHealth(nextGroupBy)
       setData(response)
+      setExpanded(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load taxonomy health')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [groupBy])
 
   useEffect(() => {
-    void load()
-  }, [load])
+    void load(groupBy)
+  }, [groupBy, load])
+
+  const rows = data?.domains ?? []
+  const { sortedRows, sort, toggleSort } = useTableSort(rows, taxonomyGetters)
+
+  const handleGroupByChange = (value: string) => {
+    setGroupBy(value as TaxonomyGroupBy)
+  }
 
   if (loading && !data) {
     return <p className="text-sm text-muted-foreground">Loading taxonomy health…</p>
@@ -80,10 +110,12 @@ export function TaxonomyTab() {
   if (!data) return null
 
   const needsReviewCount = data.domains_needing_review
+  const groupLabel = groupBy === 'role' ? 'Role' : 'Domain'
+  const groupsLabel = groupBy === 'role' ? 'Roles' : 'Domains'
 
-  const toggleAcknowledged = async (domain: string, acknowledged: boolean) => {
+  const toggleAcknowledged = async (key: string, acknowledged: boolean) => {
     try {
-      const response = await setTaxonomyDomainAcknowledged(domain, acknowledged)
+      const response = await setTaxonomyDomainAcknowledged(key, acknowledged, groupBy)
       setData(response)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update acknowledgement')
@@ -92,15 +124,28 @@ export function TaxonomyTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-muted-foreground">
           <Layers className="size-4" />
-          <span className="text-sm">No-pool rate by job domain (enriched active jobs)</span>
+          <span className="text-sm">
+            No-pool rate by job {groupBy === 'role' ? 'role' : 'domain'} (enriched active jobs)
+          </span>
         </div>
-        <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
-          <RefreshCw className={cn('size-4 mr-2', loading && 'animate-spin')} />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <Select value={groupBy} onValueChange={handleGroupByChange}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Split by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="domain">Split by: Domain</SelectItem>
+              <SelectItem value="role">Split by: Role</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
+            <RefreshCw className={cn('size-4 mr-2', loading && 'animate-spin')} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       <SummaryStrip>
@@ -118,7 +163,7 @@ export function TaxonomyTab() {
           valueClassName={pctColor(data.global_no_pool_pct, data.global_no_pool_pct >= THRESHOLD_PCT)}
         />
         <MetricCard
-          title={`Domains needing review`}
+          title={`${groupsLabel} needing review`}
           value={needsReviewCount}
           subtitle={`${data.domains_flagged} flagged (≥${THRESHOLD_PCT}%)`}
           valueClassName={needsReviewCount > 0 ? 'text-red-600' : undefined}
@@ -127,23 +172,29 @@ export function TaxonomyTab() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-medium">Per-domain breakdown</CardTitle>
+          <CardTitle className="text-base font-medium">Per-{groupBy} breakdown</CardTitle>
+          {groupBy === 'role' && (
+            <p className="text-xs text-muted-foreground font-normal">
+              Jobs with multiple roles are counted once per role, so row totals can exceed active
+              job count. Global metrics stay job-level.
+            </p>
+          )}
         </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Domain</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-                <TableHead className="text-right">No-pool</TableHead>
-                <TableHead className="text-right">No-pool %</TableHead>
-                <TableHead>Status</TableHead>
+                <SortableTableHead label={groupLabel} columnKey="key" sort={sort} onToggle={toggleSort} />
+                <SortableTableHead label="Total" columnKey="total" sort={sort} onToggle={toggleSort} align="right" />
+                <SortableTableHead label="No-pool" columnKey="no_pool" sort={sort} onToggle={toggleSort} align="right" />
+                <SortableTableHead label="No-pool %" columnKey="no_pool_pct" sort={sort} onToggle={toggleSort} align="right" />
+                <SortableTableHead label="Status" columnKey="status" sort={sort} onToggle={toggleSort} />
                 <TableHead className="w-[100px]" />
                 <TableHead className="w-[130px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.domains.map((domain) => (
+              {sortedRows.map((domain) => (
                 <Fragment key={domain.domain}>
                   <TableRow
                     className={cn(
@@ -251,10 +302,10 @@ export function TaxonomyTab() {
       </Card>
 
       <p className="text-xs text-muted-foreground">
-        Generated {new Date(data.generated_at).toLocaleString()}. Threshold: flag domains with
+        Generated {new Date(data.generated_at).toLocaleString()}. Threshold: flag {groupBy === 'role' ? 'roles' : 'domains'} with
         no-pool ≥ {THRESHOLD_PCT}%. To fix: expand titles above, update taxonomy/prompt if titles
-        cluster, then re-enrich flagged domain jobs manually. Acknowledge domains with
-        intentional exclusions (e.g. Business ministry/trader jobs) to suppress repeat alerts.
+        cluster, then re-enrich flagged jobs manually. Acknowledge groups with
+        intentional exclusions to suppress repeat alerts.
       </p>
     </div>
   )

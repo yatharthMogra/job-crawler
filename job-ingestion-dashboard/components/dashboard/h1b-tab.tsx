@@ -20,6 +20,8 @@ import {
 } from '@/components/ui/select'
 import { Globe, RefreshCw } from 'lucide-react'
 import { MetricCard, SummaryStrip } from './metric-card'
+import { SortableTableHead } from './sortable-table-head'
+import { useTableSort } from '@/hooks/use-table-sort'
 import {
   getCompanies,
   getH1bCoverage,
@@ -33,6 +35,22 @@ import {
 } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { formatNumber } from '@/lib/dashboard-utils'
+
+type ReviewItem = H1bReviewQueueResponse['items'][number]
+type CoverageItem = H1bCoverageResponse['items'][number]
+
+const reviewGetters = {
+  employer: (r: ReviewItem) => r.employer_name_norm,
+  method: (r: ReviewItem) => r.match_method,
+  total_lca: (r: ReviewItem) => r.total_lca,
+}
+
+const coverageGetters = {
+  pool_family: (r: CoverageItem) => r.pool_family,
+  companies_with_data: (r: CoverageItem) => r.companies_with_data,
+  tracked_companies: (r: CoverageItem) => r.tracked_companies,
+  coverage_pct: (r: CoverageItem) => r.coverage_pct,
+}
 
 export function H1bTab() {
   const [stats, setStats] = useState<H1bStatsResponse | null>(null)
@@ -91,6 +109,19 @@ export function H1bTab() {
     }
   }
 
+  const reviewItems = queue?.items ?? []
+  const coverageItems = coverage?.items ?? []
+  const {
+    sortedRows: sortedReview,
+    sort: reviewSort,
+    toggleSort: toggleReviewSort,
+  } = useTableSort(reviewItems, reviewGetters)
+  const {
+    sortedRows: sortedCoverage,
+    sort: coverageSort,
+    toggleSort: toggleCoverageSort,
+  } = useTableSort(coverageItems, coverageGetters)
+
   if (loading && !stats) {
     return <p className="text-sm text-muted-foreground">Loading H-1B stats…</p>
   }
@@ -148,14 +179,14 @@ export function H1bTab() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Employer</TableHead>
-                  <TableHead>Method</TableHead>
-                  <TableHead className="text-right">LCA count</TableHead>
+                  <SortableTableHead label="Employer" columnKey="employer" sort={reviewSort} onToggle={toggleReviewSort} />
+                  <SortableTableHead label="Method" columnKey="method" sort={reviewSort} onToggle={toggleReviewSort} />
+                  <SortableTableHead label="LCA count" columnKey="total_lca" sort={reviewSort} onToggle={toggleReviewSort} align="right" />
                   <TableHead>Link company</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {queue.items.map((item) => (
+                {sortedReview.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">{item.employer_name_norm}</TableCell>
                     <TableCell>{item.match_method}</TableCell>
@@ -196,14 +227,14 @@ export function H1bTab() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Pool family</TableHead>
-                  <TableHead className="text-right">With data</TableHead>
-                  <TableHead className="text-right">Tracked</TableHead>
-                  <TableHead className="text-right">Coverage</TableHead>
+                  <SortableTableHead label="Pool family" columnKey="pool_family" sort={coverageSort} onToggle={toggleCoverageSort} />
+                  <SortableTableHead label="With data" columnKey="companies_with_data" sort={coverageSort} onToggle={toggleCoverageSort} align="right" />
+                  <SortableTableHead label="Tracked" columnKey="tracked_companies" sort={coverageSort} onToggle={toggleCoverageSort} align="right" />
+                  <SortableTableHead label="Coverage" columnKey="coverage_pct" sort={coverageSort} onToggle={toggleCoverageSort} align="right" />
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {coverage.items.map((row) => (
+                {sortedCoverage.map((row) => (
                   <TableRow key={row.pool_family}>
                     <TableCell>{row.pool_family}</TableCell>
                     <TableCell className="text-right tabular-nums">

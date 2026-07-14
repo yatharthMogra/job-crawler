@@ -147,8 +147,11 @@ export type JobUpdateInput = {
 export type UsagePeriod = 'run' | 'day' | 'month'
 export type UsageSplitBy = 'platform' | 'company'
 
+export type TaxonomyGroupBy = 'domain' | 'role'
+
 export type TaxonomyHealthResponse = {
   generated_at: string
+  group_by?: TaxonomyGroupBy
   total_active_enriched: number
   global_no_pool_count: number
   global_no_pool_pct: number
@@ -407,17 +410,24 @@ export async function getCadenceStats(includeInactive = false): Promise<CadenceS
   }
 }
 
-export async function getTaxonomyHealth(): Promise<TaxonomyHealthResponse> {
-  return apiRequest<TaxonomyHealthResponse>('/admin/taxonomy-health')
+export async function getTaxonomyHealth(
+  groupBy: TaxonomyGroupBy = 'domain',
+): Promise<TaxonomyHealthResponse> {
+  const query = new URLSearchParams()
+  query.set('group_by', groupBy)
+  return apiRequest<TaxonomyHealthResponse>(`/admin/taxonomy-health?${query.toString()}`)
 }
 
 export async function setTaxonomyDomainAcknowledged(
   domain: string,
   acknowledged: boolean,
+  groupBy: TaxonomyGroupBy = 'domain',
 ): Promise<TaxonomyHealthResponse> {
   const encoded = encodeURIComponent(domain)
+  const query = new URLSearchParams()
+  query.set('group_by', groupBy)
   return apiRequest<TaxonomyHealthResponse>(
-    `/admin/taxonomy-health/domains/${encoded}/acknowledge`,
+    `/admin/taxonomy-health/domains/${encoded}/acknowledge?${query.toString()}`,
     {
       method: 'PATCH',
       body: JSON.stringify({ acknowledged }),

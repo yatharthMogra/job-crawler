@@ -15,6 +15,8 @@ class NoPoolTitleOut(BaseModel):
 
 
 class DomainTaxonomyHealthOut(BaseModel):
+    """One taxonomy group row. `domain` holds the group key (domain or role name)."""
+
     domain: str
     total: int
     no_pool: int
@@ -28,6 +30,7 @@ class DomainTaxonomyHealthOut(BaseModel):
 
 class TaxonomyHealthOut(BaseModel):
     generated_at: datetime
+    group_by: str = "domain"
     total_active_enriched: int
     global_no_pool_count: int
     global_no_pool_pct: float

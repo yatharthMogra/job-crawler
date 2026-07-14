@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/table'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -19,9 +20,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Building2, AlertTriangle, Timer, TrendingUp } from 'lucide-react'
+import { Building2, AlertTriangle, Timer, TrendingUp, ChevronDown } from 'lucide-react'
 import { MetricCard, SummaryStrip } from './metric-card'
+import { SortableTableHead } from './sortable-table-head'
+import { useTableSort } from '@/hooks/use-table-sort'
 import { cn } from '@/lib/utils'
 import {
   getCadenceStats,
@@ -32,6 +43,9 @@ import {
 
 type AggView = 'source' | 'tier' | 'source_tier' | 'company'
 type SortBy = 'drift_desc' | 'never_first' | 'slowest_actual' | 'alpha'
+
+const ALL_TIERS = [1, 2, 3] as const
+
 
 const HEALTH_META: Record<
   CadenceHealth,
@@ -207,11 +221,80 @@ function sortCompanies(list: CadenceCompany[], sortBy: SortBy): CadenceCompany[]
   return arr
 }
 
+function toggleInList<T>(list: T[], value: T, allValues: readonly T[]): T[] {
+  const exists = list.includes(value)
+  if (exists) {
+    const next = list.filter((item) => item !== value)
+    // Keep at least one selection so the table doesn't go blank accidentally.
+    return next.length > 0 ? next : list
+  }
+  const next = [...list, value]
+  return allValues.filter((item) => next.includes(item))
+}
+
+function MultiFilterDropdown<T extends string | number>({
+  label,
+  options,
+  selected,
+  onToggle,
+  onSelectAll,
+  formatOption,
+}: {
+  label: string
+  options: readonly T[]
+  selected: T[]
+  onToggle: (value: T) => void
+  onSelectAll: () => void
+  formatOption: (value: T) => string
+}) {
+  const allSelected = options.length > 0 && selected.length === options.length
+  const triggerLabel = allSelected
+    ? `All ${label.toLowerCase()}`
+    : selected.length === 1
+      ? formatOption(selected[0])
+      : `${selected.length} ${label.toLowerCase()}`
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" className="min-w-[150px] justify-between font-normal">
+          <span className="truncate">{triggerLabel}</span>
+          <ChevronDown className="size-4 opacity-60" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel>{label}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuCheckboxItem
+          checked={allSelected}
+          onCheckedChange={(checked) => {
+            if (checked) onSelectAll()
+          }}
+          onSelect={(e) => e.preventDefault()}
+        >
+          All {label.toLowerCase()}
+        </DropdownMenuCheckboxItem>
+        <DropdownMenuSeparator />
+        {options.map((option) => (
+          <DropdownMenuCheckboxItem
+            key={String(option)}
+            checked={selected.includes(option)}
+            onCheckedChange={() => onToggle(option)}
+            onSelect={(e) => e.preventDefault()}
+          >
+            {formatOption(option)}
+          </DropdownMenuCheckboxItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 export function CadenceTab() {
   const [stats, setStats] = useState<CadenceStats | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [platformFilter, setPlatformFilter] = useState('all')
-  const [tierFilter, setTierFilter] = useState('all')
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([])
+  const [selectedTiers, setSelectedTiers] = useState<number[]>([...ALL_TIERS])
   const [view, setView] = useState<AggView>('source_tier')
   const [search, setSearch] = useState('')
   const [healthFilter, setHealthFilter] = useState<CadenceHealth | 'all'>('all')
@@ -235,14 +318,26 @@ export function CadenceTab() {
     return Array.from(new Set(stats.companies.map((c) => c.platform))).sort()
   }, [stats])
 
+  // Default: all sources selected once catalog loads; keep selection if still valid.
+  useEffect(() => {
+    if (platforms.length === 0) return
+    setSelectedPlatforms((prev) => {
+      if (prev.length === 0) return platforms
+      const kept = prev.filter((p) => platforms.includes(p))
+      return kept.length > 0 ? kept : platforms
+    })
+  }, [platforms])
+
   const filtered = useMemo(() => {
     if (!stats) return []
+    const platformSet = new Set(selectedPlatforms)
+    const tierSet = new Set(selectedTiers)
     return stats.companies.filter((c) => {
-      if (platformFilter !== 'all' && c.platform !== platformFilter) return false
-      if (tierFilter !== 'all' && String(c.tier) !== tierFilter) return false
+      if (platformSet.size > 0 && !platformSet.has(c.platform)) return false
+      if (tierSet.size > 0 && !tierSet.has(c.tier)) return false
       return true
     })
-  }, [stats, platformFilter, tierFilter])
+  }, [stats, selectedPlatforms, selectedTiers])
 
   const summary = useMemo(() => {
     const withActual = filtered.filter(
@@ -263,15 +358,36 @@ export function CadenceTab() {
     }
   }, [filtered])
 
+  const selectedPlatformOrder = useMemo(
+    () => platforms.filter((p) => selectedPlatforms.includes(p)),
+    [platforms, selectedPlatforms],
+  )
+  const selectedTierOrdered = useMemo(
+    () => ALL_TIERS.filter((t) => selectedTiers.includes(t)),
+    [selectedTiers],
+  )
+
   const aggRows = useMemo(() => {
     if (view === 'source') {
-      return aggregate(filtered, (c) => c.platform, (c) => formatPlatform(c.platform), platforms)
+      return aggregate(
+        filtered,
+        (c) => c.platform,
+        (c) => formatPlatform(c.platform),
+        selectedPlatformOrder,
+      )
     }
     if (view === 'tier') {
-      return aggregate(filtered, (c) => String(c.tier), (c) => `Tier ${c.tier}`, ['1', '2', '3'])
+      return aggregate(
+        filtered,
+        (c) => String(c.tier),
+        (c) => `Tier ${c.tier}`,
+        selectedTierOrdered.map(String),
+      )
     }
     if (view === 'source_tier') {
-      const orderKeys = platforms.flatMap((p) => [1, 2, 3].map((t) => `${p}|${t}`))
+      const orderKeys = selectedPlatformOrder.flatMap((p) =>
+        selectedTierOrdered.map((t) => `${p}|${t}`),
+      )
       return aggregate(
         filtered,
         (c) => `${c.platform}|${c.tier}`,
@@ -280,7 +396,7 @@ export function CadenceTab() {
       )
     }
     return []
-  }, [filtered, view, platforms])
+  }, [filtered, view, selectedPlatformOrder, selectedTierOrdered])
 
   const companyRows = useMemo(() => {
     let list = filtered
@@ -304,31 +420,27 @@ export function CadenceTab() {
             {stats ? ` · tick ${stats.tickMinutes}m · batch cap ${stats.batchCap}` : ''}
           </p>
         </div>
-        <div className="flex gap-2">
-          <Select value={platformFilter} onValueChange={setPlatformFilter}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Platform" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All sources</SelectItem>
-              {platforms.map((platform) => (
-                <SelectItem key={platform} value={platform}>
-                  {formatPlatform(platform)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={tierFilter} onValueChange={setTierFilter}>
-            <SelectTrigger className="w-[130px]">
-              <SelectValue placeholder="Tier" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All tiers</SelectItem>
-              <SelectItem value="1">Tier 1</SelectItem>
-              <SelectItem value="2">Tier 2</SelectItem>
-              <SelectItem value="3">Tier 3</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="flex flex-wrap gap-2">
+          <MultiFilterDropdown
+            label="Sources"
+            options={platforms}
+            selected={selectedPlatforms}
+            onToggle={(platform) =>
+              setSelectedPlatforms((prev) => toggleInList(prev, platform, platforms))
+            }
+            onSelectAll={() => setSelectedPlatforms(platforms)}
+            formatOption={formatPlatform}
+          />
+          <MultiFilterDropdown
+            label="Tiers"
+            options={ALL_TIERS}
+            selected={selectedTiers}
+            onToggle={(tier) =>
+              setSelectedTiers((prev) => toggleInList(prev, tier, ALL_TIERS))
+            }
+            onSelectAll={() => setSelectedTiers([...ALL_TIERS])}
+            formatOption={(tier) => `Tier ${tier}`}
+          />
         </div>
       </div>
 
@@ -433,6 +545,19 @@ export function CadenceTab() {
 }
 
 function AggTable({ rows, colLabel }: { rows: AggRow[]; colLabel: string }) {
+  const getters = useMemo(
+    () => ({
+      label: (r: AggRow) => r.label,
+      count: (r: AggRow) => r.count,
+      avgTarget: (r: AggRow) => r.avgTarget,
+      avgActual: (r: AggRow) => r.avgActual,
+      ratio: (r: AggRow) => r.ratio,
+      health: (r: AggRow) => r.health,
+    }),
+    [],
+  )
+  const { sortedRows, sort, toggleSort } = useTableSort(rows, getters)
+
   return (
     <Card>
       <CardHeader>
@@ -442,24 +567,24 @@ function AggTable({ rows, colLabel }: { rows: AggRow[]; colLabel: string }) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{colLabel}</TableHead>
-              <TableHead>Companies</TableHead>
-              <TableHead>Avg. target</TableHead>
-              <TableHead>Avg. actual</TableHead>
+              <SortableTableHead label={colLabel} columnKey="label" sort={sort} onToggle={toggleSort} />
+              <SortableTableHead label="Companies" columnKey="count" sort={sort} onToggle={toggleSort} />
+              <SortableTableHead label="Avg. target" columnKey="avgTarget" sort={sort} onToggle={toggleSort} />
+              <SortableTableHead label="Avg. actual" columnKey="avgActual" sort={sort} onToggle={toggleSort} />
               <TableHead>Target vs. actual</TableHead>
-              <TableHead>Ratio</TableHead>
-              <TableHead>Health</TableHead>
+              <SortableTableHead label="Ratio" columnKey="ratio" sort={sort} onToggle={toggleSort} />
+              <SortableTableHead label="Health" columnKey="health" sort={sort} onToggle={toggleSort} />
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.length === 0 ? (
+            {sortedRows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center text-muted-foreground py-10">
                   No companies match the current filters.
                 </TableCell>
               </TableRow>
             ) : (
-              rows.map((row) => (
+              sortedRows.map((row) => (
                 <TableRow key={row.key}>
                   <TableCell className="font-medium">{row.label}</TableCell>
                   <TableCell>{row.count}</TableCell>
@@ -485,33 +610,49 @@ function AggTable({ rows, colLabel }: { rows: AggRow[]; colLabel: string }) {
 }
 
 function CompanyTable({ rows }: { rows: CadenceCompany[] }) {
+  const getters = useMemo(
+    () => ({
+      name: (r: CadenceCompany) => r.name,
+      platform: (r: CadenceCompany) => r.platform,
+      tier: (r: CadenceCompany) => r.tier,
+      target: (r: CadenceCompany) => r.targetCadenceHours,
+      actual: (r: CadenceCompany) => r.actualCadenceHours,
+      drift: (r: CadenceCompany) => r.driftRatio,
+      health: (r: CadenceCompany) => r.health,
+      lastFetch: (r: CadenceCompany) => r.lastSuccessfulFetchAt,
+      failures: (r: CadenceCompany) => r.consecutiveFailures,
+    }),
+    [],
+  )
+  const { sortedRows, sort, toggleSort } = useTableSort(rows, getters)
+
   return (
     <Card>
       <CardContent className="pt-6">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Company</TableHead>
-              <TableHead>Platform</TableHead>
-              <TableHead>Tier</TableHead>
-              <TableHead>Target</TableHead>
-              <TableHead>Actual</TableHead>
+              <SortableTableHead label="Company" columnKey="name" sort={sort} onToggle={toggleSort} />
+              <SortableTableHead label="Platform" columnKey="platform" sort={sort} onToggle={toggleSort} />
+              <SortableTableHead label="Tier" columnKey="tier" sort={sort} onToggle={toggleSort} />
+              <SortableTableHead label="Target" columnKey="target" sort={sort} onToggle={toggleSort} />
+              <SortableTableHead label="Actual" columnKey="actual" sort={sort} onToggle={toggleSort} />
               <TableHead>Target vs. actual</TableHead>
-              <TableHead>Drift</TableHead>
-              <TableHead>Health</TableHead>
-              <TableHead>Last fetch</TableHead>
-              <TableHead>Failures</TableHead>
+              <SortableTableHead label="Drift" columnKey="drift" sort={sort} onToggle={toggleSort} />
+              <SortableTableHead label="Health" columnKey="health" sort={sort} onToggle={toggleSort} />
+              <SortableTableHead label="Last fetch" columnKey="lastFetch" sort={sort} onToggle={toggleSort} />
+              <SortableTableHead label="Failures" columnKey="failures" sort={sort} onToggle={toggleSort} />
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.length === 0 ? (
+            {sortedRows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={10} className="text-center text-muted-foreground py-10">
                   No companies match the current filters.
                 </TableCell>
               </TableRow>
             ) : (
-              rows.map((row) => (
+              sortedRows.map((row) => (
                 <TableRow key={row.id}>
                   <TableCell className="font-medium whitespace-nowrap">{row.name}</TableCell>
                   <TableCell>{formatPlatform(row.platform)}</TableCell>
