@@ -7,7 +7,8 @@ const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 10
 export type PipelineRunStatus = 'completed' | 'partial_success' | 'failed'
 export type ProcessingState = 'success' | 'partial_success' | 'extraction_failed' | 'enrichment_failed' | 'requires_review' | 'manually_corrected' | 'pending'
 export type SourceHealth = 'healthy' | 'warning' | 'critical'
-export type Platform = 'greenhouse' | 'lever' | 'ashby'
+/** Connector platform id from job_ingestion (e.g. greenhouse, workday, oracle_hcm). */
+export type Platform = string
 export type Severity = 'info' | 'warning' | 'error' | 'critical'
 export type EventCategory = 'pipeline' | 'source' | 'enrichment' | 'review' | 'system'
 

@@ -347,7 +347,9 @@ async def process_company_raw_jobs(
         deterministic_fields = extract_deterministic_fields(job, platform=company.platform)
         external_id = deterministic_fields["external_job_id"]
         freshness = classify_posted_at(deterministic_fields.get("posted_at"), settings=settings)
-        if is_baseline and freshness != FreshnessVerdict.FRESH:
+        # First contact: ledger the entire catalog. Never ingest on baseline —
+        # only net-new IDs or hash changes on later runs enter normalized_jobs.
+        if is_baseline:
             await upsert_ledger_entry(
                 db,
                 company.id,

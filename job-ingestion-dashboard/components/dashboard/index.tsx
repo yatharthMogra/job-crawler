@@ -1,13 +1,14 @@
 'use client'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Activity, Database, DollarSign, Briefcase, Layers, Globe } from 'lucide-react'
+import { Activity, Database, DollarSign, Briefcase, Layers, Globe, Timer } from 'lucide-react'
 import { PipelineTab } from './pipeline-tab'
 import { SourcesTab } from './sources-tab'
 import { CostTab } from './cost-tab'
 import { JobsTab } from './jobs-tab'
 import { TaxonomyTab } from './taxonomy-tab'
 import { H1bTab } from './h1b-tab'
+import { CadenceTab } from './cadence-tab'
 
 export function Dashboard() {
   return (
@@ -27,6 +28,10 @@ export function Dashboard() {
             <TabsTrigger value="pipeline" className="gap-2 data-[state=active]:bg-primary/10">
               <Activity className="size-4" />
               Pipeline
+            </TabsTrigger>
+            <TabsTrigger value="cadence" className="gap-2 data-[state=active]:bg-primary/10">
+              <Timer className="size-4" />
+              Cadence
             </TabsTrigger>
             <TabsTrigger value="sources" className="gap-2 data-[state=active]:bg-primary/10">
               <Database className="size-4" />
@@ -52,6 +57,10 @@ export function Dashboard() {
 
           <TabsContent value="pipeline">
             <PipelineTab />
+          </TabsContent>
+
+          <TabsContent value="cadence">
+            <CadenceTab />
           </TabsContent>
 
           <TabsContent value="sources">

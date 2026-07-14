@@ -277,7 +277,8 @@ async def test_process_company_raw_jobs_baseline_ledgers_unknown_posted_at(monke
 
 
 @pytest.mark.asyncio
-async def test_process_company_raw_jobs_baseline_ingests_fresh_jobs(monkeypatch) -> None:
+async def test_process_company_raw_jobs_baseline_ledgers_fresh_jobs(monkeypatch) -> None:
+    """Baseline never ingests — even jobs with fresh posted_at are ledger-only."""
     company = _company()
     reference = datetime.now(timezone.utc)
     job = {
@@ -292,17 +293,6 @@ async def test_process_company_raw_jobs_baseline_ingests_fresh_jobs(monkeypatch)
     monkeypatch.setattr(pipeline, "_latest_hashes_for_company", AsyncMock(return_value={}))
     monkeypatch.setattr(pipeline, "_normalized_map_for_company", AsyncMock(return_value={}))
     monkeypatch.setattr(pipeline, "fingerprint_exists", AsyncMock(return_value=False))
-    monkeypatch.setattr(
-        pipeline,
-        "upsert_job_archive_from_deterministic",
-        AsyncMock(return_value=uuid4()),
-    )
-    monkeypatch.setattr(
-        pipeline,
-        "_upsert_normalized_core",
-        AsyncMock(return_value=SimpleNamespace(id=uuid4())),
-    )
-    monkeypatch.setattr(pipeline, "queue_job_for_enrichment", AsyncMock())
     upsert_mock = AsyncMock()
     monkeypatch.setattr(pipeline, "upsert_ledger_entry", upsert_mock)
 
@@ -317,9 +307,9 @@ async def test_process_company_raw_jobs_baseline_ingests_fresh_jobs(monkeypatch)
         settings=Settings(),
     )
 
-    assert outcome.jobs_new == 1
-    assert outcome.jobs_ledger_baselined == 0
-    db.add.assert_called_once()
+    assert outcome.jobs_new == 0
+    assert outcome.jobs_ledger_baselined == 1
+    db.add.assert_not_called()
     upsert_mock.assert_awaited_once()
 
 

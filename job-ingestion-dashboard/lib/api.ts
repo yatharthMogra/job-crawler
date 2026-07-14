@@ -308,6 +308,105 @@ export async function getEvents(filters?: {
   }))
 }
 
+export type CadenceHealth = 'on_target' | 'drifting' | 'behind' | 'never_fetched'
+
+export type CadenceCompany = {
+  id: string
+  name: string
+  platform: string
+  tier: number
+  isActive: boolean
+  targetCadenceHours: number
+  actualCadenceHours: number | null
+  hoursSinceLastSuccess: number | null
+  observedIntervalHours: number | null
+  lastSuccessfulFetchAt: Date | null
+  consecutiveFailures: number
+  health: CadenceHealth
+  driftRatio: number | null
+}
+
+export type CadenceStats = {
+  generatedAt: Date
+  tickMinutes: number
+  batchCap: number
+  scheduleIntervalsHours: Record<string, Record<string, number>>
+  summary: {
+    total: number
+    neverFetched: number
+    onTarget: number
+    drifting: number
+    behind: number
+    avgDriftPct: number
+  }
+  companies: CadenceCompany[]
+}
+
+type CadenceStatsResponse = {
+  generated_at: string
+  tick_minutes: number
+  batch_cap: number
+  schedule_intervals_hours: Record<string, Record<string, number>>
+  summary: {
+    total: number
+    never_fetched: number
+    on_target: number
+    drifting: number
+    behind: number
+    avg_drift_pct: number
+  }
+  companies: Array<{
+    id: string
+    name: string
+    platform: string
+    tier: number
+    is_active: boolean
+    target_cadence_hours: number
+    actual_cadence_hours: number | null
+    hours_since_last_success: number | null
+    observed_interval_hours: number | null
+    last_successful_fetch_at: string | null
+    consecutive_failures: number
+    health: CadenceHealth
+    drift_ratio: number | null
+  }>
+}
+
+export async function getCadenceStats(includeInactive = false): Promise<CadenceStats> {
+  const query = new URLSearchParams()
+  query.set('include_inactive', String(includeInactive))
+  const response = await apiRequest<CadenceStatsResponse>(`/stats/cadence?${query.toString()}`)
+  return {
+    generatedAt: parseDate(response.generated_at) ?? new Date(),
+    tickMinutes: response.tick_minutes,
+    batchCap: response.batch_cap,
+    scheduleIntervalsHours: response.schedule_intervals_hours,
+    summary: {
+      total: response.summary.total,
+      neverFetched: response.summary.never_fetched,
+      onTarget: response.summary.on_target,
+      drifting: response.summary.drifting,
+      behind: response.summary.behind,
+      avgDriftPct: response.summary.avg_drift_pct,
+    },
+    companies: response.companies.map((row) => ({
+      id: row.id,
+      name: row.name,
+      platform: row.platform,
+      tier: row.tier,
+      isActive: row.is_active,
+      targetCadenceHours: row.target_cadence_hours,
+      actualCadenceHours: row.actual_cadence_hours,
+      hoursSinceLastSuccess: row.hours_since_last_success,
+      observedIntervalHours: row.observed_interval_hours,
+      lastSuccessfulFetchAt: parseDate(row.last_successful_fetch_at),
+      consecutiveFailures: row.consecutive_failures,
+      health: row.health,
+      driftRatio: row.drift_ratio,
+    })),
+  }
+}
+
 export async function getTaxonomyHealth(): Promise<TaxonomyHealthResponse> {
   return apiRequest<TaxonomyHealthResponse>('/admin/taxonomy-health')
 }
@@ -403,7 +502,7 @@ export async function getCostUsage(params: {
     usageByPlatform: response.breakdown
       .filter((row) => row.platform)
       .map((row) => ({
-        platform: row.platform as Platform,
+        platform: row.platform!,
         inputTokens: row.input_tokens,
         outputTokens: row.output_tokens,
         enrichmentCount: row.enrichment_count,

@@ -91,7 +91,7 @@ The change detector (`classify_jobs`) expects every job dict to have:
 | **Canonical content hash (v2)** | `compute_job_content_hash(job, platform)` builds a versioned payload from deterministic fields (title, company/department, location, employment type) plus **cleaned plain-text description** (HTML stripped, whitespace normalized). Volatile fields such as URLs and raw HTML markup are excluded from the hash input. Real description edits (e.g. new requirements) change the hash; HTML formatting-only changes do not. |
 | **Complete descriptions in fetch** | Descriptions must be present in the dict returned by `fetch_jobs`, not fetched later in the extractor. Ashby is the example of a two-step fetch inside the connector. |
 
-**Ledger semantics:** On the first fetch for a company (baseline), jobs without a verifiable fresh `posted_at` are recorded in `job_identity_ledger` only. On later fetches, jobs already in the ledger with the same canonical hash are dropped (ledger `last_seen_at` updated only). Jobs not in the ledger, or with a changed hash, are ingested into `normalized_jobs` and the ledger.
+**Ledger semantics:** On the first fetch for a company (baseline), **every** job is recorded in `job_identity_ledger` only — nothing enters `normalized_jobs`, even when `posted_at` is fresh. On later fetches, jobs already in the ledger with the same canonical hash are dropped (ledger `last_seen_at` updated only). Jobs not in the ledger, or with a changed hash, are ingested into `normalized_jobs` and the ledger (stale `posted_at` still rejected on non-baseline runs).
 
 After deploying hash algorithm changes, run `scripts/rebaseline_content_hashes.py` to recompute ledger and `raw_jobs` hashes from stored `raw_api_response` payloads.
 

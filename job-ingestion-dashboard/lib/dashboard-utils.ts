@@ -74,7 +74,26 @@ export const severityLabels: Record<string, string> = {
 export const platformLabels: Record<string, string> = {
   greenhouse: 'Greenhouse',
   lever: 'Lever',
-  ashby: 'Ashby'
+  ashby: 'Ashby',
+  workday: 'Workday',
+  oracle_hcm: 'Oracle HCM',
+  icims: 'iCIMS',
+  eightfold: 'Eightfold',
+  successfactors: 'SuccessFactors',
+  workable: 'Workable',
+  smartrecruiters: 'SmartRecruiters',
+  bamboohr: 'BambooHR',
+  workatastartup: 'Work at a Startup',
+  google_careers: 'Google Careers',
+  amazon_jobs: 'Amazon Jobs',
+  uber_careers: 'Uber Careers',
+}
+
+export function formatPlatformLabel(platform: string): string {
+  return platformLabels[platform] ?? platform
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
 }
 
 export const seniorityOptions = [
